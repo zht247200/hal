@@ -3,7 +3,7 @@
 #include "gui/graph_widget/contexts/cone_context.h"
 #include "gui/graph_widget/contexts/dynamic_context.h"
 #include "gui/graph_widget/contexts/module_context.h"
-#include "gui/graph_widget/layouters/standard_graph_layouter.h"
+#include "gui/graph_widget/layouters/standard_module_layouter.h"
 #include "gui/graph_widget/layouters/standard_graph_layouter_v2.h"
 #include "gui/graph_widget/layouters/minimal_graph_layouter.h"
 #include "gui/graph_widget/shaders/module_shader.h"
@@ -31,11 +31,47 @@ module_context* graph_context_manager::get_module_context(const u32 id)
     return c;
 }
 
+cone_context* graph_context_manager::add_cone_context(const QString& name)
+{
+    cone_context* context = new cone_context(name);
+    m_cone_contexts.append(context);
+    return context;
+}
+
+void graph_context_manager::delete_cone_context(const QString& name)
+{
+    Q_UNUSED(name)
+}
+
+cone_context* graph_context_manager::get_cone_context(const QString& name)
+{
+    for (cone_context* context : m_cone_contexts)
+        if (context->name() == name)
+            return context;
+
+    return nullptr;
+}
+
+QStringList graph_context_manager::cone_context_list() const
+{
+    QStringList list;
+
+    for (cone_context* context : m_cone_contexts)
+        list.append(context->name());
+
+    return list;
+}
+
 dynamic_context* graph_context_manager::add_dynamic_context(const QString& name)
 {
     dynamic_context* context = new dynamic_context(name);
     m_dynamic_contexts.append(context);
     return context;
+}
+
+void graph_context_manager::delete_dynamic_context(const QString& name)
+{
+    Q_UNUSED(name)
 }
 
 dynamic_context* graph_context_manager::get_dynamic_context(const QString& name)
@@ -235,7 +271,7 @@ void graph_context_manager::handle_net_dst_removed(const std::shared_ptr<net> n,
 graph_layouter* graph_context_manager::get_default_layouter(module_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new standard_graph_layouter(context);
+    return new standard_module_layouter(context);
     //return new standard_graph_layouter_v2(context);
     //return new minimal_graph_layouter(context);
 }
@@ -243,13 +279,13 @@ graph_layouter* graph_context_manager::get_default_layouter(module_context* cons
 graph_layouter *graph_context_manager::get_default_layouter(cone_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new standard_graph_layouter(context);
+    return new standard_module_layouter(context);
 }
 
 graph_layouter* graph_context_manager::get_default_layouter(dynamic_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new standard_graph_layouter(context);
+    return new standard_module_layouter(context);
 }
 
 graph_shader* graph_context_manager::get_default_shader(module_context* const context) const

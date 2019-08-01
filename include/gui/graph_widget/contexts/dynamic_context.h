@@ -8,10 +8,18 @@ class dynamic_context : public graph_context
 public:
     dynamic_context(const QString& name);
 
+    const QSet<u32>& modules() const;
+    const QSet<u32>& gates() const;
+    const QSet<u32>& nets() const;
+
     QString name() const;
 
 private:
     QString m_name;
+
+    QSet<u32> m_modules;
+    QSet<u32> m_gates;
+    QSet<u32> m_nets;
 
     bool m_extend_gnd;
     bool m_extend_vcc;

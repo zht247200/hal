@@ -12,3 +12,18 @@ QString dynamic_context::name() const
 {
     return m_name;
 }
+
+const QSet<u32>& dynamic_context::gates() const
+{
+    return m_gates;
+}
+
+const QSet<u32>& dynamic_context::modules() const
+{
+    return m_modules;
+}
+
+const QSet<u32>& dynamic_context::nets() const
+{
+    return m_nets;
+}

@@ -6,7 +6,9 @@
 class cone_context : public graph_context
 {
 public:
-    cone_context();
+    cone_context(const QString& name);
+
+    QString name() const;
 
 //    const QSet<u32>& initial_modules() const;
 //    const QSet<u32>& initial_gates() const;
@@ -15,6 +17,8 @@ public:
     const QSet<u32>& separated_nets() const;
 
 private:
+    QString m_name;
+
 //    QSet<u32> m_initial_modules;
 //    QSet<u32> m_initial_gates;
     QSet<u32> m_initial_nets;

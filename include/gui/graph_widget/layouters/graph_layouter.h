@@ -48,16 +48,12 @@ class graph_layouter : public QObject
 
 public:
     explicit graph_layouter(const graph_context* const context, QObject* parent = nullptr);
-
-    virtual void add(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)    = 0;
-    virtual void remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets) = 0;
-
-    virtual void expand(const u32 from_gate, const u32 via_net, const u32 to_gate) = 0;
-
-    virtual void layout() = 0;
+    virtual ~graph_layouter() = default;
 
     virtual const QString name() const        = 0;
     virtual const QString description() const = 0;
+
+    virtual void layout() = 0;
 
     graphics_scene* scene() const;
 

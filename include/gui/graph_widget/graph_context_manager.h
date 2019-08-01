@@ -23,9 +23,16 @@ public:
 
     module_context* get_module_context(const u32 id);
 
+    // RETRIEVAL AND REMOVAL SHOULD BE INDEX BASE, OR NAMES NEED TO BE UNIQUE
+    cone_context* add_cone_context(const QString& name);
+    void delete_cone_context(const QString& name);
+    cone_context* get_cone_context(const QString& name);
+    QStringList cone_context_list() const;
+
     dynamic_context* add_dynamic_context(const QString& name);
+    void delete_dynamic_context(const QString& name);
     dynamic_context* get_dynamic_context(const QString& name);
-    QStringList dynamic_context_list() const; // PROBABLY DEBUG METHOD, WILL BE REPLACED BY DIFFERENT SELECTION INTERFACE
+    QStringList dynamic_context_list() const;
 
     //void handle_module_created(const std::shared_ptr<module> m) const; // PRECACHING ???
     void handle_module_removed(const std::shared_ptr<module> m);
@@ -57,6 +64,7 @@ public:
 
 private:
     QVector<module_context*> m_module_contexts;
+    QVector<cone_context*> m_cone_contexts;
     QVector<dynamic_context*> m_dynamic_contexts;
 };
 
