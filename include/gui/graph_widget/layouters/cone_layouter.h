@@ -12,6 +12,9 @@ public:
 
     virtual void expand(const u32 from_gate, const u32 via_net, const u32 to_gate) = 0;
     // HOW SHOULD THE LAYOUTER DEAL WITH REMOVED GATES / NETS ???
+
+protected:
+    const cone_context* const m_context;
 };
 
 #endif // CONE_LAYOUTER_H

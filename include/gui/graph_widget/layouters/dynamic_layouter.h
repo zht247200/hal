@@ -12,6 +12,9 @@ public:
 
     virtual void add(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)    = 0;
     virtual void remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets) = 0;
+
+protected:
+    const dynamic_context* const m_context;
 };
 
 #endif // DYNAMIC_LAYOUTER_H

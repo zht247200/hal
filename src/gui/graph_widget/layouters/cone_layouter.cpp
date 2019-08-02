@@ -2,7 +2,8 @@
 
 #include "gui/graph_widget/contexts/cone_context.h"
 
-cone_layouter::cone_layouter(const cone_context* const context) : graph_layouter(context)
+cone_layouter::cone_layouter(const cone_context* const context) : graph_layouter(),
+    m_context(context)
 {
 
 }

@@ -47,11 +47,11 @@ class graph_layouter : public QObject
     Q_OBJECT
 
 public:
-    explicit graph_layouter(const graph_context* const context, QObject* parent = nullptr);
+    explicit graph_layouter(QObject* parent = nullptr);
     virtual ~graph_layouter() = default;
 
-    virtual const QString name() const        = 0;
-    virtual const QString description() const = 0;
+    virtual QString name() const        = 0;
+    virtual QString description() const = 0;
 
     virtual void layout() = 0;
 
@@ -63,7 +63,6 @@ Q_SIGNALS:
 
 protected:
     graphics_scene* m_scene;
-    const graph_context* const m_context;
 };
 
 #endif // GRAPH_LAYOUTER_H

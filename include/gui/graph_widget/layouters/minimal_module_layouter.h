@@ -21,10 +21,10 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#ifndef MINIMAL_GRAPH_LAYOUTER_H
-#define MINIMAL_GRAPH_LAYOUTER_H
+#ifndef MINIMAL_MODULE_LAYOUTER_H
+#define MINIMAL_MODULE_LAYOUTER_H
 
-#include "graph_widget/layouters/graph_layouter.h"
+#include "graph_widget/layouters/module_layouter.h"
 
 class graphics_module;
 class graphics_node;
@@ -34,23 +34,21 @@ namespace hal
 struct node;
 }
 
-class minimal_graph_layouter : public graph_layouter
+class minimal_module_layouter : public module_layouter
 {
 public:
-    minimal_graph_layouter(graph_context* context);
+    minimal_module_layouter(module_context* context);
 
-    virtual void layout() Q_DECL_OVERRIDE;
+    virtual QString name() const override;
+    virtual QString description() const override;
 
-    virtual void add(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets) Q_DECL_OVERRIDE;
-    virtual void remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets) Q_DECL_OVERRIDE;
+    virtual void layout() override;
 
-    virtual void expand(const u32 from_gate, const u32 via_net, const u32 to_gate) Q_DECL_OVERRIDE;
-
-    virtual const QString name() const Q_DECL_OVERRIDE;
-    virtual const QString description() const Q_DECL_OVERRIDE;
+    virtual void add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets) override;
+    virtual void remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets) override;
 
 private:
     graphics_node* item_for_node(hal::node& node, const QMap<u32, graphics_gate*>& gate_map, const QMap<u32, graphics_module*>& module_map);
 };
 
-#endif // MINIMAL_GRAPH_LAYOUTER_H
+#endif // MINIMAL_MODULE_LAYOUTER_H

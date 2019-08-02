@@ -1,8 +1,9 @@
-#ifndef STANDARD_GRAPH_LAYOUTER_H
-#define STANDARD_GRAPH_LAYOUTER_H
+/*
+#ifndef STANDARD_MODULE_LAYOUTER_V2_H
+#define STANDARD_MODULE_LAYOUTER_V2_H
 
 #include "gui/graph_widget/items/graphics_gate.h"
-#include "gui/graph_widget/layouters/graph_layouter.h"
+#include "gui/graph_widget/layouters/module_layouter.h"
 #include "gui/gui_def.h"
 
 #include <QSet>
@@ -10,7 +11,7 @@
 
 class graphics_node;
 
-class standard_graph_layouter final : public graph_layouter
+class standard_module_layouter_v2 final : public module_layouter
 {
     struct node_level
     {
@@ -30,9 +31,9 @@ class standard_graph_layouter final : public graph_layouter
         qreal output_padding;
     };
 
-    struct road
+    struct h_road
     {
-        road(const int x_coordinate, const int y_coordinate) :
+        h_road(const int x_coordinate, const int y_coordinate) :
             x(x_coordinate),
             y(y_coordinate),
             lanes(0)
@@ -43,8 +44,35 @@ class standard_graph_layouter final : public graph_layouter
 
         unsigned int lanes = 0;
 
-        qreal vertical_width() const;
-        qreal horizontal_height() const;
+        qreal height() const; // OBSOLETE ???
+    };
+
+    struct v_road
+    {
+        v_road(const int x_coordinate, const int y_coordinate) :
+            x(x_coordinate),
+            y(y_coordinate),
+            left_lanes(0),
+            max_left_lanes(0),
+            mid_lanes(0),
+            max_mid_lanes(0),
+            right_lanes(0)
+        {}
+
+        int x;
+        int y;
+
+        unsigned int left_lanes = 0;
+        unsigned int max_left_lanes = 0;
+        unsigned int mid_lanes = 0;
+        unsigned int max_mid_lanes = 0;
+        unsigned int right_lanes = 0;
+
+        unsigned int current_left_lane() const {return left_lanes;}
+        unsigned int current_mid_lane() const {return max_left_lanes + mid_lanes;}
+        unsigned int current_right_lane() const {return max_left_lanes + max_mid_lanes + right_lanes;}
+        unsigned int lanes() const {return left_lanes + mid_lanes + right_lanes;}
+        qreal width() const; // OBSOLETE ???
     };
 
     struct junction
@@ -86,8 +114,11 @@ class standard_graph_layouter final : public graph_layouter
 
     struct used_paths
     {
-        QSet<road*> h_roads;
-        QSet<road*> v_roads;
+        QSet<h_road*> h_roads;
+
+        QSet<v_road*> left_v_roads;
+        QSet<v_road*> mid_v_roads;
+        QSet<v_road*> right_v_roads;
 
         QSet<junction*> h_junctions;
         QSet<junction*> v_junctions;
@@ -104,20 +135,19 @@ class standard_graph_layouter final : public graph_layouter
     };
 
 public:
-    standard_graph_layouter(const graph_context* const context);
+    standard_module_layouter_v2(const module_context* const context);
 
     virtual const QString name() const override;
     virtual const QString description() const override;
 
     virtual void layout() override;
 
-    virtual void expand(const u32 from_gate, const u32 via_net, const u32 to_gate) override;
-
-    virtual void add(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets) override;
-    virtual void remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets) override;
+    virtual void add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets) override;
+    virtual void remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets) override;
 
 private:
     void create_boxes();
+    void calculate_max_v_lanes();
     void calculate_nets();
     void find_max_box_dimensions();
     void find_max_channel_lanes();
@@ -137,13 +167,13 @@ private:
     bool box_exists(const int x, const int y) const;
 
     bool h_road_jump_possible(const int x, const int y1, const int y2) const;
-    bool h_road_jump_possible(const road* const r1, const road* const r2) const;
+    bool h_road_jump_possible(const h_road* const r1, const h_road* const r2) const;
 
     bool v_road_jump_possible(const int x1, const int x2, const int y) const;
-    bool v_road_jump_possible(const road* const r1, const road* const r2) const;
+    bool v_road_jump_possible(const v_road* const r1, const v_road* const r2) const;
 
-    road* get_h_road(const int x, const int y);
-    road* get_v_road(const int x, const int y);
+    h_road* get_h_road(const int x, const int y);
+    v_road* get_v_road(const int x, const int y);
     junction* get_junction(const int x, const int y);
 
     qreal h_road_height(const unsigned int lanes) const;
@@ -195,8 +225,8 @@ private:
 
     QVector<node_box> m_boxes;
 
-    QVector<road*> m_h_roads;
-    QVector<road*> m_v_roads;
+    QVector<h_road*> m_h_roads;
+    QVector<v_road*> m_v_roads;
     QVector<junction*> m_junctions;
 
     QMap<int, qreal> m_max_node_width_for_x;
@@ -226,4 +256,5 @@ private:
     QMap<int, qreal> m_max_right_io_padding_for_channel_x;
 };
 
-#endif // STANDARD_GRAPH_LAYOUTER_H
+#endif // STANDARD_MODULE_LAYOUTER_V2_H
+*/

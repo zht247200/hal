@@ -1,4 +1,5 @@
-#include "graph_widget/layouters/standard_graph_layouter.h"
+/*
+#include "graph_widget/layouters/standard_module_layouter_v2.h"
 
 #include "netlist/gate.h"
 #include "netlist/module.h"
@@ -24,86 +25,22 @@ const static qreal minimum_v_channel_width = 20;
 const static qreal minimum_h_channel_height = 20;
 const static qreal minimum_gate_io_padding = 40;
 
-standard_graph_layouter::standard_graph_layouter(const graph_context* const context) : graph_layouter(context)
+standard_module_layouter_v2::standard_module_layouter_v2(const module_context* const context) : module_layouter(context)
 {
 
 }
 
-const QString standard_graph_layouter::name() const
+const QString standard_module_layouter_v2::name() const
 {
     return "Standard Layouter";
 }
 
-const QString standard_graph_layouter::description() const
+const QString standard_module_layouter_v2::description() const
 {
     return "<p>The standard layouting algorithm</p>";
 }
 
-void standard_graph_layouter::expand(const u32 from_gate, const u32 via_net, const u32 to_gate)
-{
-    // VERIFY ARGUMENTS
-    if (!(g_netlist->get_gate_by_id(from_gate) && // REDUNDANT ?
-          //g_netlist->get_net_by_id(via_net) &&
-          g_netlist->get_gate_by_id(to_gate) && // REDUNDANT ?
-          m_gates.contains(from_gate)))
-        return;
-
-    std::shared_ptr<net> n = g_netlist->get_net_by_id(via_net);
-    if (!n)
-        return;
-
-    bool arguments_connected = false;
-    bool right_expansion = false;
-
-    u32 src_id = n->get_src().gate->get_id();
-
-    if (src_id == from_gate)
-    {
-        right_expansion = true;
-
-        for (const endpoint& e : n->get_dsts())
-            if (e.gate->get_id() == to_gate)
-            {
-                arguments_connected = true;
-                break;
-            }
-    }
-    else if (src_id == to_gate)
-    {
-        for (const endpoint& e : n->get_dsts())
-            if (e.gate->get_id() == from_gate)
-            {
-                arguments_connected = true;
-                break;
-            }
-    }
-
-    if (!arguments_connected)
-        return;
-
-    bool via_net_found = m_nets.contains(via_net);
-    bool to_gate_found = m_gates.contains(to_gate);
-
-    if (via_net_found && to_gate_found)
-        return;
-
-    if (!via_net_found)
-        m_nets.append(via_net);
-
-    if (!to_gate_found)
-    {
-        int level = m_node_levels.value(hal::node{hal::node_type::gate, from_gate});
-
-        if (right_expansion)
-            add_gate(to_gate, level + 1);
-        else
-            add_gate(to_gate, level - 1);
-    }
-
-    layout();
-}
-
-void standard_graph_layouter::add(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
+void standard_module_layouter_v2::add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets)
 {
     //QSet<hal::node> unvisited;
     QVector<hal::node> unvisited;
@@ -296,7 +233,7 @@ void standard_graph_layouter::add(const QSet<u32> modules, const QSet<u32> gates
         m_nets.append(n);
 }
 
-void standard_graph_layouter::remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
+void standard_module_layouter_v2::remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets)
 {   
 //    m_modules -= modules;
 //    m_gates -= gates;
@@ -405,7 +342,7 @@ void standard_graph_layouter::remove(const QSet<u32> modules, const QSet<u32> ga
     }
 }
 
-void standard_graph_layouter::layout()
+void standard_module_layouter_v2::layout()
 {
     // CLEANUP
     m_scene->delete_all_items();
@@ -440,6 +377,7 @@ void standard_graph_layouter::layout()
 
     // LOGICAL NET LAYOUT
     create_boxes();
+    calculate_max_v_lanes();
     calculate_nets();
     find_max_box_dimensions();
     find_max_channel_lanes();
@@ -459,7 +397,7 @@ void standard_graph_layouter::layout()
     m_scene->handle_extern_selection_changed(nullptr);
 }
 
-void standard_graph_layouter::create_boxes()
+void standard_module_layouter_v2::create_boxes()
 {
     // ZERO GATES
     int level_x = 0;
@@ -532,7 +470,128 @@ void standard_graph_layouter::create_boxes()
     }
 }
 
-void standard_graph_layouter::calculate_nets()
+void standard_module_layouter_v2::calculate_max_v_lanes()
+{
+    // FOR EVERY NET
+    // IF GLOBAL / SEPARATED CONTINUE
+    // ELSE
+    // INCREASE SRC ROAD LEFT BY ONE
+    // INCREASE EVERY DST ROAD RIGHT BY ONE ???
+    // INCREASE EVERY OTHER ROAD ON THE PATH MID BY ONE
+
+    for (const u32 id : m_nets)
+    {
+        std::shared_ptr<net> n = g_netlist->get_net_by_id(id);
+        assert(n);
+
+        // HANDLE GLOBAL NETS
+        if (n->is_unrouted())
+            continue;
+
+        // HANDLE SEPARATED NETS
+        if (n->get_src().gate)
+            if (n->get_src().gate->is_global_gnd_gate() || n->get_src().gate->is_global_vcc_gate())
+                continue;
+
+        // HANDLE NORMAL NETS
+        hal::node node;
+
+        if (!m_context->node_for_gate(node, n->get_src().get_gate()->get_id()))
+            continue;
+
+        node_box* src_box = nullptr;
+
+        for (node_box& box : m_boxes)
+            if (box.node == node)
+                src_box = &box;
+
+        if (!src_box)
+            continue;
+
+        v_road* src_road = get_v_road(src_box->x + 1, src_box->y);
+        bool left_lane_used = false;
+
+        QSet<v_road*> dst_roads;
+
+        // FOR EVERY DST
+        for (const endpoint& dst : n->get_dsts())
+        {
+            // FIND DST BOX
+            node_box* dst_box = nullptr;
+
+            if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
+                return;
+
+            for (node_box& box : m_boxes)
+                if (box.node == node)
+                    dst_box = &box;
+
+            if (!dst_box)
+                continue;
+
+            dst_roads.insert(get_v_road(dst_box->x, dst_box->y));
+        }
+
+        QSet<v_road*> used_mid_v_roads;
+
+        for (v_road* dst_road : dst_roads)
+        {
+            const int x_distance = dst_road->x - src_road->x;
+            const int y_distance = dst_road->y - src_road->y;
+
+            if (!y_distance && v_road_jump_possible(src_road, dst_road))
+            {
+                // SPECIAL CASE INDIRECT HORIZONTAL NEIGHBORS
+                continue;
+            }
+
+            if (!(x_distance || y_distance))
+            {
+                // SPECIAL CASE DIRECT HORIZONTAL NEIGHBORS
+                // SHOULD DST ROAD BE USED ???
+                left_lane_used = true;
+                continue;
+            }
+
+            // NORMAL CASE
+            left_lane_used = true;
+
+            if (!y_distance)
+                continue;
+
+            int remaining_y_distance = y_distance;
+
+            if (y_distance < 0)
+            {
+                // TRAVEL UP
+                while (remaining_y_distance != -1)
+                {
+                    v_road* mid_road = get_v_road(dst_road->x, dst_road->y + remaining_y_distance);
+                    used_mid_v_roads.insert(mid_road);
+                    ++remaining_y_distance;
+                }
+            }
+            else
+            {
+                // TRAVEL DOWN
+                while (remaining_y_distance != 1)
+                {
+                    v_road* mid_road = get_v_road(dst_road->x, dst_road->y - remaining_y_distance);
+                    used_mid_v_roads.insert(mid_road);
+                    --remaining_y_distance;
+                }
+            }
+        }
+
+        if (left_lane_used)
+            src_road->max_left_lanes += 1;
+
+        for (v_road* mid_road : used_mid_v_roads)
+            mid_road->max_mid_lanes += 1;
+    }
+}
+
+void standard_module_layouter_v2::calculate_nets()
 {
     for (const u32 id : m_nets)
     {
@@ -584,23 +643,23 @@ void standard_graph_layouter::calculate_nets()
             if (!y_distance && v_road_jump_possible(src_box->x + 1, dst_box->x, src_box->y))
             {
                 // SPECIAL CASE INDIRECT HORIZONTAL NEIGHBORS
-                road* dst_v_road = get_v_road(dst_box->x, dst_box->y);
-                used.v_roads.insert(dst_v_road);
+                v_road* dst_v_road = get_v_road(dst_box->x, dst_box->y);
+                used.right_v_roads.insert(dst_v_road);
                 continue;
             }
 
-            road* src_v_road = get_v_road(src_box->x + 1, src_box->y);
+            v_road* src_v_road = get_v_road(src_box->x + 1, src_box->y);
 
             if (!(x_distance || y_distance))
             {
                 // SPECIAL CASE DIRECT HORIZONTAL NEIGHBORS
-                used.v_roads.insert(src_v_road);
+                used.left_v_roads.insert(src_v_road); // UNSURE HOW TO HANDLE
                 continue;
             }
 
             // NORMAL CASE
             // CONNECT SRC TO V ROAD, TRAVEL X DISTANCE, TRAVEL Y DISTANCE, CONNECT V ROAD TO DST
-            used.v_roads.insert(src_v_road);
+            used.left_v_roads.insert(src_v_road);
 
             junction* initial_junction = nullptr;
             int remaining_y_distance = y_distance;
@@ -610,9 +669,9 @@ void standard_graph_layouter::calculate_nets()
                 // TRAVEL UP
                 initial_junction = get_junction(src_v_road->x, src_v_road->y);
 
-                if (src_v_road->lanes != initial_junction->v_lanes)
+                if (src_v_road->current_left_lane() != initial_junction->v_lanes)
                 {
-                    if (src_v_road->lanes < initial_junction->v_lanes)
+                    if (src_v_road->current_left_lane() < initial_junction->v_lanes)
                         used.close_bottom_junctions.insert(initial_junction);
                     else
                         used.far_bottom_junctions.insert(initial_junction);
@@ -623,9 +682,9 @@ void standard_graph_layouter::calculate_nets()
                 // TRAVEL DOWN
                 initial_junction = get_junction(src_v_road->x, src_v_road->y + 1);
 
-                if (src_v_road->lanes != initial_junction->v_lanes)
+                if (src_v_road->current_left_lane() != initial_junction->v_lanes)
                 {
-                    if (src_v_road->lanes < initial_junction->v_lanes)
+                    if (src_v_road->current_left_lane() < initial_junction->v_lanes)
                         used.close_top_junctions.insert(initial_junction);
                     else
                         used.far_top_junctions.insert(initial_junction);
@@ -648,7 +707,7 @@ void standard_graph_layouter::calculate_nets()
                 // TRAVEL REMAINING X DISTANCE
                 while (remaining_x_distance)
                 {
-                    road* r = nullptr;
+                    h_road* r = nullptr;
                     junction* j = nullptr;
 
                     if (x_distance > 0)
@@ -717,11 +776,11 @@ void standard_graph_layouter::calculate_nets()
                 while (remaining_y_distance != 1)
                 {
                     // TRAVEL DOWN
-                    road* r = get_v_road(last_junction->x, last_junction->y);
+                    v_road* r = get_v_road(last_junction->x, last_junction->y);
 
-                    if (last_junction->v_lanes != r->lanes)
+                    if (last_junction->v_lanes != r->current_mid_lane())
                     {
-                        if (last_junction->v_lanes < r->lanes)
+                        if (last_junction->v_lanes < r->current_mid_lane())
                             used.far_bottom_junctions.insert(last_junction);
                         else
                             used.close_bottom_junctions.insert(last_junction);
@@ -729,15 +788,15 @@ void standard_graph_layouter::calculate_nets()
 
                     junction* j = get_junction(last_junction->x, last_junction->y + 1);
 
-                    if (r->lanes != j->v_lanes)
+                    if (r->current_mid_lane() != j->v_lanes)
                     {
-                        if (r->lanes < j->v_lanes)
+                        if (r->current_mid_lane() < j->v_lanes)
                             used.close_top_junctions.insert(j);
                         else
                             used.far_top_junctions.insert(j);
                     }
 
-                    used.v_roads.insert(r);
+                    used.mid_v_roads.insert(r);
                     used.v_junctions.insert(j);
 
                     last_junction = j;
@@ -750,11 +809,11 @@ void standard_graph_layouter::calculate_nets()
                 while (remaining_y_distance != -1)
                 {
                     // TRAVEL UP
-                    road* r = get_v_road(last_junction->x, last_junction->y - 1);
+                    v_road* r = get_v_road(last_junction->x, last_junction->y - 1);
 
-                    if (last_junction->v_lanes != r->lanes)
+                    if (last_junction->v_lanes != r->current_mid_lane())
                     {
-                        if (last_junction->v_lanes < r->lanes)
+                        if (last_junction->v_lanes < r->current_mid_lane())
                             used.far_top_junctions.insert(last_junction);
                         else
                             used.close_top_junctions.insert(last_junction);
@@ -762,15 +821,15 @@ void standard_graph_layouter::calculate_nets()
 
                     junction* j = get_junction(last_junction->x, last_junction->y - 1);
 
-                    if (r->lanes != j->v_lanes)
+                    if (r->current_mid_lane() != j->v_lanes)
                     {
-                        if (r->lanes < j->v_lanes)
+                        if (r->current_mid_lane() < j->v_lanes)
                             used.close_bottom_junctions.insert(j);
                         else
                             used.far_bottom_junctions.insert(j);
                     }
 
-                    used.v_roads.insert(r);
+                    used.mid_v_roads.insert(r);
                     used.v_junctions.insert(j);
 
                     last_junction = j;
@@ -779,16 +838,16 @@ void standard_graph_layouter::calculate_nets()
                 }
             }
 
-            road* dst_road = nullptr;
+            v_road* dst_road = nullptr;
 
             if (y_distance > 0)
             {
                 // TRAVEL DOWN
                 dst_road = get_v_road(last_junction->x, last_junction->y);
 
-                if (last_junction->v_lanes != dst_road->lanes)
+                if (last_junction->v_lanes != dst_road->current_right_lane())
                 {
-                    if (last_junction->v_lanes < dst_road->lanes)
+                    if (last_junction->v_lanes < dst_road->current_right_lane())
                         used.far_bottom_junctions.insert(last_junction);
                     else
                         used.close_bottom_junctions.insert(last_junction);
@@ -799,9 +858,9 @@ void standard_graph_layouter::calculate_nets()
                 // TRAVEL UP
                 dst_road = get_v_road(last_junction->x, last_junction->y - 1);
 
-                if (last_junction->v_lanes != dst_road->lanes)
+                if (last_junction->v_lanes != dst_road->current_right_lane())
                 {
-                    if (last_junction->v_lanes < dst_road->lanes)
+                    if (last_junction->v_lanes < dst_road->current_right_lane())
                         used.far_top_junctions.insert(last_junction);
                     else
                         used.close_top_junctions.insert(last_junction);
@@ -809,14 +868,14 @@ void standard_graph_layouter::calculate_nets()
             }
 
             used.v_junctions.insert(last_junction);
-            used.v_roads.insert(dst_road);
+            used.right_v_roads.insert(dst_road);
         }
 
         commit_used_paths(used);
     }
 }
 
-void standard_graph_layouter::find_max_box_dimensions()
+void standard_module_layouter_v2::find_max_box_dimensions()
 {
     for (const node_box& box : m_boxes)
     {
@@ -828,13 +887,13 @@ void standard_graph_layouter::find_max_box_dimensions()
     }
 }
 
-void standard_graph_layouter::find_max_channel_lanes()
+void standard_module_layouter_v2::find_max_channel_lanes()
 {
-    for (const road* r : m_v_roads)
-        store_max(m_max_v_channel_lanes_for_x, r->x, r->lanes);
-
-    for (const road* r : m_h_roads)
+    for (const h_road* r : m_h_roads)
         store_max(m_max_h_channel_lanes_for_y, r->y, r->lanes);
+
+    for (const v_road* r : m_v_roads)
+        store_max(m_max_v_channel_lanes_for_x, r->x, r->lanes());
 
     for (const junction* j : m_junctions)
     {
@@ -843,7 +902,7 @@ void standard_graph_layouter::find_max_channel_lanes()
     }
 }
 
-void standard_graph_layouter::calculate_max_channel_dimensions()
+void standard_module_layouter_v2::calculate_max_channel_dimensions()
 {
     auto i = m_max_v_channel_lanes_for_x.constBegin();
     while (i != m_max_v_channel_lanes_for_x.constEnd())
@@ -900,7 +959,7 @@ void standard_graph_layouter::calculate_max_channel_dimensions()
     }
 }
 
-void standard_graph_layouter::calculate_gate_offsets()
+void standard_module_layouter_v2::calculate_gate_offsets()
 {
     // USE METHOD TO ACCESS MAP AND RETURN MINIMUM VALUE IF NO VALUE IS FOUND
     int min_x = 0;
@@ -954,7 +1013,7 @@ void standard_graph_layouter::calculate_gate_offsets()
         }
 }
 
-void standard_graph_layouter::place_gates()
+void standard_module_layouter_v2::place_gates()
 {
     for (node_box& box : m_boxes)
     {
@@ -963,7 +1022,7 @@ void standard_graph_layouter::place_gates()
     }
 }
 
-void standard_graph_layouter::update_scene_rect()
+void standard_module_layouter_v2::update_scene_rect()
 {
     // SCENE RECT STUFF BEHAVES WEIRDLY, FURTHER RESEARCH REQUIRED
 
@@ -979,13 +1038,17 @@ void standard_graph_layouter::update_scene_rect()
     m_scene->setSceneRect(rect);
 }
 
-void standard_graph_layouter::reset_roads_and_junctions()
+void standard_module_layouter_v2::reset_roads_and_junctions()
 {
-    for (road* r : m_h_roads)
+    for (h_road* r : m_h_roads)
         r->lanes = 0;
 
-    for (road* r : m_v_roads)
-        r->lanes = 0;
+    for (v_road* r : m_v_roads)
+    {
+        r->left_lanes = 0;
+        r->mid_lanes = 0;
+        r->right_lanes = 0;
+    }
 
     for (junction* j : m_junctions)
     {
@@ -1040,7 +1103,7 @@ void standard_graph_layouter::reset_roads_and_junctions()
     }
 }
 
-void standard_graph_layouter::draw_nets()
+void standard_module_layouter_v2::draw_nets()
 {
     // ROADS AND JUNCTIONS FILLED LEFT TO RIGHT, TOP TO BOTTOM
     for (const u32 id : m_nets)
@@ -1187,9 +1250,9 @@ void standard_graph_layouter::draw_nets()
             if (!y_distance && v_road_jump_possible(src_box->x + 1, dst_box->x, src_box->y))
             {
                 // SPECIAL CASE INDIRECT HORIZONTAL NEIGHBORS
-                road* dst_v_road = get_v_road(dst_box->x, dst_box->y);
+                v_road* dst_road = get_v_road(dst_box->x, dst_box->y);
 
-                qreal x = scene_x_for_v_channel_lane(dst_v_road->x, dst_v_road->lanes);
+                qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->current_right_lane());
                 lines.h_lines.append(standard_graphics_net::h_line{src_pin_position.x(), x, src_pin_position.y()});
 
                 if (src_pin_position.y() < dst_pin_position.y())
@@ -1199,16 +1262,16 @@ void standard_graph_layouter::draw_nets()
 
                 lines.h_lines.append(standard_graphics_net::h_line{x, dst_pin_position.x(), dst_pin_position.y()});
 
-                used.v_roads.insert(dst_v_road);
+                used.right_v_roads.insert(dst_road);
                 continue;
             }
 
-            road* src_v_road = get_v_road(src_box->x + 1, src_box->y);
+            v_road* src_road = get_v_road(src_box->x + 1, src_box->y);
 
             if (!(x_distance || y_distance))
             {
                 // SPECIAL CASE DIRECT HORIZONTAL NEIGHBORS
-                qreal x = scene_x_for_v_channel_lane(src_v_road->x, src_v_road->lanes);
+                qreal x = scene_x_for_v_channel_lane(src_road->x, src_road->current_left_lane()); // DUMB, SHOULD USE RIGHT LANE
                 lines.h_lines.append(standard_graphics_net::h_line{src_pin_position.x(), x, src_pin_position.y()});
 
                 if (src_pin_position.y() < dst_pin_position.y())
@@ -1218,16 +1281,16 @@ void standard_graph_layouter::draw_nets()
 
                 lines.h_lines.append(standard_graphics_net::h_line{x, dst_pin_position.x(), dst_pin_position.y()});
 
-                used.v_roads.insert(src_v_road);
+                used.left_v_roads.insert(src_road); // DUMB, SHOULD USE RIGHT LANE
                 continue;
             }
 
             // NORMAL CASE
             // CONNECT SRC TO V ROAD, TRAVEL X DISTANCE, TRAVEL Y DISTANCE, CONNECT V ROAD TO DST
             QPointF current_position(src_pin_position);
-            current_position.setX(scene_x_for_v_channel_lane(src_v_road->x, src_v_road->lanes));
+            current_position.setX(scene_x_for_v_channel_lane(src_road->x, src_road->current_left_lane()));
             lines.h_lines.append(standard_graphics_net::h_line{src_pin_position.x(), current_position.x(), src_pin_position.y()});
-            used.v_roads.insert(src_v_road);
+            used.left_v_roads.insert(src_road);
 
             junction* initial_junction = nullptr;
             int remaining_y_distance = y_distance;
@@ -1235,12 +1298,12 @@ void standard_graph_layouter::draw_nets()
             if (y_distance < 0)
             {
                 // TRAVEL UP
-                initial_junction = get_junction(src_v_road->x, src_v_road->y);
+                initial_junction = get_junction(src_road->x, src_road->y);
 
-                if (src_v_road->lanes != initial_junction->v_lanes)
+                if (src_road->current_left_lane() != initial_junction->v_lanes)
                 {
                     // R -> J
-                    if (src_v_road->lanes < initial_junction->v_lanes)
+                    if (src_road->current_left_lane() < initial_junction->v_lanes)
                     {
                         // POS
                         qreal y = scene_y_for_close_bottom_lane_change(initial_junction->y, initial_junction->close_bottom_lane_changes);
@@ -1270,12 +1333,12 @@ void standard_graph_layouter::draw_nets()
             else
             {
                 // TRAVEL DOWN
-                initial_junction = get_junction(src_v_road->x, src_v_road->y + 1);
+                initial_junction = get_junction(src_road->x, src_road->y + 1);
 
-                if (src_v_road->lanes != initial_junction->v_lanes)
+                if (src_road->current_left_lane() != initial_junction->v_lanes)
                 {
                     // R -> J
-                    if (src_v_road->lanes < initial_junction->v_lanes)
+                    if (src_road->current_left_lane() < initial_junction->v_lanes)
                     {
                         // POS
                         qreal y = scene_y_for_close_top_lane_change(initial_junction->y, initial_junction->close_top_lane_changes);
@@ -1328,7 +1391,7 @@ void standard_graph_layouter::draw_nets()
                 // TRAVEL REMAINING X DISTANCE
                 while (remaining_x_distance)
                 {
-                    road* r = nullptr;
+                    h_road* r = nullptr;
                     junction* j = nullptr;
 
                     if (x_distance > 0)
@@ -1496,12 +1559,12 @@ void standard_graph_layouter::draw_nets()
                 while (remaining_y_distance != 1)
                 {
                     // TRAVEL DOWN
-                    road* r = get_v_road(last_junction->x, last_junction->y);
+                    v_road* r = get_v_road(last_junction->x, last_junction->y);
 
-                    if (last_junction->v_lanes != r->lanes)
+                    if (last_junction->v_lanes != r->current_mid_lane())
                     {
                         // J -> R
-                        if (last_junction->v_lanes < r->lanes)
+                        if (last_junction->v_lanes < r->current_mid_lane())
                         {
                             // POS
                             qreal y = scene_y_for_far_bottom_lane_change(last_junction->y, last_junction->far_bottom_lane_changes);
@@ -1518,7 +1581,7 @@ void standard_graph_layouter::draw_nets()
                             used.close_bottom_junctions.insert(last_junction);
                         }
 
-                        qreal x = scene_x_for_v_channel_lane(r->x, r->lanes);
+                        qreal x = scene_x_for_v_channel_lane(r->x, r->current_mid_lane());
 
                         if (current_position.x() < x)
                             lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
@@ -1530,10 +1593,10 @@ void standard_graph_layouter::draw_nets()
 
                     junction* j = get_junction(last_junction->x, last_junction->y + 1);
 
-                    if (r->lanes != j->v_lanes)
+                    if (r->current_mid_lane() != j->v_lanes)
                     {
                         // R -> J
-                        if (r->lanes < j->v_lanes)
+                        if (r->current_mid_lane() < j->v_lanes)
                         {
                             // POS
                             qreal y = scene_y_for_close_top_lane_change(j->y, j->close_top_lane_changes);
@@ -1560,7 +1623,7 @@ void standard_graph_layouter::draw_nets()
                         current_position.setX(x);
                     }
 
-                    used.v_roads.insert(r);
+                    used.mid_v_roads.insert(r);
                     used.v_junctions.insert(j);
 
                     last_junction = j;
@@ -1573,12 +1636,12 @@ void standard_graph_layouter::draw_nets()
                 while (remaining_y_distance != -1)
                 {
                     // TRAVEL UP
-                    road* r = get_v_road(last_junction->x, last_junction->y - 1);
+                    v_road* r = get_v_road(last_junction->x, last_junction->y - 1);
 
-                    if (last_junction->v_lanes != r->lanes)
+                    if (last_junction->v_lanes != r->current_mid_lane())
                     {
                         // J -> R
-                        if (last_junction->v_lanes < r->lanes)
+                        if (last_junction->v_lanes < r->current_mid_lane())
                         {
                             // POS
                             qreal y = scene_y_for_far_top_lane_change(last_junction->y, last_junction->far_top_lane_changes);
@@ -1595,7 +1658,7 @@ void standard_graph_layouter::draw_nets()
                             used.close_top_junctions.insert(last_junction);
                         }
 
-                        qreal x = scene_x_for_v_channel_lane(r->x, r->lanes);
+                        qreal x = scene_x_for_v_channel_lane(r->x, r->current_mid_lane());
 
                         if (current_position.x() < x)
                             lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
@@ -1607,10 +1670,10 @@ void standard_graph_layouter::draw_nets()
 
                     junction* j = get_junction(last_junction->x, last_junction->y - 1);
 
-                    if (r->lanes != j->v_lanes)
+                    if (r->current_mid_lane() != j->v_lanes)
                     {
                         // R -> J
-                        if (r->lanes < j->v_lanes)
+                        if (r->current_mid_lane() < j->v_lanes)
                         {
                             // POS
                             qreal y = scene_y_for_close_bottom_lane_change(j->y, j->close_bottom_lane_changes);
@@ -1637,7 +1700,7 @@ void standard_graph_layouter::draw_nets()
                         current_position.setX(x);
                     }
 
-                    used.v_roads.insert(r);
+                    used.mid_v_roads.insert(r);
                     used.v_junctions.insert(j);
 
                     last_junction = j;
@@ -1646,17 +1709,17 @@ void standard_graph_layouter::draw_nets()
                 }
             }
 
-            road* dst_road = nullptr;
+            v_road* dst_road = nullptr;
 
             if (y_distance > 0)
             {
                 // TRAVEL DOWN
                 dst_road = get_v_road(last_junction->x, last_junction->y);
 
-                if (last_junction->v_lanes != dst_road->lanes)
+                if (last_junction->v_lanes != dst_road->current_right_lane())
                 {
                     // J -> R
-                    if (last_junction->v_lanes < dst_road->lanes)
+                    if (last_junction->v_lanes < dst_road->current_right_lane())
                     {
                         // POS
                         qreal y = scene_y_for_far_bottom_lane_change(last_junction->y, last_junction->far_bottom_lane_changes);
@@ -1673,7 +1736,7 @@ void standard_graph_layouter::draw_nets()
                         used.close_bottom_junctions.insert(last_junction);
                     }
 
-                    qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->lanes);
+                    qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->current_right_lane());
 
                     if (current_position.x() < x)
                         lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
@@ -1688,10 +1751,10 @@ void standard_graph_layouter::draw_nets()
                 // TRAVEL UP
                 dst_road = get_v_road(last_junction->x, last_junction->y - 1);
 
-                if (last_junction->v_lanes != dst_road->lanes)
+                if (last_junction->v_lanes != dst_road->current_right_lane())
                 {
                     // J -> R
-                    if (last_junction->v_lanes < dst_road->lanes)
+                    if (last_junction->v_lanes < dst_road->current_right_lane())
                     {
                         // POS
                         qreal y = scene_y_for_far_top_lane_change(last_junction->y, last_junction->far_top_lane_changes);
@@ -1708,7 +1771,7 @@ void standard_graph_layouter::draw_nets()
                         used.close_top_junctions.insert(last_junction);
                     }
 
-                    qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->lanes);
+                    qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->current_right_lane());
 
                     if (current_position.x() < x)
                         lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
@@ -1728,7 +1791,7 @@ void standard_graph_layouter::draw_nets()
 
             current_position.setY(dst_pin_position.y());
 
-            used.v_roads.insert(dst_road);
+            used.right_v_roads.insert(dst_road);
 
             lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), dst_pin_position.x(), current_position.y()});
 
@@ -1743,22 +1806,22 @@ void standard_graph_layouter::draw_nets()
     }
 }
 
-void standard_graph_layouter::clear_net_layout_data()
+void standard_module_layouter_v2::clear_net_layout_data()
 {
-    for (const standard_graph_layouter::road* r : m_h_roads)
+    for (const standard_module_layouter_v2::h_road* r : m_h_roads)
         delete r;
     m_h_roads.clear();
 
-    for (const standard_graph_layouter::road* r : m_v_roads)
+    for (const standard_module_layouter_v2::v_road* r : m_v_roads)
         delete r;
     m_v_roads.clear();
 
-    for (const standard_graph_layouter::junction* j : m_junctions)
+    for (const standard_module_layouter_v2::junction* j : m_junctions)
         delete j;
     m_junctions.clear();
 }
 
-standard_graph_layouter::node_box standard_graph_layouter::create_box(const hal::node& node, const int x, const int y) const
+standard_module_layouter_v2::node_box standard_module_layouter_v2::create_box(const hal::node& node, const int x, const int y) const
 {
     node_box box;
     box.node = node;
@@ -1787,7 +1850,7 @@ standard_graph_layouter::node_box standard_graph_layouter::create_box(const hal:
     return box;
 }
 
-void standard_graph_layouter::add_gate(const u32 gate_id, const int level)
+void standard_module_layouter_v2::add_gate(const u32 gate_id, const int level)
 {
     assert(!m_gates.contains(gate_id));
 
@@ -1848,16 +1911,16 @@ void standard_graph_layouter::add_gate(const u32 gate_id, const int level)
         }
 }
 
-bool standard_graph_layouter::box_exists(const int x, const int y) const
+bool standard_module_layouter_v2::box_exists(const int x, const int y) const
 {
-    for (const standard_graph_layouter::node_box& box : m_boxes)
+    for (const standard_module_layouter_v2::node_box& box : m_boxes)
         if (box.x == x && box.y == y)
             return true;
 
     return false;
 }
 
-bool standard_graph_layouter::h_road_jump_possible(const int x, const int y1, const int y2) const
+bool standard_module_layouter_v2::h_road_jump_possible(const int x, const int y1, const int y2) const
 {
     if (y1 == y2)
         return false;
@@ -1882,7 +1945,7 @@ bool standard_graph_layouter::h_road_jump_possible(const int x, const int y1, co
     return true;
 }
 
-bool standard_graph_layouter::h_road_jump_possible(const standard_graph_layouter::road* const r1, const standard_graph_layouter::road* const r2) const
+bool standard_module_layouter_v2::h_road_jump_possible(const standard_module_layouter_v2::h_road* const r1, const standard_module_layouter_v2::h_road* const r2) const
 {
     // CONVENIENCE METHOD
     assert(r1 && r2);
@@ -1893,7 +1956,7 @@ bool standard_graph_layouter::h_road_jump_possible(const standard_graph_layouter
     return h_road_jump_possible(r1->x, r1->y, r2->y);
 }
 
-bool standard_graph_layouter::v_road_jump_possible(const int x1, const int x2, const int y) const
+bool standard_module_layouter_v2::v_road_jump_possible(const int x1, const int x2, const int y) const
 {
     if (x1 == x2)
         return false;
@@ -1918,7 +1981,7 @@ bool standard_graph_layouter::v_road_jump_possible(const int x1, const int x2, c
     return true;
 }
 
-bool standard_graph_layouter::v_road_jump_possible(const standard_graph_layouter::road* const r1, const standard_graph_layouter::road* const r2) const
+bool standard_module_layouter_v2::v_road_jump_possible(const v_road* const r1, const v_road* const r2) const
 {
     // CONVENIENCE METHOD
     assert(r1 && r2);
@@ -1929,40 +1992,40 @@ bool standard_graph_layouter::v_road_jump_possible(const standard_graph_layouter
     return v_road_jump_possible(r1->x, r2->x, r1->y);
 }
 
-standard_graph_layouter::road* standard_graph_layouter::get_h_road(const int x, const int y)
+standard_module_layouter_v2::h_road* standard_module_layouter_v2::get_h_road(const int x, const int y)
 {
-    for (standard_graph_layouter::road* r : m_h_roads)
+    for (standard_module_layouter_v2::h_road* r : m_h_roads)
         if (r->x == x && r->y == y)
             return r;
 
-    standard_graph_layouter::road* new_r = new road(x, y);
+    standard_module_layouter_v2::h_road* new_r = new h_road(x, y);
     m_h_roads.append(new_r);
     return new_r;
 }
 
-standard_graph_layouter::road* standard_graph_layouter::get_v_road(const int x, const int y)
+standard_module_layouter_v2::v_road* standard_module_layouter_v2::get_v_road(const int x, const int y)
 {
-    for (standard_graph_layouter::road* r : m_v_roads)
+    for (standard_module_layouter_v2::v_road* r : m_v_roads)
         if (r->x == x && r->y == y)
             return r;
 
-    standard_graph_layouter::road* new_r = new road(x, y);
+    standard_module_layouter_v2::v_road* new_r = new v_road(x, y);
     m_v_roads.append(new_r);
     return new_r;
 }
 
-standard_graph_layouter::junction* standard_graph_layouter::get_junction(const int x, const int y)
+standard_module_layouter_v2::junction* standard_module_layouter_v2::get_junction(const int x, const int y)
 {
-    for (standard_graph_layouter::junction* j : m_junctions)
+    for (standard_module_layouter_v2::junction* j : m_junctions)
         if (j->x == x && j->y == y)
             return j;
 
-    standard_graph_layouter::junction* new_j = new junction(x, y);
+    standard_module_layouter_v2::junction* new_j = new junction(x, y);
     m_junctions.append(new_j);
     return new_j;
 }
 
-qreal standard_graph_layouter::h_road_height(const unsigned int lanes) const
+qreal standard_module_layouter_v2::h_road_height(const unsigned int lanes) const
 {
     // LANES COUNTED FROM 1
     qreal height = h_road_padding * 2;
@@ -1973,7 +2036,7 @@ qreal standard_graph_layouter::h_road_height(const unsigned int lanes) const
     return height;
 }
 
-qreal standard_graph_layouter::v_road_width(const unsigned int lanes) const
+qreal standard_module_layouter_v2::v_road_width(const unsigned int lanes) const
 {
     // LANES COUNTED FROM 1
     qreal width = v_road_padding * 2;
@@ -1984,7 +2047,7 @@ qreal standard_graph_layouter::v_road_width(const unsigned int lanes) const
     return width;
 }
 
-qreal standard_graph_layouter::scene_y_for_h_channel_lane(const int y, const unsigned int lane) const
+qreal standard_module_layouter_v2::scene_y_for_h_channel_lane(const int y, const unsigned int lane) const
 {
     // LINES NUMBERED FROM 0
     assert(m_node_offset_for_y.contains(y) || m_node_offset_for_y.contains(y - 1));
@@ -1997,7 +2060,7 @@ qreal standard_graph_layouter::scene_y_for_h_channel_lane(const int y, const uns
         return m_node_offset_for_y.value(y - 1) + m_max_node_height_for_y.value(y - 1) + m_max_h_channel_top_spacing_for_y.value(y) + offset;
 }
 
-qreal standard_graph_layouter::scene_x_for_v_channel_lane(const int x, const unsigned int lane) const
+qreal standard_module_layouter_v2::scene_x_for_v_channel_lane(const int x, const unsigned int lane) const
 {
     // LINES NUMBERED FROM 0
     assert(m_node_offset_for_x.contains(x) || m_node_offset_for_x.contains(x - 1));
@@ -2010,7 +2073,7 @@ qreal standard_graph_layouter::scene_x_for_v_channel_lane(const int x, const uns
         return m_node_offset_for_x.value(x - 1) + m_max_node_width_for_x.value(x - 1) + m_max_v_channel_left_spacing_for_x.value(x) + offset;
 }
 
-qreal standard_graph_layouter::scene_x_for_close_left_lane_change(const int channel_x, unsigned int lane_change) const
+qreal standard_module_layouter_v2::scene_x_for_close_left_lane_change(const int channel_x, unsigned int lane_change) const
 {
     // LANE CHANGES COUNTED FROM 0
     assert(m_node_offset_for_x.contains(channel_x) || m_node_offset_for_x.contains(channel_x - 1));
@@ -2029,7 +2092,7 @@ qreal standard_graph_layouter::scene_x_for_close_left_lane_change(const int chan
                 lane_change * lane_spacing;
 }
 
-qreal standard_graph_layouter::scene_x_for_far_left_lane_change(const int channel_x, unsigned int lane_change) const
+qreal standard_module_layouter_v2::scene_x_for_far_left_lane_change(const int channel_x, unsigned int lane_change) const
 {
     // LANE CHANGES COUNTED FROM 0
     assert(m_node_offset_for_x.contains(channel_x) || m_node_offset_for_x.contains(channel_x - 1));
@@ -2048,7 +2111,7 @@ qreal standard_graph_layouter::scene_x_for_far_left_lane_change(const int channe
                 lane_change * lane_spacing;
 }
 
-qreal standard_graph_layouter::scene_x_for_close_right_lane_change(const int channel_x, unsigned int lane_change) const
+qreal standard_module_layouter_v2::scene_x_for_close_right_lane_change(const int channel_x, unsigned int lane_change) const
 {
     // LANE CHANGES COUNTED FROM 0
     assert(m_node_offset_for_x.contains(channel_x) || m_node_offset_for_x.contains(channel_x - 1));
@@ -2067,7 +2130,7 @@ qreal standard_graph_layouter::scene_x_for_close_right_lane_change(const int cha
                 lane_change * lane_spacing;
 }
 
-qreal standard_graph_layouter::scene_x_for_far_right_lane_change(const int channel_x, unsigned int lane_change) const
+qreal standard_module_layouter_v2::scene_x_for_far_right_lane_change(const int channel_x, unsigned int lane_change) const
 {
     // LANE CHANGES COUNTED FROM 0
     assert(m_node_offset_for_x.contains(channel_x) || m_node_offset_for_x.contains(channel_x - 1));
@@ -2086,7 +2149,7 @@ qreal standard_graph_layouter::scene_x_for_far_right_lane_change(const int chann
                 lane_change * lane_spacing;
 }
 
-qreal standard_graph_layouter::scene_y_for_close_top_lane_change(const int channel_y, unsigned int lane_change) const
+qreal standard_module_layouter_v2::scene_y_for_close_top_lane_change(const int channel_y, unsigned int lane_change) const
 {
     // LANE CHANGES COUNTED FROM 0
     if (channel_y == 0)
@@ -2103,7 +2166,7 @@ qreal standard_graph_layouter::scene_y_for_close_top_lane_change(const int chann
                 lane_change * lane_spacing;
 }
 
-qreal standard_graph_layouter::scene_y_for_far_top_lane_change(const int channel_y, unsigned int lane_change) const
+qreal standard_module_layouter_v2::scene_y_for_far_top_lane_change(const int channel_y, unsigned int lane_change) const
 {
     // LANE CHANGES COUNTED FROM 0
     if (channel_y == 0)
@@ -2120,7 +2183,7 @@ qreal standard_graph_layouter::scene_y_for_far_top_lane_change(const int channel
                 lane_change * lane_spacing;
 }
 
-qreal standard_graph_layouter::scene_y_for_close_bottom_lane_change(const int channel_y, unsigned int lane_change) const
+qreal standard_module_layouter_v2::scene_y_for_close_bottom_lane_change(const int channel_y, unsigned int lane_change) const
 {
     // LANE CHANGES COUNTED FROM 0
     if (channel_y == 0)
@@ -2137,7 +2200,7 @@ qreal standard_graph_layouter::scene_y_for_close_bottom_lane_change(const int ch
                 lane_change * lane_spacing;
 }
 
-qreal standard_graph_layouter::scene_y_for_far_bottom_lane_change(const int channel_y, unsigned int lane_change) const
+qreal standard_module_layouter_v2::scene_y_for_far_bottom_lane_change(const int channel_y, unsigned int lane_change) const
 {
     // LANE CHANGES COUNTED FROM 0
     if (channel_y == 0)
@@ -2154,7 +2217,7 @@ qreal standard_graph_layouter::scene_y_for_far_bottom_lane_change(const int chan
                 lane_change * lane_spacing;
 }
 
-qreal standard_graph_layouter::scene_x_for_close_left_lane_change(const junction* const j) const
+qreal standard_module_layouter_v2::scene_x_for_close_left_lane_change(const junction* const j) const
 {
     // CONVENIENCE METHOD
     assert(j);
@@ -2162,7 +2225,7 @@ qreal standard_graph_layouter::scene_x_for_close_left_lane_change(const junction
     return scene_x_for_close_left_lane_change(j->x, j->close_left_lane_changes);
 }
 
-qreal standard_graph_layouter::scene_x_for_far_left_lane_change(const standard_graph_layouter::junction* const j) const
+qreal standard_module_layouter_v2::scene_x_for_far_left_lane_change(const standard_module_layouter_v2::junction* const j) const
 {
     // CONVENIENCE METHOD
     assert(j);
@@ -2170,7 +2233,7 @@ qreal standard_graph_layouter::scene_x_for_far_left_lane_change(const standard_g
     return scene_x_for_far_left_lane_change(j->x, j->far_left_lane_changes);
 }
 
-qreal standard_graph_layouter::scene_x_for_close_right_lane_change(const junction* const j) const
+qreal standard_module_layouter_v2::scene_x_for_close_right_lane_change(const junction* const j) const
 {
     // CONVENIENCE METHOD
     assert(j);
@@ -2178,7 +2241,7 @@ qreal standard_graph_layouter::scene_x_for_close_right_lane_change(const junctio
     return scene_x_for_close_right_lane_change(j->x, j->close_right_lane_changes);
 }
 
-qreal standard_graph_layouter::scene_x_for_far_right_lane_change(const standard_graph_layouter::junction* const j) const
+qreal standard_module_layouter_v2::scene_x_for_far_right_lane_change(const standard_module_layouter_v2::junction* const j) const
 {
     // CONVENIENCE METHOD
     assert(j);
@@ -2186,7 +2249,7 @@ qreal standard_graph_layouter::scene_x_for_far_right_lane_change(const standard_
     return scene_x_for_far_right_lane_change(j->x, j->far_right_lane_changes);
 }
 
-qreal standard_graph_layouter::scene_y_for_close_top_lane_change(const junction* const j) const
+qreal standard_module_layouter_v2::scene_y_for_close_top_lane_change(const junction* const j) const
 {
     // CONVENIENCE METHOD
     assert(j);
@@ -2194,7 +2257,7 @@ qreal standard_graph_layouter::scene_y_for_close_top_lane_change(const junction*
     return scene_y_for_close_top_lane_change(j->y, j->close_top_lane_changes);
 }
 
-qreal standard_graph_layouter::scene_y_for_far_top_lane_change(const standard_graph_layouter::junction* const j) const
+qreal standard_module_layouter_v2::scene_y_for_far_top_lane_change(const standard_module_layouter_v2::junction* const j) const
 {
     // CONVENIENCE METHOD
     assert(j);
@@ -2202,7 +2265,7 @@ qreal standard_graph_layouter::scene_y_for_far_top_lane_change(const standard_gr
     return scene_y_for_far_top_lane_change(j->y, j->far_top_lane_changes);
 }
 
-qreal standard_graph_layouter::scene_y_for_close_bottom_lane_change(const junction* const j) const
+qreal standard_module_layouter_v2::scene_y_for_close_bottom_lane_change(const junction* const j) const
 {
     // CONVENIENCE METHOD
     assert(j);
@@ -2210,7 +2273,7 @@ qreal standard_graph_layouter::scene_y_for_close_bottom_lane_change(const juncti
     return scene_y_for_close_bottom_lane_change(j->y, j->close_bottom_lane_changes);
 }
 
-qreal standard_graph_layouter::scene_y_for_far_bottom_lane_change(const standard_graph_layouter::junction* const j) const
+qreal standard_module_layouter_v2::scene_y_for_far_bottom_lane_change(const standard_module_layouter_v2::junction* const j) const
 {
     // CONVENIENCE METHOD
     assert(j);
@@ -2219,7 +2282,7 @@ qreal standard_graph_layouter::scene_y_for_far_bottom_lane_change(const standard
 }
 
 template<typename T1, typename T2>
-void standard_graph_layouter::store_max(QMap<T1, T2>& map, T1 key, T2 value)
+void standard_module_layouter_v2::store_max(QMap<T1, T2>& map, T1 key, T2 value)
 {
     if (map.contains(key))
         if (map.value(key) >= value)
@@ -2228,13 +2291,19 @@ void standard_graph_layouter::store_max(QMap<T1, T2>& map, T1 key, T2 value)
     map.insert(key, value);
 }
 
-void standard_graph_layouter::commit_used_paths(const standard_graph_layouter::used_paths& used)
+void standard_module_layouter_v2::commit_used_paths(const standard_module_layouter_v2::used_paths& used)
 {
-    for (road* r : used.h_roads)
+    for (h_road* r : used.h_roads)
         r->lanes += 1;
 
-    for (road* r : used.v_roads)
-        r->lanes += 1;
+    for (v_road* r : used.left_v_roads)
+        r->left_lanes += 1;
+
+    for (v_road* r : used.mid_v_roads)
+        r->mid_lanes += 1;
+
+    for (v_road* r : used.right_v_roads)
+        r->right_lanes += 1;
 
     for (junction* j : used.h_junctions)
         j->h_lanes += 1;
@@ -2266,3 +2335,4 @@ void standard_graph_layouter::commit_used_paths(const standard_graph_layouter::u
     for (junction* j : used.far_bottom_junctions)
         j->far_bottom_lane_changes += 1;
 }
+*/

@@ -12,6 +12,9 @@ public:
 
     virtual void add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets)    = 0;
     virtual void remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets) = 0;
+
+protected:
+    const module_context* const m_context;
 };
 
 #endif // MODULE_LAYOUTER_H

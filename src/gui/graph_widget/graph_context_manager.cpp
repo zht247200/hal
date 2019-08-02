@@ -3,9 +3,10 @@
 #include "gui/graph_widget/contexts/cone_context.h"
 #include "gui/graph_widget/contexts/dynamic_context.h"
 #include "gui/graph_widget/contexts/module_context.h"
+#include "gui/graph_widget/layouters/standard_cone_layouter.h"
 #include "gui/graph_widget/layouters/standard_module_layouter.h"
-#include "gui/graph_widget/layouters/standard_graph_layouter_v2.h"
-#include "gui/graph_widget/layouters/minimal_graph_layouter.h"
+#include "gui/graph_widget/layouters/standard_module_layouter_v2.h"
+#include "gui/graph_widget/layouters/minimal_module_layouter.h"
 #include "gui/graph_widget/shaders/module_shader.h"
 #include "gui/gui_globals.h"
 
@@ -204,13 +205,13 @@ void graph_context_manager::handle_net_created(const std::shared_ptr<net> n) con
 void graph_context_manager::handle_net_removed(const std::shared_ptr<net> n) const
 {
     // IF NET IS PART OF CONTEXT UPDATE
-    for (module_context* context : m_module_contexts)
-        if (context->nets().contains(n->get_id()))
-            context->request_update();
+//    for (module_context* context : m_module_contexts)
+//        if (context->nets().contains(n->get_id()))
+//            context->request_update();
 
-    for (dynamic_context* context : m_dynamic_contexts)
-        if (context->nets().contains(n->get_id()))
-            context->request_update();
+//    for (dynamic_context* context : m_dynamic_contexts)
+//        if (context->nets().contains(n->get_id()))
+//            context->request_update();
 
     // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
 }
@@ -225,13 +226,13 @@ void graph_context_manager::handle_net_name_changed(const std::shared_ptr<net> n
 void graph_context_manager::handle_net_src_changed(const std::shared_ptr<net> n) const
 {
     // IF NET IS PART OF CONTEXT UPDATE
-    for (module_context* context : m_module_contexts)
-        if (context->nets().contains(n->get_id()))
-            context->request_update();
+//    for (module_context* context : m_module_contexts)
+//        if (context->nets().contains(n->get_id()))
+//            context->request_update();
 
-    for (dynamic_context* context : m_dynamic_contexts)
-        if (context->nets().contains(n->get_id()))
-            context->request_update();
+//    for (dynamic_context* context : m_dynamic_contexts)
+//        if (context->nets().contains(n->get_id()))
+//            context->request_update();
 
     // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
 }
@@ -241,13 +242,13 @@ void graph_context_manager::handle_net_dst_added(const std::shared_ptr<net> n, c
     Q_UNUSED(dst_gate_id)
 
     // IF NET OR DST GATE IS PART OF CONTEXT UPDATE
-    for (module_context* context : m_module_contexts)
-        if (context->nets().contains(n->get_id()) || context->gates().contains(dst_gate_id))
-            context->request_update();
+//    for (module_context* context : m_module_contexts)
+//        if (context->nets().contains(n->get_id()) || context->gates().contains(dst_gate_id))
+//            context->request_update();
 
-    for (dynamic_context* context : m_dynamic_contexts)
-        if (context->nets().contains(n->get_id()) || context->gates().contains(dst_gate_id))
-            context->request_update();
+//    for (dynamic_context* context : m_dynamic_contexts)
+//        if (context->nets().contains(n->get_id()) || context->gates().contains(dst_gate_id))
+//            context->request_update();
 
     // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
 }
@@ -257,13 +258,13 @@ void graph_context_manager::handle_net_dst_removed(const std::shared_ptr<net> n,
     Q_UNUSED(dst_gate_id)
 
     // IF NET IS PART OF CONTEXT UPDATE
-    for (module_context* context : m_module_contexts)
-        if (context->nets().contains(n->get_id()))
-            context->request_update();
+//    for (module_context* context : m_module_contexts)
+//        if (context->nets().contains(n->get_id()))
+//            context->request_update();
 
-    for (dynamic_context* context : m_dynamic_contexts)
-        if (context->nets().contains(n->get_id()))
-            context->request_update();
+//    for (dynamic_context* context : m_dynamic_contexts)
+//        if (context->nets().contains(n->get_id()))
+//            context->request_update();
 
     // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
 }
@@ -279,13 +280,14 @@ graph_layouter* graph_context_manager::get_default_layouter(module_context* cons
 graph_layouter *graph_context_manager::get_default_layouter(cone_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new standard_module_layouter(context);
+    return new standard_cone_layouter(context);
 }
 
 graph_layouter* graph_context_manager::get_default_layouter(dynamic_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new standard_module_layouter(context);
+    //return new standard_dynamic_layouter(context);
+    return nullptr;
 }
 
 graph_shader* graph_context_manager::get_default_shader(module_context* const context) const

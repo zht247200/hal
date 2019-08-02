@@ -106,8 +106,8 @@ class standard_module_layouter final : public module_layouter
 public:
     standard_module_layouter(const module_context* const context);
 
-    virtual const QString name() const override;
-    virtual const QString description() const override;
+    virtual QString name() const override;
+    virtual QString description() const override;
 
     virtual void layout() override;
 

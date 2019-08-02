@@ -29,12 +29,12 @@ standard_module_layouter::standard_module_layouter(const module_context* const c
 
 }
 
-const QString standard_module_layouter::name() const
+QString standard_module_layouter::name() const
 {
     return "Standard Layouter";
 }
 
-const QString standard_module_layouter::description() const
+QString standard_module_layouter::description() const
 {
     return "<p>The standard layouting algorithm</p>";
 }

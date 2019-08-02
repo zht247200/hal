@@ -8,8 +8,8 @@ class debug_layouter final : public graph_layouter
 public:
     debug_layouter(const graph_context* const context);
 
-    virtual const QString name() const override;
-    virtual const QString description() const override;
+    virtual QString name() const override;
+    virtual QString description() const override;
 
     virtual void layout() override;
 
