@@ -15,6 +15,8 @@ public:
     QString name() const;
 
 private:
+    void apply_changes() override;
+
     QString m_name;
 
     QSet<u32> m_modules;

@@ -15,58 +15,54 @@ class graph_context : public QObject
     Q_OBJECT
 
 public:
-    enum class context_type
+    enum class type
     {
         module,
         cone,
         dynamic
     };
 
-    explicit graph_context(context_type type, graph_layouter* layouter, graph_shader* shader, QObject* parent = nullptr);
+    explicit graph_context(type t, graph_layouter* layouter, graph_shader* shader, QObject* parent = nullptr);
     virtual ~graph_context();
 
     void subscribe(graph_context_subscriber* const subscriber);
     void unsubscribe(graph_context_subscriber* const subscriber);
 
+    void schedule_relayout();
+    void schedule_reshade();
+
+    type get_type();
     graphics_scene* scene();
 
-    context_type get_type();
-
-    bool available() const;
-    bool update_in_progress() const;
-
-    void update();
-
-    void request_update();
-
-    bool node_for_gate(hal::node& node, const u32 id) const;
-
-private Q_SLOTS:
-    void handle_layouter_update(const int percent);
-    void handle_layouter_update(const QString& message);
-    void handle_layouter_finished();
+    bool scene_available() const;
 
 protected:
-    void evaluate_changes();
-
-    bool m_unhandled_changes;
-    bool m_scene_update_required;
-
-    bool m_update_requested;
-
-private:
-    void apply_changes();
-    void update_scene();
-
-    const context_type m_type;
+    void update();
 
     graph_layouter* m_layouter;
     graph_shader* m_shader; // MOVE SHADER TO VIEW ? USE BASE SHADER AND ADDITIONAL SHADERS ? LAYER SHADERS ?
 
+    bool m_unapplied_changes;
+
+private Q_SLOTS:
+    void handle_layouter_update(const int percent);
+    void handle_layouter_update(const QString& message);
+    void handle_layouter_task_finished();
+
+private:
+    virtual void apply_changes() = 0;
+
+    void queue_layouter_task();
+    void reshade();
+
+    const type m_type;
+
     QList<graph_context_subscriber*> m_subscribers;
 
     bool m_scene_available;
-    bool m_update_in_progress;
+
+    bool m_relayout_required;
+    bool m_reshade_required;
 };
 
 #endif // GRAPH_CONTEXT_H

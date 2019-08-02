@@ -3,7 +3,7 @@
 #include "gui/graph_widget/layouters/module_layouter.h"
 #include "gui/gui_globals.h"
 
-module_context::module_context(const std::shared_ptr<const module> m) : graph_context(context_type::module, g_graph_context_manager.get_default_layouter(this), g_graph_context_manager.get_default_shader(this)),
+module_context::module_context(const std::shared_ptr<const module> m) : graph_context(type::module, g_graph_context_manager.get_default_layouter(this), g_graph_context_manager.get_default_shader(this)),
     m_id(m->get_id())
 {
     for (const std::shared_ptr<module>& s : m->get_submodules())
@@ -31,10 +31,10 @@ module_context::module_context(const std::shared_ptr<const module> m) : graph_co
             m_local_io_nets.insert(n->get_id());
     }
 
-    static_cast<module_layouter*>(m_layouter)->add(m_modules, m_gates, m_internal_nets);
+    static_cast<module_layouter*>(m_layouter)->add(m_modules, m_gates, m_internal_nets, m_global_io_nets, m_local_io_nets);
     m_shader->add(m_modules, m_gates, m_internal_nets);
 
-    m_scene_update_required = true;
+    schedule_relayout();
 }
 
 void module_context::add(const QSet<u32>& modules, const QSet<u32>& gates)
@@ -145,6 +145,38 @@ void module_context::remove(const QSet<u32>& modules, const QSet<u32>& gates)
     update();
 }
 
+bool module_context::node_for_gate(hal::node& node, const u32 id) const
+{
+    // MIGHT BE BETTER TO CHECK FOR A SPECIFIC IO PIN
+    if (m_gates.contains(id))
+    {
+        node.id = id;
+        node.type = hal::node_type::gate;
+        return true;
+    }
+
+    std::shared_ptr<gate> g = g_netlist->get_gate_by_id(id);
+
+    if (!g)
+        return false;
+
+    std::shared_ptr<module> m = g->get_module();
+
+    while (m)
+    {
+        if (m_modules.contains(m->get_id()))
+        {
+            node.id = m->get_id();
+            node.type = hal::node_type::module;
+            return true;
+        }
+
+        m = m->get_parent_module();
+    }
+
+    return false;
+}
+
 u32 module_context::get_id() const
 {
     return m_id;
@@ -175,7 +207,7 @@ const QSet<u32>& module_context::local_io_nets() const
     return m_local_io_nets;
 }
 
-void module_context::evaluate_changesets()
+void module_context::evaluate_changes()
 {
     if (!m_added_modules.isEmpty()          ||
         !m_added_gates.isEmpty()            ||
@@ -188,11 +220,13 @@ void module_context::evaluate_changesets()
         !m_removed_global_io_nets.isEmpty() ||
         !m_removed_local_io_nets.isEmpty())
 
-        m_unhandled_changes = true;
+        m_unapplied_changes = true;
 }
 
-void module_context::apply_changesets()
+void module_context::apply_changes()
 {
+    assert(m_unapplied_changes);
+
     m_modules -= m_removed_modules;
     m_gates -= m_removed_gates;
     m_internal_nets -= m_removed_internal_nets;
@@ -203,11 +237,11 @@ void module_context::apply_changesets()
     m_gates += m_added_gates;
     m_internal_nets += m_added_internal_nets;
 
-    static_cast<module_layouter*>m_layouter->remove(m_removed_modules, m_removed_gates, m_removed_nets);
-    static_cast<module_layouter*>m_layouter->add(m_added_modules, m_added_gates, m_added_nets);
+    static_cast<module_layouter*>(m_layouter)->remove(m_removed_modules, m_removed_gates, m_removed_internal_nets, m_removed_global_io_nets, m_removed_local_io_nets);
+    static_cast<module_layouter*>(m_layouter)->add(m_added_modules, m_added_gates, m_added_internal_nets, m_added_global_io_nets, m_added_local_io_nets);
 
-    m_shader->remove(m_removed_modules, m_removed_gates, m_removed_nets);
-    m_shader->add(m_added_modules, m_added_gates, m_added_nets);
+    m_shader->remove(m_removed_modules, m_removed_gates, m_removed_internal_nets);
+    m_shader->add(m_added_modules, m_added_gates, m_added_internal_nets);
 
     m_added_modules.clear();
     m_added_gates.clear();
@@ -221,6 +255,7 @@ void module_context::apply_changesets()
     m_removed_global_io_nets.clear();
     m_removed_local_io_nets.clear();
 
-    m_unhandled_changes = false;
-    m_scene_update_required = true;
+    m_unapplied_changes = false;
+
+    schedule_relayout();
 }

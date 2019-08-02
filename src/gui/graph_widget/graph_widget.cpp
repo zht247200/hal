@@ -137,7 +137,7 @@ void graph_widget::keyPressEvent(QKeyEvent* event)
     if (!m_context)
         return;
 
-    if (!m_context->available())
+    if (!m_context->scene_available())
         return;
 
     //if (m_context && m_context->available())
@@ -504,7 +504,7 @@ void graph_widget::debug_change_context()
         if (!m_context)
             return;
 
-        if (m_context->available())
+        if (m_context->scene_available())
             m_view->setScene(m_context->scene());
     }
 }
@@ -519,6 +519,6 @@ void graph_widget::change_context(graph_context* const context)
     m_context = context;
     m_context->subscribe(this);
 
-    if (!m_context->update_in_progress())
+    if (m_context->scene_available())
         m_view->setScene(m_context->scene());
 }

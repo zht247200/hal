@@ -17,6 +17,8 @@ public:
     const QSet<u32>& separated_nets() const;
 
 private:
+    void apply_changes() override;
+
     QString m_name;
 
 //    QSet<u32> m_initial_modules;

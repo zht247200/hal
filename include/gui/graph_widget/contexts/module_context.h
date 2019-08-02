@@ -14,6 +14,8 @@ public:
     void remove(const QSet<u32>& modules, const QSet<u32>& gates);
     //void net_change(const QSet<u32>& nets); // NECESSARY ???
 
+    bool node_for_gate(hal::node& node, const u32 id) const;
+
     u32 get_id() const;
 
     const QSet<u32>& modules() const;
@@ -23,8 +25,8 @@ public:
     const QSet<u32>& local_io_nets() const;
 
 private:
-    void evaluate_changesets();
-    void apply_changesets();
+    void evaluate_changes();
+    void apply_changes() override;
 
     const u32 m_id;
 
