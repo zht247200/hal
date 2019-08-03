@@ -10,25 +10,42 @@
 #include "gui/graph_widget/shaders/module_shader.h"
 #include "gui/gui_globals.h"
 
-static const int max_module_contexts = 10; // USE SETTINGS FOR THIS
+int graph_context_manager::s_max_module_contexts = 10; // USE SETTINGS FOR THIS
 
 graph_context_manager::graph_context_manager()
 {
 
 }
 
+void graph_context_manager::set_max_module_contexts(const int max)
+{
+    if (max > 0)
+        s_max_module_contexts = max;
+}
+
 module_context* graph_context_manager::get_module_context(const u32 id)
 {
-    for (module_context* c : m_module_contexts)
-        if (c->get_id() == id)
-            return c;
+    // METHOD EXPECTS VALID ID
+
+    for (int i = 0; i < m_module_contexts.size(); ++i)
+        if (m_module_contexts.at(i)->get_id() == id)
+        {
+            if (i > 0)
+                m_module_contexts.move(i, 0);
+
+            return m_module_contexts[0];
+        }
 
     std::shared_ptr<module> m = g_netlist->get_module_by_id(id);
-    if (!m)
-        return nullptr;
+    assert(m);
+
+    assert(s_max_module_contexts > 0);
+
+    if (m_module_contexts.size() == s_max_module_contexts)
+        m_module_contexts.removeLast();
 
     module_context* c = new module_context(m);
-    m_module_contexts.append(c); // USE LRU
+    m_module_contexts.prepend(c);
     return c;
 }
 

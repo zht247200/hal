@@ -175,21 +175,31 @@ void graph_widget::keyPressEvent(QKeyEvent* event)
 
 void graph_widget::handle_navigation_jump_requested(const u32 from_gate, const u32 via_net, const u32 to_gate)
 {
-    // ASSERT INPUTS ARE VALID ?
+    // CHECKS NECESSARY ???
     std::shared_ptr<gate> g = g_netlist->get_gate_by_id(from_gate);
-
-    if (!g)
-        return;
+    assert(g);
 
     std::shared_ptr<net> n = g_netlist->get_net_by_id(via_net);
-
-    if (!n)
-        return;
+    assert(n);
 
     g = g_netlist->get_gate_by_id(to_gate);
+    assert(g);
 
-    if (!g)
-        return;
+    switch(m_context->get_type())
+    {
+    case graph_context::type::module:
+    {
+        break;
+    }
+    case graph_context::type::cone:
+    {
+        break;
+    }
+    case graph_context::type::dynamic:
+    {
+        break;
+    }
+    }
 
     bool contains_net = false;
     bool contains_gate = false;
@@ -462,14 +472,6 @@ void graph_widget::handle_module_down_requested(const u32 id)
 
 void graph_widget::debug_module_one()
 {
-    // UNSUB FROM OLD CONTEXT
-    //disconnect(m_context, &graph_context::updating_scene, this, &graph_widget::handle_updating_scene);
-    //disconnect(m_context, &graph_context::scene_available, this, &graph_widget::handle_scene_available);
-
-    // SUB TO NEW CONTEXT
-    //connect(m_context, &graph_context::updating_scene, this, &graph_widget::handle_updating_scene);
-    //connect(m_context, &graph_context::scene_available, this, &graph_widget::handle_scene_available);
-
     graph_context* context = g_graph_context_manager.get_module_context(1);
 
     if (context)

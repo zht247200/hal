@@ -21,9 +21,11 @@ class graph_context_manager
 public:
     graph_context_manager();
 
+    static void set_max_module_contexts(const int max);
+
     module_context* get_module_context(const u32 id);
 
-    // RETRIEVAL AND REMOVAL SHOULD BE INDEX BASE, OR NAMES NEED TO BE UNIQUE
+    // RETRIEVAL AND REMOVAL SHOULD EITHER BE INDEX BASED OR NAMES NEED TO BE UNIQUE
     cone_context* add_cone_context(const QString& name);
     void delete_cone_context(const QString& name);
     cone_context* get_cone_context(const QString& name);
@@ -63,6 +65,8 @@ public:
     graph_shader* get_default_shader(dynamic_context* const context) const;
 
 private:
+    static int s_max_module_contexts;
+
     QVector<module_context*> m_module_contexts;
     QVector<cone_context*> m_cone_contexts;
     QVector<dynamic_context*> m_dynamic_contexts;
