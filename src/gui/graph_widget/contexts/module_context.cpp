@@ -12,9 +12,6 @@ module_context::module_context(const std::shared_ptr<const module> m) : graph_co
     for (const std::shared_ptr<gate>& g : m->get_gates())
         m_gates.insert(g->get_id());
 
-    for (const std::shared_ptr<net>& n: m->get_internal_nets())
-        m_internal_nets.insert(n->get_id());
-
     for (const std::shared_ptr<net>& n : m->get_input_nets())
     {
         if (n->is_unrouted())
@@ -31,7 +28,13 @@ module_context::module_context(const std::shared_ptr<const module> m) : graph_co
             m_local_io_nets.insert(n->get_id());
     }
 
-    static_cast<module_layouter*>(m_layouter)->add(m_modules, m_gates, m_internal_nets, m_global_io_nets, m_local_io_nets);
+    for (const std::shared_ptr<net>& n: m->get_internal_nets())
+    {
+        if (!m_local_io_nets.contains(n->get_id()))
+            m_internal_nets.insert(n->get_id());
+    }
+
+    static_cast<module_layouter*>(m_layouter)->add(m_modules, m_gates, m_internal_nets, m_local_io_nets, m_global_io_nets);
     m_shader->add(m_modules, m_gates, m_internal_nets);
 
     schedule_relayout();
@@ -101,11 +104,11 @@ void module_context::add(const QSet<u32>& modules, const QSet<u32>& gates)
             current_local_io_nets.insert(n->get_id());
     }
 
-    m_added_global_io_nets = current_global_io_nets - m_global_io_nets;
-    m_removed_global_io_nets -= current_global_io_nets;
-
     m_added_local_io_nets = current_local_io_nets - m_local_io_nets;
     m_removed_local_io_nets -= current_local_io_nets;
+
+    m_added_global_io_nets = current_global_io_nets - m_global_io_nets;
+    m_removed_global_io_nets -= current_global_io_nets;
 
     evaluate_changes();
     update();
@@ -152,11 +155,11 @@ void module_context::remove(const QSet<u32>& modules, const QSet<u32>& gates)
             current_local_io_nets.insert(n->get_id());
     }
 
-    m_added_global_io_nets = current_global_io_nets - m_global_io_nets;
-    m_removed_global_io_nets = m_global_io_nets - current_global_io_nets;
-
     m_added_local_io_nets = current_local_io_nets - m_local_io_nets;
     m_removed_local_io_nets = m_local_io_nets - current_local_io_nets;
+
+    m_added_global_io_nets = current_global_io_nets - m_global_io_nets;
+    m_removed_global_io_nets = m_global_io_nets - current_global_io_nets;
 
     evaluate_changes();
     update();
@@ -214,14 +217,14 @@ const QSet<u32>& module_context::internal_nets() const
     return m_internal_nets;
 }
 
-const QSet<u32>& module_context::global_io_nets() const
-{
-    return m_global_io_nets;
-}
-
 const QSet<u32>& module_context::local_io_nets() const
 {
     return m_local_io_nets;
+}
+
+const QSet<u32>& module_context::global_io_nets() const
+{
+    return m_global_io_nets;
 }
 
 void module_context::evaluate_changes()

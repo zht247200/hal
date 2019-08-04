@@ -37,20 +37,20 @@ private:
     QSet<u32> m_modules;
     QSet<u32> m_gates;
     QSet<u32> m_internal_nets;
-    QSet<u32> m_global_io_nets;
     QSet<u32> m_local_io_nets;
+    QSet<u32> m_global_io_nets;
 
     QSet<u32> m_added_modules;
     QSet<u32> m_added_gates;
     QSet<u32> m_added_internal_nets;
-    QSet<u32> m_added_global_io_nets;
     QSet<u32> m_added_local_io_nets;
+    QSet<u32> m_added_global_io_nets;
 
     QSet<u32> m_removed_modules;
     QSet<u32> m_removed_gates;
     QSet<u32> m_removed_internal_nets;
-    QSet<u32> m_removed_global_io_nets;
     QSet<u32> m_removed_local_io_nets;
+    QSet<u32> m_removed_global_io_nets;
 };
 
 #endif // MODULE_CONTEXT_H
