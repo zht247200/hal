@@ -8,6 +8,24 @@ dynamic_context::dynamic_context(const QString& name) : graph_context(type::dyna
 
 }
 
+bool dynamic_context::contains_module(const u32 id) const
+{
+    // NOT YET IMPLEMENTED
+    return false;
+}
+
+bool dynamic_context::contains_gate(const u32 id) const
+{
+    // NOT YET IMPLEMENTED
+    return false;
+}
+
+bool dynamic_context::contains_net(const u32 id) const
+{
+    // NOT YET IMPLEMENTED
+    return false;
+}
+
 QString dynamic_context::name() const
 {
     return m_name;
@@ -15,7 +33,10 @@ QString dynamic_context::name() const
 
 void dynamic_context::apply_changes()
 {
-
+    assert(m_unapplied_changes);
+    // APPLY STUFF
+    m_unapplied_changes = false;
+    schedule_relayout();
 }
 
 const QSet<u32>& dynamic_context::gates() const

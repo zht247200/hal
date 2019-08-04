@@ -10,9 +10,13 @@ class module_context final : public graph_context
 public:
     module_context(const std::shared_ptr<const module> m);
 
+    bool contains_module(const u32 id) const override;
+    bool contains_gate(const u32 id) const override;
+    bool contains_net(const u32 id) const override;
+
     void add(const QSet<u32>& modules, const QSet<u32>& gates);
     void remove(const QSet<u32>& modules, const QSet<u32>& gates);
-    //void net_change(const QSet<u32>& nets); // NECESSARY ???
+    //void net_change(const QSet<u32>& nets); // FIND BETTER NAME, IMPLEMENT
 
     bool node_for_gate(hal::node& node, const u32 id) const;
 
@@ -21,8 +25,8 @@ public:
     const QSet<u32>& modules() const;
     const QSet<u32>& gates() const;
     const QSet<u32>& internal_nets() const;
-    const QSet<u32>& global_io_nets() const;
     const QSet<u32>& local_io_nets() const;
+    const QSet<u32>& global_io_nets() const;
 
 private:
     void evaluate_changes();

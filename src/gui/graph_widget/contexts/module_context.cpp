@@ -37,6 +37,23 @@ module_context::module_context(const std::shared_ptr<const module> m) : graph_co
     schedule_relayout();
 }
 
+bool module_context::contains_module(const u32 id) const
+{
+    return (m_modules - m_removed_modules + m_added_modules).contains(id);
+}
+
+bool module_context::contains_gate(const u32 id) const
+{
+    return (m_gates - m_removed_gates + m_added_gates).contains(id);
+}
+
+bool module_context::contains_net(const u32 id) const
+{
+    return (m_internal_nets - m_removed_internal_nets + m_added_internal_nets +
+            m_local_io_nets - m_removed_local_io_nets + m_added_local_io_nets +
+            m_global_io_nets - m_removed_global_io_nets + m_added_global_io_nets).contains(id);
+}
+
 void module_context::add(const QSet<u32>& modules, const QSet<u32>& gates)
 {
     QSet<u32> new_modules = modules - m_modules;
@@ -212,13 +229,13 @@ void module_context::evaluate_changes()
     if (!m_added_modules.isEmpty()          ||
         !m_added_gates.isEmpty()            ||
         !m_added_internal_nets.isEmpty()    ||
-        !m_added_global_io_nets.isEmpty()   ||
         !m_added_local_io_nets.isEmpty()    ||
+        !m_added_global_io_nets.isEmpty()   ||
         !m_removed_modules.isEmpty()        ||
         !m_removed_gates.isEmpty()          ||
         !m_removed_internal_nets.isEmpty()  ||
-        !m_removed_global_io_nets.isEmpty() ||
-        !m_removed_local_io_nets.isEmpty())
+        !m_removed_local_io_nets.isEmpty()  ||
+        !m_removed_global_io_nets.isEmpty())
 
         m_unapplied_changes = true;
 }
@@ -230,15 +247,17 @@ void module_context::apply_changes()
     m_modules -= m_removed_modules;
     m_gates -= m_removed_gates;
     m_internal_nets -= m_removed_internal_nets;
-    m_global_io_nets -= m_removed_global_io_nets;
     m_local_io_nets -= m_removed_local_io_nets;
+    m_global_io_nets -= m_removed_global_io_nets;
 
     m_modules += m_added_modules;
     m_gates += m_added_gates;
     m_internal_nets += m_added_internal_nets;
+    m_local_io_nets += m_added_local_io_nets;
+    m_global_io_nets += m_added_global_io_nets;
 
-    static_cast<module_layouter*>(m_layouter)->remove(m_removed_modules, m_removed_gates, m_removed_internal_nets, m_removed_global_io_nets, m_removed_local_io_nets);
-    static_cast<module_layouter*>(m_layouter)->add(m_added_modules, m_added_gates, m_added_internal_nets, m_added_global_io_nets, m_added_local_io_nets);
+    static_cast<module_layouter*>(m_layouter)->remove(m_removed_modules, m_removed_gates, m_removed_internal_nets, m_removed_local_io_nets, m_removed_global_io_nets);
+    static_cast<module_layouter*>(m_layouter)->add(m_added_modules, m_added_gates, m_added_internal_nets, m_added_local_io_nets, m_added_global_io_nets);
 
     m_shader->remove(m_removed_modules, m_removed_gates, m_removed_internal_nets);
     m_shader->add(m_added_modules, m_added_gates, m_added_internal_nets);
@@ -246,14 +265,14 @@ void module_context::apply_changes()
     m_added_modules.clear();
     m_added_gates.clear();
     m_added_internal_nets.clear();
-    m_added_global_io_nets.clear();
     m_added_local_io_nets.clear();
+    m_added_global_io_nets.clear();
 
     m_removed_modules.clear();
     m_removed_gates.clear();
     m_removed_internal_nets.clear();
-    m_removed_global_io_nets.clear();
     m_removed_local_io_nets.clear();
+    m_removed_global_io_nets.clear();
 
     m_unapplied_changes = false;
 

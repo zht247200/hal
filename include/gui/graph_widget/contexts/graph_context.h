@@ -36,11 +36,15 @@ public:
 
     bool scene_available() const;
 
+    virtual bool contains_module(const u32 id) const = 0;
+    virtual bool contains_gate(const u32 id) const = 0;
+    virtual bool contains_net(const u32 id) const = 0;
+
 protected:
     void update();
 
     graph_layouter* m_layouter;
-    graph_shader* m_shader; // MOVE SHADER TO VIEW ? USE BASE SHADER AND ADDITIONAL SHADERS ? LAYER SHADERS ?
+    graph_shader* m_shader;
 
     bool m_unapplied_changes;
 

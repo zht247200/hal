@@ -3,10 +3,14 @@
 
 #include "gui/graph_widget/contexts/graph_context.h"
 
-class dynamic_context : public graph_context
+class dynamic_context final : public graph_context
 {
 public:
     dynamic_context(const QString& name);
+
+    bool contains_module(const u32 id) const override;
+    bool contains_gate(const u32 id) const override;
+    bool contains_net(const u32 id) const override;
 
     const QSet<u32>& modules() const;
     const QSet<u32>& gates() const;

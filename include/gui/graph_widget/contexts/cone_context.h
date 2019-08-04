@@ -3,13 +3,14 @@
 
 #include "gui/graph_widget/contexts/graph_context.h"
 
-class cone_context : public graph_context
+class cone_context final : public graph_context
 {
 public:
     cone_context(const QString& name);
 
-//    bool contains_net(const u32 id, bool recursive = false);
-//    bool contains_gate(const u32 id, bool recursive = false);
+    bool contains_module(const u32 id) const override;
+    bool contains_gate(const u32 id) const override;
+    bool contains_net(const u32 id) const override;
 
 //    bool node_for_gate();
 

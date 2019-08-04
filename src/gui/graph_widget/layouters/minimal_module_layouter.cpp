@@ -234,22 +234,22 @@ void minimal_module_layouter::layout()
     m_scene->move_nets_to_background();
 }
 
-void minimal_module_layouter::add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets)
+void minimal_module_layouter::add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
 {
     Q_UNUSED(modules)
     Q_UNUSED(gates)
     Q_UNUSED(internal_nets)
-    Q_UNUSED(global_io_nets)
     Q_UNUSED(local_io_nets)
+    Q_UNUSED(global_io_nets)
 }
 
-void minimal_module_layouter::remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets)
+void minimal_module_layouter::remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
 {
     Q_UNUSED(modules)
     Q_UNUSED(gates)
     Q_UNUSED(internal_nets)
-    Q_UNUSED(global_io_nets)
     Q_UNUSED(local_io_nets)
+    Q_UNUSED(global_io_nets)
 }
 
 graphics_node* minimal_module_layouter::item_for_node(hal::node& node, const QMap<u32, graphics_gate*>& gate_map, const QMap<u32, graphics_module*>& module_map)

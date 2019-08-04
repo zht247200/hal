@@ -19,6 +19,8 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
+bool graph_widget::s_animate_jumps = true;
+
 graph_widget::graph_widget(QWidget* parent) : content_widget("Graph", parent),
     m_view(new graph_graphics_view(this)),
     m_context(nullptr),
@@ -140,8 +142,6 @@ void graph_widget::keyPressEvent(QKeyEvent* event)
     if (!m_context->scene_available())
         return;
 
-    //if (m_context && m_context->available())
-
     switch (event->key())
     {
     case Qt::Key_Left:
@@ -189,14 +189,23 @@ void graph_widget::handle_navigation_jump_requested(const u32 from_gate, const u
     {
     case graph_context::type::module:
     {
+        // IF TARGET IN MODULE
+        // JUMP THERE
+        // ELSE (= IF TARGET NOT IN MODULE)
+        // CHANGE CONTEXT AND JUMP THERE
         break;
     }
     case graph_context::type::cone:
     {
+        // IF NET AND NODE IN CONE
+        // JUMP THERE
+        // ELSE (= IF NET AND / OR NODE NOT IN CONE)
+        // ADD THEM AND JUMP THERE
         break;
     }
     case graph_context::type::dynamic:
     {
+        // NOT IMPLEMENTED YET
         break;
     }
     }
@@ -468,6 +477,11 @@ void graph_widget::handle_module_down_requested(const u32 id)
 
     if (context)
         change_context(context);
+}
+
+void graph_widget::handle_previous_context_requested()
+{
+    // NOT YET IMPLEMENTED
 }
 
 void graph_widget::debug_module_one()

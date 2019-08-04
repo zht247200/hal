@@ -39,7 +39,7 @@ QString standard_module_layouter::description() const
     return "<p>The standard layouting algorithm</p>";
 }
 
-void standard_module_layouter::add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets)
+void standard_module_layouter::add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
 {
     //QSet<hal::node> unvisited;
     QVector<hal::node> unvisited;
@@ -232,7 +232,7 @@ void standard_module_layouter::add(const QSet<u32>& modules, const QSet<u32>& ga
         m_nets.append(n);
 }
 
-void standard_module_layouter::remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& global_io_nets, const QSet<u32>& local_io_nets)
+void standard_module_layouter::remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
 {   
 //    m_modules -= modules;
 //    m_gates -= gates;

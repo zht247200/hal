@@ -43,23 +43,25 @@ class graph_widget : public content_widget, public graph_context_subscriber
 public:
     graph_widget(QWidget* parent = nullptr);
 
-    virtual void setup_toolbar(toolbar* toolbar) Q_DECL_OVERRIDE;
+    virtual void setup_toolbar(toolbar* toolbar) override;
 
-    virtual void handle_scene_available() Q_DECL_OVERRIDE;
-    virtual void handle_scene_unavailable() Q_DECL_OVERRIDE;
-    virtual void handle_context_about_to_be_deleted() Q_DECL_OVERRIDE;
+    virtual void handle_scene_available() override;
+    virtual void handle_scene_unavailable() override;
+    virtual void handle_context_about_to_be_deleted() override;
 
-    virtual void handle_status_update(const int percent) Q_DECL_OVERRIDE;
-    virtual void handle_status_update(const QString& message) Q_DECL_OVERRIDE;
+    virtual void handle_status_update(const int percent) override;
+    virtual void handle_status_update(const QString& message) override;
 
 protected:
-    void keyPressEvent(QKeyEvent* event) Q_DECL_OVERRIDE;
+    void keyPressEvent(QKeyEvent* event) override;
 
 private Q_SLOTS:
     void handle_navigation_jump_requested(const u32 from_gate, const u32 via_net, const u32 to_gate);
     void handle_module_double_clicked(const u32 id);
 
 private:
+    static bool s_animate_jumps;
+
     void handle_navigation_left_request();
     void handle_navigation_right_request();
     void handle_navigation_up_request();
@@ -68,14 +70,13 @@ private:
     void handle_module_up_request();
     void handle_module_down_requested(const u32 id);
 
+    void handle_previous_context_requested();
+
     void debug_module_one();
     void debug_create_context();
     void debug_change_context();
 
     void change_context(graph_context* const context);
-
-    void handle_updating_scene();
-    //void handle_scene_available();
 
     graph_graphics_view* m_view;
     graph_context* m_context;

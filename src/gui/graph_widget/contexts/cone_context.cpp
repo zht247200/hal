@@ -8,6 +8,24 @@ cone_context::cone_context(const QString& name) : graph_context(type::dynamic, g
 
 }
 
+bool cone_context::contains_module(const u32 id) const
+{
+    // NOT YET IMPLEMENTED
+    return false;
+}
+
+bool cone_context::contains_gate(const u32 id) const
+{
+    // NOT YET IMPLEMENTED
+    return false;
+}
+
+bool cone_context::contains_net(const u32 id) const
+{
+    // NOT YET IMPLEMENTED
+    return false;
+}
+
 QString cone_context::name() const
 {
     return m_name;
@@ -15,5 +33,5 @@ QString cone_context::name() const
 
 void cone_context::apply_changes()
 {
-
+    schedule_relayout();
 }
