@@ -29,9 +29,10 @@
 #include <QGraphicsView>
 #include <QOpenGLWidget>
 
-hal_content_manager::hal_content_manager()
+hal_content_manager::hal_content_manager(main_window* parent) : QObject(parent), m_main_window(parent)
 {
-    m_main_window = nullptr;
+    // has to be created this early in order to receive deserialization by the core signals
+    m_python_widget = new python_editor();
 
     connect(file_manager::get_instance(), &file_manager::file_opened, this, &hal_content_manager::handle_open_document);
     connect(file_manager::get_instance(), &file_manager::file_closed, this, &hal_content_manager::handle_close_document);
@@ -40,49 +41,6 @@ hal_content_manager::hal_content_manager()
 
 hal_content_manager::~hal_content_manager()
 {
-}
-
-void hal_content_manager::set_main_window(main_window* parent)
-{
-    m_main_window = parent;
-
-    // has to be created this early in order to receive deserialization by the core signals
-    m_python_widget = new python_editor();
-}
-
-void hal_content_manager::data_changed(const QString& identifier)
-{
-    if (std::get<1>(m_unsaved_changes.insert(identifier)))
-    {
-        m_main_window->setWindowTitle(m_window_title + "*");
-    }
-}
-void hal_content_manager::data_saved(const QString& identifier)
-{
-    m_unsaved_changes.erase(identifier);
-    if (!has_unsaved_changes())
-    {
-        m_main_window->setWindowTitle(m_window_title);
-    }
-}
-
-bool hal_content_manager::has_unsaved_changes() const
-{
-    if (!file_manager::get_instance()->file_open())
-        return false;
-    return !m_unsaved_changes.empty();
-}
-
-std::set<QString> hal_content_manager::get_unsaved_changes() const
-{
-    return m_unsaved_changes;
-}
-
-void hal_content_manager::flush_unsaved_changes()
-{
-    m_unsaved_changes.clear();
-    m_netlist_watcher->reset();
-    m_main_window->setWindowTitle(m_window_title);
 }
 
 void hal_content_manager::hack_delete_content()
@@ -110,11 +68,14 @@ void hal_content_manager::handle_open_document(const QString& file_name)
 //    navigation->open();
 
     m_main_window->add_content(new graph_widget(), 2, content_anchor::center);
-    m_main_window->add_content(new graph_widget(), 3, content_anchor::center);
 
-    module_widget* m = new module_widget();
-    m_main_window->add_content(m, 0, content_anchor::left);
-    m->open();
+    //module_widget* m = new module_widget();
+    //m_main_window->add_content(m, 0, content_anchor::left);
+    //m->open();
+
+    old_graph_navigation_widget* nav_widget = new old_graph_navigation_widget();
+    m_main_window->add_content(nav_widget, 0, content_anchor::left);
+    nav_widget->open();
 
     selection_details_widget* details = new selection_details_widget();
     m_main_window->add_content(details, 0, content_anchor::bottom);
@@ -188,6 +149,11 @@ void hal_content_manager::handle_close_document()
 void hal_content_manager::handle_filsystem_doc_changed(const QString& file_name)
 {
     Q_UNUSED(file_name)
+}
+
+void hal_content_manager::handle_save_triggered()
+{
+    Q_EMIT save_triggered();
 }
 
 void hal_content_manager::handle_relayout_button_clicked()

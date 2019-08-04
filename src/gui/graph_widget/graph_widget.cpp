@@ -10,7 +10,9 @@
 #include "gui/graph_widget/graph_graphics_view.h"
 #include "gui/graph_widget/graph_navigation_widget.h"
 #include "gui/graph_widget/graph_layout_progress_widget.h"
+#include "gui/graph_widget/graph_layout_spinner_widget.h"
 #include "gui/graph_widget/graphics_scene.h"
+#include "gui/graph_widget/items/graphics_gate.h"
 #include "gui/gui_globals.h"
 #include "gui/overlay/dialog_overlay.h"
 #include "gui/toolbar/toolbar.h"
@@ -18,6 +20,7 @@
 #include <QInputDialog>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QKeyEvent>
 
 bool graph_widget::s_animate_jumps = true;
 
@@ -25,12 +28,14 @@ graph_widget::graph_widget(QWidget* parent) : content_widget("Graph", parent),
     m_view(new graph_graphics_view(this)),
     m_context(nullptr),
     m_overlay(new dialog_overlay(this)),
-    m_navigation_widget(new graph_navigation_widget(this)),
+    m_navigation_widget(new graph_navigation_widget(nullptr)),
     m_progress_widget(new graph_layout_progress_widget(this)),
+    m_spinner_widget(new graph_layout_spinner_widget(this)),
     m_current_expansion(0)
 {
     connect(m_navigation_widget, &graph_navigation_widget::navigation_requested, this, &graph_widget::handle_navigation_jump_requested);
     connect(m_navigation_widget, &graph_navigation_widget::close_requested, m_overlay, &dialog_overlay::hide);
+    connect(m_navigation_widget, &graph_navigation_widget::close_requested, this, &graph_widget::reset_focus);
 
     connect(m_overlay, &dialog_overlay::clicked, m_overlay, &dialog_overlay::hide);
 
@@ -45,6 +50,9 @@ graph_widget::graph_widget(QWidget* parent) : content_widget("Graph", parent),
     m_view->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     m_view->setRenderHint(QPainter::Antialiasing, false);
     m_view->setDragMode(QGraphicsView::RubberBandDrag);
+
+    // debug: go to context 1; delete later
+    debug_module_one();
 }
 
 void graph_widget::setup_toolbar(toolbar* toolbar)
@@ -53,22 +61,22 @@ void graph_widget::setup_toolbar(toolbar* toolbar)
     // DEPRECATED
     // DELETE THIS METHOD AFTER CONTENT WIDGET REFACTOR
 
-    QToolButton* context_one_button = new QToolButton();
-    context_one_button->setText("Context 1");
+    // QToolButton* context_one_button = new QToolButton();
+    // context_one_button->setText("Context 1");
 
-    QToolButton* create_context_button = new QToolButton();
-    create_context_button->setText("Create Context");
+    // QToolButton* create_context_button = new QToolButton();
+    // create_context_button->setText("Create Context");
 
-    QToolButton* change_context_button = new QToolButton();
-    change_context_button->setText("Change Context");
+    // QToolButton* change_context_button = new QToolButton();
+    // change_context_button->setText("Change Context");
 
-    connect(context_one_button, &QToolButton::clicked, this, &graph_widget::debug_module_one);
-    connect(create_context_button, &QToolButton::clicked, this, &graph_widget::debug_create_context);
-    connect(change_context_button, &QToolButton::clicked, this, &graph_widget::debug_change_context);
+    // connect(context_one_button, &QToolButton::clicked, this, &graph_widget::debug_module_one);
+    // connect(create_context_button, &QToolButton::clicked, this, &graph_widget::debug_create_context);
+    // connect(change_context_button, &QToolButton::clicked, this, &graph_widget::debug_change_context);
 
-    toolbar->addWidget(context_one_button);
-    toolbar->addWidget(create_context_button);
-    toolbar->addWidget(change_context_button);
+    // toolbar->addWidget(context_one_button);
+    // toolbar->addWidget(create_context_button);
+    // toolbar->addWidget(change_context_button);
 }
 
 void graph_widget::handle_scene_available()
@@ -78,20 +86,11 @@ void graph_widget::handle_scene_available()
     connect(m_overlay, &dialog_overlay::clicked, m_overlay, &dialog_overlay::hide);
 
     m_overlay->hide();
-    m_progress_widget->stop();
+    //m_progress_widget->stop();
     m_overlay->set_widget(m_navigation_widget);
 
     if (hasFocus())
         m_view->setFocus();
-
-    // FIND BETTER WAY TO DO THIS
-    g_selection_relay.m_selected_gates[0] = m_current_expansion;
-    g_selection_relay.m_number_of_selected_gates = 1;
-    g_selection_relay.m_focus_type = selection_relay::item_type::gate;
-    g_selection_relay.m_focus_id = m_current_expansion;
-    // SET CORRECT SUBSELECTION
-    g_selection_relay.m_subfocus = selection_relay::subfocus::none;
-    g_selection_relay.relay_selection_changed(nullptr);
 
     // JUMP TO THE GATE
     // JUMP SHOULD BE HANDLED SEPARATELY
@@ -105,11 +104,12 @@ void graph_widget::handle_scene_unavailable()
 
     disconnect(m_overlay, &dialog_overlay::clicked, m_overlay, &dialog_overlay::hide);
 
-    m_progress_widget->set_direction(graph_layout_progress_widget::direction::right);
+    //m_progress_widget->set_direction(graph_layout_progress_widget::direction::right);
     //m_progress_widget->set_direction(graph_layout_progress_widget::direction::left);
 
-    m_overlay->set_widget(m_progress_widget);
-    m_progress_widget->start();
+    //m_overlay->set_widget(m_progress_widget);
+    m_overlay->set_widget(m_spinner_widget);
+    //m_progress_widget->start();
 
     if (m_overlay->isHidden())
         m_overlay->show();
@@ -270,6 +270,7 @@ void graph_widget::handle_navigation_jump_requested(const u32 from_gate, const u
     g_selection_relay.relay_selection_changed(nullptr);
 
     // JUMP TO THE GATE
+    ensure_gate_visible(to_gate);
 }
 
 void graph_widget::handle_module_double_clicked(const u32 id)
@@ -359,6 +360,9 @@ void graph_widget::handle_navigation_left_request()
                 g_selection_relay.m_subfocus_index = 0;
 
                 g_selection_relay.relay_selection_changed(nullptr);
+
+                // JUMP TO THE GATE
+                ensure_gate_visible(n->get_src().get_gate()->get_id());
             }
             else
             {
@@ -449,7 +453,7 @@ void graph_widget::handle_navigation_down_request()
 }
 
 void graph_widget::handle_module_up_request()
-{   
+{
     if (!m_context)
         return;
 
@@ -525,6 +529,12 @@ void graph_widget::debug_change_context()
     }
 }
 
+void graph_widget::ensure_gate_visible(const u32 gate)
+{
+    const graphics_gate *itm = m_context->scene()->get_gate_item(gate);
+    m_view->ensureVisible(itm);
+}
+
 void graph_widget::change_context(graph_context* const context)
 {
     assert(context);
@@ -537,4 +547,9 @@ void graph_widget::change_context(graph_context* const context)
 
     if (m_context->scene_available())
         m_view->setScene(m_context->scene());
+}
+
+void graph_widget::reset_focus()
+{
+    m_view->setFocus();
 }

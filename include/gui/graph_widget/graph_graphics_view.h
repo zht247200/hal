@@ -58,7 +58,7 @@ private:
     void mouseReleaseEvent(QMouseEvent* event) Q_DECL_OVERRIDE;
     void mouseMoveEvent(QMouseEvent* event) Q_DECL_OVERRIDE;
     void mouseDoubleClickEvent(QMouseEvent* event) Q_DECL_OVERRIDE;
-    void wheelEvent(QWheelEvent* event) Q_DECL_OVERRIDE;
+//    void wheelEvent(QWheelEvent* event) Q_DECL_OVERRIDE;
     void keyPressEvent(QKeyEvent* event) Q_DECL_OVERRIDE;
     void keyReleaseEvent(QKeyEvent* event) Q_DECL_OVERRIDE;
     void resizeEvent(QResizeEvent* event) Q_DECL_OVERRIDE;
@@ -81,7 +81,6 @@ private:
     graph_widget_constants::grid_type m_grid_type;
 
     QPoint m_move_position;
-    QPoint m_zoom_position;
     QPointF m_zoom_scene_position;
     qreal m_min_scale;
 
