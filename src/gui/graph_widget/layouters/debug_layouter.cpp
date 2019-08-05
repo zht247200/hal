@@ -3,17 +3,17 @@
 #include <QSet>
 #include <QTime>
 
-debug_layouter::debug_layouter(const graph_context* const context) : graph_layouter(context)
+debug_layouter::debug_layouter(const module_context* const context) : module_layouter(context)
 {
 
 }
 
-const QString debug_layouter::name() const
+QString debug_layouter::name() const
 {
     return "Debug Layouter";
 }
 
-const QString debug_layouter::description() const
+QString debug_layouter::description() const
 {
     return "For testing purposes";
 }
@@ -28,23 +28,27 @@ void debug_layouter::layout()
     }
 }
 
-void debug_layouter::add(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
+void debug_layouter::add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
 {
     Q_UNUSED(modules)
     Q_UNUSED(gates)
-    Q_UNUSED(nets)
+    Q_UNUSED(internal_nets)
+    Q_UNUSED(local_io_nets)
+    Q_UNUSED(global_io_nets)
 }
 
-void debug_layouter::remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
+void debug_layouter::remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
 {
     Q_UNUSED(modules)
     Q_UNUSED(gates)
-    Q_UNUSED(nets)
+    Q_UNUSED(internal_nets)
+    Q_UNUSED(local_io_nets)
+    Q_UNUSED(global_io_nets)
 }
 
-void debug_layouter::expand(const u32 from_gate, const u32 via_net, const u32 to_gate)
-{
-    Q_UNUSED(from_gate)
-    Q_UNUSED(via_net)
-    Q_UNUSED(to_gate)
-}
+//void debug_layouter::expand(const u32 from_gate, const u32 via_net, const u32 to_gate)
+//{
+//    Q_UNUSED(from_gate)
+//    Q_UNUSED(via_net)
+//    Q_UNUSED(to_gate)
+//}

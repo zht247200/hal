@@ -4,7 +4,7 @@
 #include "netlist/module.h"
 #include "netlist/net.h"
 
-#include "gui/graph_widget/contexts/graph_context.h"
+#include "gui/graph_widget/contexts/module_context.h"
 #include "gui/graph_widget/graphics_factory.h"
 #include "gui/graph_widget/graphics_scene.h"
 #include "gui/graph_widget/items/io_graphics_net.h"
@@ -228,8 +228,8 @@ void standard_module_layouter::add(const QSet<u32>& modules, const QSet<u32>& ga
 //    for (u32 g : gates)
 //        m_gates.append(g);
 
-    for (u32 n : nets)
-        m_nets.append(n);
+//    for (u32 n : nets)
+//        m_nets.append(n);
 }
 
 void standard_module_layouter::remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
@@ -244,8 +244,8 @@ void standard_module_layouter::remove(const QSet<u32>& modules, const QSet<u32>&
     for (u32 id : gates)
         m_gates.removeOne(id);
 
-    for (u32 id : nets)
-        m_nets.removeOne(id);
+//    for (u32 id : nets)
+//        m_nets.removeOne(id);
 
     for (u32 id : gates)
         m_node_levels.remove(hal::node{hal::node_type::gate, id});

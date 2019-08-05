@@ -30,7 +30,6 @@ public:
     virtual void remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets) = 0;
 
     virtual void update() = 0;
-    virtual void reset() = 0;
 
     const shading& get_shading();
 

@@ -103,114 +103,114 @@ void standard_cone_layouter::expand(const u32 from_gate, const u32 via_net, cons
     layout();
 }
 
-void standard_cone_layouter::remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
-{   
-//    m_modules -= modules;
-//    m_gates -= gates;
-//    m_nets -= nets;
+//void standard_cone_layouter::remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
+//{
+////    m_modules -= modules;
+////    m_gates -= gates;
+////    m_nets -= nets;
 
-    for (u32 id : modules)
-        m_modules.removeOne(id);
+//    for (u32 id : modules)
+//        m_modules.removeOne(id);
 
-    for (u32 id : gates)
-        m_gates.removeOne(id);
+//    for (u32 id : gates)
+//        m_gates.removeOne(id);
 
-    for (u32 id : nets)
-        m_nets.removeOne(id);
+//    for (u32 id : nets)
+//        m_nets.removeOne(id);
 
-    for (u32 id : gates)
-        m_node_levels.remove(hal::node{hal::node_type::gate, id});
+//    for (u32 id : gates)
+//        m_node_levels.remove(hal::node{hal::node_type::gate, id});
 
-    for (int i = 0; i < m_zero_nodes.size();)
-    {
-        bool found = false;
+//    for (int i = 0; i < m_zero_nodes.size();)
+//    {
+//        bool found = false;
 
-        switch (m_zero_nodes.at(i).type)
-        {
-        case hal::node_type::module:
-        {
-            if (modules.contains(m_zero_nodes.at(i).id))
-                found = true;
+//        switch (m_zero_nodes.at(i).type)
+//        {
+//        case hal::node_type::module:
+//        {
+//            if (modules.contains(m_zero_nodes.at(i).id))
+//                found = true;
 
-            break;
-        }
-        case hal::node_type::gate:
-        {
-            if (gates.contains(m_zero_nodes.at(i).id))
-                found = true;
+//            break;
+//        }
+//        case hal::node_type::gate:
+//        {
+//            if (gates.contains(m_zero_nodes.at(i).id))
+//                found = true;
 
-            break;
-        }
-        }
+//            break;
+//        }
+//        }
 
-        if (found)
-            m_zero_nodes.remove(i);
-        else
-            ++i;
-    }
+//        if (found)
+//            m_zero_nodes.remove(i);
+//        else
+//            ++i;
+//    }
 
-    for (QVector<hal::node> v : m_positive_nodes)
-    {
-        for (int i = 0; i < v.size();)
-        {
-            bool found = false;
+//    for (QVector<hal::node> v : m_positive_nodes)
+//    {
+//        for (int i = 0; i < v.size();)
+//        {
+//            bool found = false;
 
-            switch (v.at(i).type)
-            {
-            case hal::node_type::module:
-            {
-                if (modules.contains(v.at(i).id))
-                    found = true;
+//            switch (v.at(i).type)
+//            {
+//            case hal::node_type::module:
+//            {
+//                if (modules.contains(v.at(i).id))
+//                    found = true;
 
-                break;
-            }
-            case hal::node_type::gate:
-            {
-                if (gates.contains(v.at(i).id))
-                    found = true;
+//                break;
+//            }
+//            case hal::node_type::gate:
+//            {
+//                if (gates.contains(v.at(i).id))
+//                    found = true;
 
-                break;
-            }
-            }
+//                break;
+//            }
+//            }
 
-            if (found)
-                v.remove(i);
-            else
-                ++i;
-        }
-    }
+//            if (found)
+//                v.remove(i);
+//            else
+//                ++i;
+//        }
+//    }
 
-    for (QVector<hal::node> v : m_negative_nodes)
-    {
-        for (int i = 0; i < v.size();)
-        {
-            bool found = false;
+//    for (QVector<hal::node> v : m_negative_nodes)
+//    {
+//        for (int i = 0; i < v.size();)
+//        {
+//            bool found = false;
 
-            switch (v.at(i).type)
-            {
-            case hal::node_type::module:
-            {
-                if (modules.contains(v.at(i).id))
-                    found = true;
+//            switch (v.at(i).type)
+//            {
+//            case hal::node_type::module:
+//            {
+//                if (modules.contains(v.at(i).id))
+//                    found = true;
 
-                break;
-            }
-            case hal::node_type::gate:
-            {
-                if (gates.contains(v.at(i).id))
-                    found = true;
+//                break;
+//            }
+//            case hal::node_type::gate:
+//            {
+//                if (gates.contains(v.at(i).id))
+//                    found = true;
 
-                break;
-            }
-            }
+//                break;
+//            }
+//            }
 
-            if (found)
-                v.remove(i);
-            else
-                ++i;
-        }
-    }
-}
+//            if (found)
+//                v.remove(i);
+//            else
+//                ++i;
+//        }
+//    }
+//}
 
 void standard_cone_layouter::layout()
 {
@@ -356,8 +356,8 @@ void standard_cone_layouter::calculate_nets()
 
         hal::node node;
 
-        if (!m_context->node_for_gate(node, n->get_src().get_gate()->get_id()))
-            continue;
+//        if (!m_context->node_for_gate(node, n->get_src().get_gate()->get_id()))
+//            continue;
 
         for (node_box& box : m_boxes)
             if (box.node == node)
@@ -374,8 +374,8 @@ void standard_cone_layouter::calculate_nets()
             // FIND DST BOX
             node_box* dst_box = nullptr;
 
-            if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
-                return;
+//            if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
+//                return;
 
             for (node_box& box : m_boxes)
                 if (box.node == node)
@@ -869,8 +869,8 @@ void standard_cone_layouter::draw_nets()
             {
                 hal::node node;
 
-                if (!m_context->node_for_gate(node, src_end.get_gate()->get_id()))
-                    continue;
+//                if (!m_context->node_for_gate(node, src_end.get_gate()->get_id()))
+//                    continue;
 
                 for (const node_box& box : m_boxes)
                 {
@@ -887,8 +887,8 @@ void standard_cone_layouter::draw_nets()
             {
                 hal::node node;
 
-                if (!m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
-                    continue;
+//                if (!m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
+//                    continue;
 
                 for (const node_box& box : m_boxes)
                 {
@@ -909,8 +909,8 @@ void standard_cone_layouter::draw_nets()
                 // HANDLE SEPARATED NETS
                 hal::node node;
 
-                if (!m_context->node_for_gate(node, n->get_src().get_gate()->get_id()))
-                    continue;
+//                if (!m_context->node_for_gate(node, n->get_src().get_gate()->get_id()))
+//                    continue;
 
                 separated_graphics_net* net_item = new separated_graphics_net(n, QString::fromStdString(n->get_name()));
 
@@ -925,8 +925,8 @@ void standard_cone_layouter::draw_nets()
 
                 for (endpoint& dst_end : n->get_dsts())
                 {
-                    if (!m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
-                        continue;
+//                    if (!m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
+//                        continue;
 
                     for (const node_box& box : m_boxes)
                     {
@@ -950,8 +950,8 @@ void standard_cone_layouter::draw_nets()
 
         hal::node node;
 
-        if (!m_context->node_for_gate(node, n->get_src().get_gate()->get_id()))
-            continue;
+//        if (!m_context->node_for_gate(node, n->get_src().get_gate()->get_id()))
+//            continue;
 
         for (node_box& box : m_boxes)
             if (box.node == node)
@@ -975,8 +975,8 @@ void standard_cone_layouter::draw_nets()
 
             hal::node node;
 
-            if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
-                continue;
+//            if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
+//                continue;
 
             for (node_box& box : m_boxes)
                 if (box.node == node)

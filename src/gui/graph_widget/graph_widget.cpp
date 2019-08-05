@@ -4,6 +4,7 @@
 #include "netlist/module.h"
 #include "netlist/net.h"
 
+#include "gui/graph_widget/contexts/cone_context.h"
 #include "gui/graph_widget/contexts/dynamic_context.h"
 #include "gui/graph_widget/contexts/module_context.h"
 #include "gui/graph_widget/graph_context_manager.h"
@@ -185,6 +186,9 @@ void graph_widget::handle_navigation_jump_requested(const u32 from_gate, const u
     g = g_netlist->get_gate_by_id(to_gate);
     assert(g);
 
+    m_overlay->hide();
+    m_view->setFocus();
+
     switch(m_context->get_type())
     {
     case graph_context::type::module:
@@ -201,6 +205,28 @@ void graph_widget::handle_navigation_jump_requested(const u32 from_gate, const u
         // JUMP THERE
         // ELSE (= IF NET AND / OR NODE NOT IN CONE)
         // ADD THEM AND JUMP THERE
+        bool contains_net = static_cast<cone_context*>(m_context)->contains_net(via_net);
+        bool contains_gate = static_cast<cone_context*>(m_context)->contains_gate(to_gate);
+
+        if (!contains_net || !contains_gate)
+        {
+            QSet<u32> gates;
+            QSet<u32> nets;
+
+            if (!contains_net)
+                nets.insert(via_net);
+
+            if (!contains_gate)
+                gates.insert(to_gate);
+
+            //static_cast<cone_context*>(m_context)->expand(QSet<u32>(), gates, nets);
+            // JUMP
+        }
+        else
+        {
+            // SELECT AND JUMP
+        }
+
         break;
     }
     case graph_context::type::dynamic:
@@ -210,67 +236,18 @@ void graph_widget::handle_navigation_jump_requested(const u32 from_gate, const u
     }
     }
 
-    bool contains_net = false;
-    bool contains_gate = false;
+//    // SELECT IN RELAY
+//    g_selection_relay.m_selected_gates[0] = to_gate;
+//    g_selection_relay.m_number_of_selected_gates = 1;
+//    g_selection_relay.m_focus_type = selection_relay::item_type::gate;
+//    g_selection_relay.m_focus_id = to_gate;
+//    g_selection_relay.m_subfocus = selection_relay::subfocus::left;
+//    g_selection_relay.m_subfocus_index = 0;
 
-    if (m_context->nets().contains(via_net))
-        contains_net = true;
+//    g_selection_relay.relay_selection_changed(nullptr);
 
-    if (m_context->gates().contains(to_gate))
-        contains_gate = true;
-
-    bool update_necessary = false;
-
-    if (!contains_net || !contains_gate)
-    {
-        // THIS HAS TO BE DELEGATED TO THE CONTEXT
-//        if (m_context->scope())
-//        {
-//            // DRAW NON MEMBER NETS AND GATES AND SHADE THEM DIFFERENTLY ?
-//            std::shared_ptr<module> m = g_netlist->get_module_by_id(m_context->scope());
-
-//            if (!m)
-//                return; // INVALID SCOPE
-
-//            if (!m->contains_net(n, true))
-//                return; // NET OUT OF SCOPE
-
-//            if (!m->contains_gate(g, true))
-//                return; // GATE OUT OF SCOPE
-//        }
-
-        QSet<u32> gates;
-        QSet<u32> nets;
-
-        if (!contains_net)
-            nets.insert(via_net);
-
-        if (!contains_gate)
-            gates.insert(to_gate);
-
-        // ADD TO CONTEXT
-        m_context->add(QSet<u32>(), gates, nets); // EMPTY SET DEBUG CODE
-        update_necessary = true;
-    }
-    else
-    {
-        m_overlay->hide();
-        //if (hasFocus())
-            m_view->setFocus();
-    }
-
-    // SELECT IN RELAY
-    g_selection_relay.m_selected_gates[0] = to_gate;
-    g_selection_relay.m_number_of_selected_gates = 1;
-    g_selection_relay.m_focus_type = selection_relay::item_type::gate;
-    g_selection_relay.m_focus_id = to_gate;
-    g_selection_relay.m_subfocus = selection_relay::subfocus::left;
-    g_selection_relay.m_subfocus_index = 0;
-
-    g_selection_relay.relay_selection_changed(nullptr);
-
-    // JUMP TO THE GATE
-    ensure_gate_visible(to_gate);
+//    // JUMP TO THE GATE
+//    ensure_gate_visible(to_gate);
 }
 
 void graph_widget::handle_module_double_clicked(const u32 id)
@@ -283,6 +260,7 @@ void graph_widget::handle_module_double_clicked(const u32 id)
 // ADD SOUND OR ERROR MESSAGE TO FAILED NAVIGATION ATTEMPTS
 void graph_widget::handle_navigation_left_request()
 {
+    /*
     switch (g_selection_relay.m_focus_type)
     {
     case selection_relay::item_type::none:
@@ -389,10 +367,12 @@ void graph_widget::handle_navigation_left_request()
         return;
     }
     }
+    */
 }
 
 void graph_widget::handle_navigation_right_request()
 {
+    /*
     switch (g_selection_relay.m_focus_type)
     {
     case selection_relay::item_type::none:
@@ -436,19 +416,26 @@ void graph_widget::handle_navigation_right_request()
         return;
     }
     }
+    */
 }
 
 void graph_widget::handle_navigation_up_request()
 {
+    if (!m_context)
+        return;
+
     if (g_selection_relay.m_focus_type == selection_relay::item_type::gate)
-        if (m_context->gates().contains(g_selection_relay.m_focus_id))
+        if (m_context->contains_gate(g_selection_relay.m_focus_id))
             g_selection_relay.navigate_up();
 }
 
 void graph_widget::handle_navigation_down_request()
 {
+    if (!m_context)
+        return;
+
     if (g_selection_relay.m_focus_type == selection_relay::item_type::gate)
-        if (m_context->gates().contains(g_selection_relay.m_focus_id))
+        if (m_context->contains_gate(g_selection_relay.m_focus_id))
             g_selection_relay.navigate_down();
 }
 
@@ -509,7 +496,7 @@ void graph_widget::debug_create_context()
     for (u32 i = 0; i < g_selection_relay.m_number_of_selected_nets; ++i)
         nets.insert(g_selection_relay.m_selected_nets[i]);
 
-    context->add(QSet<u32>(), gates, nets); // EMPTY SET DEBUG CODE
+    //context->add(QSet<u32>(), gates, nets); // EMPTY SET DEBUG CODE
 }
 
 void graph_widget::debug_change_context()
