@@ -41,7 +41,8 @@ if "__decorated__" not in dir():
 			elif len(result) == 0:
 				log_string += "empty}"
 			else:
-				for g in result:
+				sorted_result = sorted(result, key=lambda gate: gate.id)
+				for g in sorted_result:
 					log_string += str(g.id) + ", "
 				log_string = log_string[:-2] + "}"
 			hal_py.log_info(log_string)
@@ -66,7 +67,8 @@ if "__decorated__" not in dir():
 			elif len(result) == 0:
 				log_string += "empty}"
 			else:
-				for g in result:
+				sorted_result = sorted(result, key=lambda net: net.id)
+				for g in sorted_result:
 					log_string += str(g.id) + ", "
 				log_string = log_string[:-2] + "}"
 			hal_py.log_info(log_string)
@@ -84,12 +86,13 @@ if "__decorated__" not in dir():
 	def netlist_delete_module(message, f):
 		@wraps(f)
 		def decorated(*args, **kwargs):
-			gate_ids = args[1].get_gates()
 			module_id = args[1].get_id()
+			gate_ids = args[1].gates
 			result = f(*args, **kwargs)
 			log_string = "Function: " + message + ", Module-ID: " + str(module_id) + ", Gate-IDs: {"
 			if len(gate_ids) != 0:
-				for g in gate_ids:
+				sorted_gate_ids = sorted(gate_ids, key=lambda gate: gate.id)
+				for g in sorted_gate_ids:
 					log_string += str(g.id) + ", "
 				log_string = log_string[:-2] + "}"
 			else:
@@ -102,11 +105,12 @@ if "__decorated__" not in dir():
 		@wraps(f)
 		def decorated(*args, **kwargs):
 			result = f(*args, **kwargs)
-			gate_ids = result.get_gates()
+			gate_ids = result.gates
 			module_id = result.get_id()
 			log_string = "Function: " + message + ", Module-ID: " + str(module_id) + ", Gate-IDs: {"
 			if len(gate_ids) != 0:
-				for g in gate_ids:
+				sorted_gate_ids = sorted(gate_ids, key=lambda gate: gate.id)
+				for g in sorted_gate_ids:
 					log_string += str(g.id) + ", "
 				log_string = log_string[:-2] + "}"
 			else:
@@ -123,7 +127,8 @@ if "__decorated__" not in dir():
 			if len(result) == 0:
 				log_string += "empty}"
 			else:
-				for mod in result:
+				sorted_modules = sorted(result, key=lambda module: module.get_id())
+				for mod in sorted_modules:
 					log_string += str(mod.get_id()) + ", "
 				log_string = log_string[:-2] + "}"
 			hal_py.log_info(log_string)
@@ -137,7 +142,8 @@ if "__decorated__" not in dir():
 			result = f(*args, **kwargs)
 			log_string = "Function: " + message + ", Gate-ID: " + str(args[0].id) + ", " + pred_or_successor+".-IDs: {"
 			if len(result) != 0:
-				for endpoint in result:
+				sorted_endpoints = sorted(result, key=lambda ep: ep.gate.id)
+				for endpoint in sorted_endpoints:
 					log_string += str(endpoint.gate.id) + ", "
 				log_string = log_string[:-2] + "}"
 			else:
@@ -167,8 +173,9 @@ if "__decorated__" not in dir():
 			if len(result) == 0:
 				log_string += "empty}"
 			else:
-				for ep in result:
-					log_string += str(ep.gate.id) + ", "
+				sorted_endpoints = sorted(result, key=lambda ep: ep.gate.id)
+				for endpoint in sorted_endpoints:
+					log_string += str(endpoint.gate.id) + ", "
 				log_string = log_string[:-2] + "}"
 			hal_py.log_info(log_string)
 			return result
@@ -192,7 +199,8 @@ if "__decorated__" not in dir():
 			if len(result) == 0:
 				log_string += "empty}"
 			else:
-				for g in result:
+				sorted_gates = sorted(result, key=lambda gate: gate.id)
+				for g in sorted_gates:
 					log_string += str(g.id) + ", "
 				log_string = log_string[:-2] + "}"
 			hal_py.log_info(log_string)
