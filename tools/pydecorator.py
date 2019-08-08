@@ -12,7 +12,7 @@ if "__decorated__" not in dir():
 			return f(*args, **kwargs)
 		return decorated
 
-	def generic_generator(message, object_type, f):
+	def generic_decorator(message, object_type, f):
 		@wraps(f)
 		def decorated(*args, **kwargs):
 			result = f(*args, **kwargs)
@@ -221,20 +221,20 @@ if "__decorated__" not in dir():
 	hal_py.netlist.get_modules = netlist_get_modules("netlist.get_modules", hal_py.netlist.get_modules)
 
 	####### Gate Functions
-	hal_py.gate.get_name = generic_generator("gate.get_name", "Gate", hal_py.gate.get_name)
-	hal_py.gate.get_id = generic_generator("gate.get_id", "Gate", hal_py.gate.get_id)
-	hal_py.gate.get_type = generic_generator("gate.get_type", "Gate", hal_py.gate.get_type)
-	hal_py.gate.get_data_by_key = generic_generator("gate.get_data_by_key", "Gate", hal_py.gate.get_data_by_key)
-	hal_py.gate.set_data = generic_generator("gate.set_data", "Gate", hal_py.gate.set_data)
-	hal_py.gate.set_name = generic_generator("gate.set_name", "Gate", hal_py.gate.set_name)
+	hal_py.gate.get_name = generic_decorator("gate.get_name", "Gate", hal_py.gate.get_name)
+	hal_py.gate.get_id = generic_decorator("gate.get_id", "Gate", hal_py.gate.get_id)
+	hal_py.gate.get_type = generic_decorator("gate.get_type", "Gate", hal_py.gate.get_type)
+	hal_py.gate.get_data_by_key = generic_decorator("gate.get_data_by_key", "Gate", hal_py.gate.get_data_by_key)
+	hal_py.gate.set_data = generic_decorator("gate.set_data", "Gate", hal_py.gate.set_data)
+	hal_py.gate.set_name = generic_decorator("gate.set_name", "Gate", hal_py.gate.set_name)
 	hal_py.gate.get_predecessors = gate_get_predecessors_or_successors("gate.get_predecessors", "predecessor", hal_py.gate.get_predecessors)
 	hal_py.gate.get_successors = gate_get_predecessors_or_successors("gate.get_successors", "successor", hal_py.gate.get_successors)
 
 	####### Net Functions
-	hal_py.net.get_id = generic_generator("net.get_id", "Net", hal_py.net.get_id)
-	hal_py.net.get_name = generic_generator("net.get_name", "Net", hal_py.net.get_name)
-	hal_py.net.set_data = generic_generator("net.set_data", "Net", hal_py.net.set_data)
-	hal_py.net.set_nama = generic_generator("net.set_name", "Net", hal_py.net.set_name)
+	hal_py.net.get_id = generic_decorator("net.get_id", "Net", hal_py.net.get_id)
+	hal_py.net.get_name = generic_decorator("net.get_name", "Net", hal_py.net.get_name)
+	hal_py.net.set_data = generic_decorator("net.set_data", "Net", hal_py.net.set_data)
+	hal_py.net.set_nama = generic_decorator("net.set_name", "Net", hal_py.net.set_name)
 	hal_py.net.get_src = net_get_src("net.get_src", hal_py.net.get_src)
 	hal_py.net.get_dsts = net_get_dests("net.get_dsts", hal_py.net.get_dsts)
 
@@ -244,4 +244,3 @@ if "__decorated__" not in dir():
 
 else:
 	hal_py.log_info("Already decorated. Not applying again.")
-
