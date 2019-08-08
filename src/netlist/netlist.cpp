@@ -13,10 +13,10 @@
 netlist::netlist(std::shared_ptr<gate_library> library) : m_gate_library(library)
 {
     m_manager        = new netlist_internal_manager(this);
-    m_netlist_id     = 1;
-    m_next_gate_id   = 1;
-    m_next_net_id    = 1;
-    m_next_module_id = 1;
+    m_netlist_id     = 0;
+    m_next_gate_id   = 0;
+    m_next_net_id    = 0;
+    m_next_module_id = 0;
     m_top_module     = nullptr;    // this triggers the internal manager to allow creation of a module without parent
     m_top_module     = create_module("top module", nullptr);
 }
