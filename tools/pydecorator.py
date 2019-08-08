@@ -79,14 +79,14 @@ if "__decorated__" not in dir():
 		@wraps(f)
 		def decorated(*args, **kwargs):
 			result = f(*args, **kwargs)
-			hal_py.log_info("Function: {}, Module-ID: {}".format(message, result.get_id()))#make this a property call -> add property in python definitions
+			hal_py.log_info("Function: {}, Module-ID: {}".format(message, result.id))
 			return result
 		return decorated
 
 	def netlist_delete_module(message, f):
 		@wraps(f)
 		def decorated(*args, **kwargs):
-			module_id = args[1].get_id()
+			module_id = args[1].id
 			gate_ids = args[1].gates
 			result = f(*args, **kwargs)
 			log_string = "Function: " + message + ", Module-ID: " + str(module_id) + ", Gate-IDs: {"
@@ -106,7 +106,7 @@ if "__decorated__" not in dir():
 		def decorated(*args, **kwargs):
 			result = f(*args, **kwargs)
 			gate_ids = result.gates
-			module_id = result.get_id()
+			module_id = result.id
 			log_string = "Function: " + message + ", Module-ID: " + str(module_id) + ", Gate-IDs: {"
 			if len(gate_ids) != 0:
 				sorted_gate_ids = sorted(gate_ids, key=lambda gate: gate.id)
@@ -127,9 +127,9 @@ if "__decorated__" not in dir():
 			if len(result) == 0:
 				log_string += "empty}"
 			else:
-				sorted_modules = sorted(result, key=lambda module: module.get_id())
+				sorted_modules = sorted(result, key=lambda module: module.id)
 				for mod in sorted_modules:
-					log_string += str(mod.get_id()) + ", "
+					log_string += str(mod.id) + ", "
 				log_string = log_string[:-2] + "}"
 			hal_py.log_info(log_string)
 			return result
@@ -187,7 +187,7 @@ if "__decorated__" not in dir():
 		@wraps(f)
 		def decorated(*args, **kwargs):
 			result = f(*args, **kwargs)
-			hal_py.log_info("Function: {}, Module-ID: {}, Gate-ID: {}".format(message, args[0].get_id(), args[1].id))
+			hal_py.log_info("Function: {}, Module-ID: {}, Gate-ID: {}".format(message, args[0].id, args[1].id))
 			return result
 		return decorated
 
@@ -195,7 +195,7 @@ if "__decorated__" not in dir():
 		@wraps(f)
 		def decorated(*args, **kwargs):
 			result = f(*args, **kwargs)
-			log_string = "Function: " + message + ", Module-ID: " + str(args[0].get_id()) + ", Gate-IDs: {"
+			log_string = "Function: " + message + ", Module-ID: " + str(args[0].id) + ", Gate-IDs: {"
 			if len(result) == 0:
 				log_string += "empty}"
 			else:
