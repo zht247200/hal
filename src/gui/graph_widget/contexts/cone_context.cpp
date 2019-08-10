@@ -33,5 +33,8 @@ QString cone_context::name() const
 
 void cone_context::apply_changes()
 {
+    assert(m_unapplied_changes);
+    // APPLY STUFF
+    m_unapplied_changes = false;
     schedule_relayout();
 }
