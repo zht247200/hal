@@ -179,9 +179,7 @@ private:
 
     void commit_used_paths(const used_paths& used);
 
-    QVector<u32> m_modules;
-    QVector<u32> m_gates;
-    QVector<u32> m_nets;
+    void recalculate_levels();
 
     QMap<hal::node, int> m_node_levels;
 

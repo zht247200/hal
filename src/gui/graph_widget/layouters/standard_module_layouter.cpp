@@ -41,304 +41,24 @@ QString standard_module_layouter::description() const
 
 void standard_module_layouter::add(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
 {
-    //QSet<hal::node> unvisited;
-    QVector<hal::node> unvisited;
+    Q_UNUSED(modules)
+    Q_UNUSED(gates)
+    Q_UNUSED(internal_nets)
+    Q_UNUSED(local_io_nets)
+    Q_UNUSED(global_io_nets)
 
-    for (u32 id : gates)
-        //unvisited.insert(hal::node{hal::node_type::gate, id});
-        unvisited.append(hal::node{hal::node_type::gate, id});
-
-    for (u32 id : modules)
-        //unvisited.insert(hal::node{hal::node_type::module, id});
-        unvisited.append(hal::node{hal::node_type::module, id});
-
-    // ZERO GATES
-    {
-        //QSet<hal::node> visited;
-        QVector<hal::node> visited;
-
-        bool visit = false;
-
-        for (const hal::node& node : unvisited)
-        {
-            switch (node.type)
-            {
-            case hal::node_type::module:
-            {
-                std::shared_ptr<module> m = g_netlist->get_module_by_id(node.id);
-
-                for (std::shared_ptr<net> n : m->get_input_nets())
-                {
-                    if (!n->get_src().gate)
-                    {
-                        visit = true;
-                        break;
-                    }
-
-                    hal::node src_node;
-
-                    if (!m_context->node_for_gate(src_node, n->get_src().gate->get_id()))
-                        continue; // ???
-
-                    if (!m_gates.contains(n->get_src().gate->get_id()) && !unvisited.contains(src_node))
-                    {
-                        visit = true;
-                        break;
-                    }
-                }
-                break;
-            }
-            case hal::node_type::gate:
-            {
-                std::shared_ptr<gate> g = g_netlist->get_gate_by_id(node.id);
-
-                for (std::shared_ptr<net> n : g->get_fan_in_nets())
-                {
-                    if (!n->get_src().gate)
-                    {
-                        visit = true;
-                        break;
-                    }
-
-                    hal::node src_node;
-
-                    if (!m_context->node_for_gate(src_node, n->get_src().gate->get_id()))
-                        continue; // ???
-
-                    if (!m_gates.contains(n->get_src().gate->get_id()) && !unvisited.contains(src_node))
-                    {
-                        visit = true;
-                        break;
-                    }
-                }
-                break;
-            }
-            }
-
-            if (visit)
-            {
-                //visited.insert(node);
-                visited.append(node);
-
-                m_zero_nodes.append(node);
-                m_node_levels.insert(node, 0);
-                m_gates.append(node.id);
-            }
-        }
-
-        //unvisited -= visited;
-
-        for (const hal::node& node : visited)
-            unvisited.removeOne(node);
-    }
-
-    int level = 1;
-
-    while (!unvisited.isEmpty())
-    {
-        //QSet<hal::node> visited;
-        QVector<hal::node> visited;
-
-        for (const hal::node& node : unvisited)
-        {
-            bool visit = false;
-
-            switch (node.type)
-            {
-            case hal::node_type::module:
-            {
-                std::shared_ptr<module> m = g_netlist->get_module_by_id(node.id);
-
-                for (std::shared_ptr<net> n : m->get_input_nets())
-                {
-                    if (!m_gates.contains(n->get_src().gate->get_id()))
-                    {
-                        visit = true;
-                        break;
-                    }
-                }
-
-                if (visit)
-                    //visited.insert(node);
-                    visited.append(node);
-
-                break;
-            }
-            case hal::node_type::gate:
-            {
-                std::shared_ptr<gate> g = g_netlist->get_gate_by_id(node.id);
-
-                for (std::shared_ptr<net> n : g->get_fan_in_nets())
-                {
-                    if (!m_gates.contains(n->get_src().gate->get_id()))
-                    {
-                        visit = true;
-                        break;
-                    }
-                }
-
-                if (visit)
-                    //visited.insert(node);
-                    visited.append(node);
-
-                break;
-            }
-            }
-        }
-
-        if (visited.isEmpty())
-        {
-            for (const hal::node& node : unvisited)
-            {
-                m_zero_nodes.append(node);
-                m_node_levels.insert(node, 0);
-
-                if (node.type == hal::node_type::gate)
-                    m_gates.append(node.id);
-            }
-
-            unvisited.clear();
-            // HACK SOLUTIONS TM
-        }
-        else
-        {
-            //unvisited -= visited;
-
-            for (const hal::node& node : visited)
-                unvisited.removeOne(node);
-
-            for (const hal::node& node : visited)
-            {
-                m_node_levels.insert(node, level);
-
-                if (node.type == hal::node_type::gate)
-                {
-                    add_gate(node.id, level);
-                    m_gates.append(node.id);
-                }
-            }
-
-            ++level;
-        }
-    }
-
-    for (u32 m : modules)
-        m_modules.append(m);
-
-//    for (u32 g : gates)
-//        m_gates.append(g);
-
-//    for (u32 n : nets)
-//        m_nets.append(n);
+    recalculate_levels();
 }
 
 void standard_module_layouter::remove(const QSet<u32>& modules, const QSet<u32>& gates, const QSet<u32>& internal_nets, const QSet<u32>& local_io_nets, const QSet<u32>& global_io_nets)
 {   
-//    m_modules -= modules;
-//    m_gates -= gates;
-//    m_nets -= nets;
+    Q_UNUSED(modules)
+    Q_UNUSED(gates)
+    Q_UNUSED(internal_nets)
+    Q_UNUSED(local_io_nets)
+    Q_UNUSED(global_io_nets)
 
-    for (u32 id : modules)
-        m_modules.removeOne(id);
-
-    for (u32 id : gates)
-        m_gates.removeOne(id);
-
-//    for (u32 id : nets)
-//        m_nets.removeOne(id);
-
-    for (u32 id : gates)
-        m_node_levels.remove(hal::node{hal::node_type::gate, id});
-
-    for (int i = 0; i < m_zero_nodes.size();)
-    {
-        bool found = false;
-
-        switch (m_zero_nodes.at(i).type)
-        {
-        case hal::node_type::module:
-        {
-            if (modules.contains(m_zero_nodes.at(i).id))
-                found = true;
-
-            break;
-        }
-        case hal::node_type::gate:
-        {
-            if (gates.contains(m_zero_nodes.at(i).id))
-                found = true;
-
-            break;
-        }
-        }
-
-        if (found)
-            m_zero_nodes.remove(i);
-        else
-            ++i;
-    }
-
-    for (QVector<hal::node> v : m_positive_nodes)
-    {
-        for (int i = 0; i < v.size();)
-        {
-            bool found = false;
-
-            switch (v.at(i).type)
-            {
-            case hal::node_type::module:
-            {
-                if (modules.contains(v.at(i).id))
-                    found = true;
-
-                break;
-            }
-            case hal::node_type::gate:
-            {
-                if (gates.contains(v.at(i).id))
-                    found = true;
-
-                break;
-            }
-            }
-
-            if (found)
-                v.remove(i);
-            else
-                ++i;
-        }
-    }
-
-    for (QVector<hal::node> v : m_negative_nodes)
-    {
-        for (int i = 0; i < v.size();)
-        {
-            bool found = false;
-
-            switch (v.at(i).type)
-            {
-            case hal::node_type::module:
-            {
-                if (modules.contains(v.at(i).id))
-                    found = true;
-
-                break;
-            }
-            case hal::node_type::gate:
-            {
-                if (gates.contains(v.at(i).id))
-                    found = true;
-
-                break;
-            }
-            }
-
-            if (found)
-                v.remove(i);
-            else
-                ++i;
-        }
-    }
+    recalculate_levels();
 }
 
 void standard_module_layouter::layout()
@@ -405,7 +125,7 @@ void standard_module_layouter::create_boxes()
         int x_offset = 0;
         int y = 0;
 
-        int root = sqrt(m_zero_nodes.size());
+        int root = static_cast<int>(sqrt(m_zero_nodes.size()));
         for (const hal::node& node : m_zero_nodes)
         {
             m_boxes.append(create_box(node, level_x + x_offset, y));
@@ -427,7 +147,7 @@ void standard_module_layouter::create_boxes()
         int x_offset = 0;
         int y = 0;
 
-        int root = sqrt(v.size());
+        int root = static_cast<int>(sqrt(v.size()));
         for (const hal::node& node : v)
         {
             m_boxes.append(create_box(node, level_x + x_offset, y));
@@ -451,7 +171,7 @@ void standard_module_layouter::create_boxes()
         int x_offset = 0;
         int y = 0;
 
-        int root = sqrt(v.size());
+        int root = static_cast<int>(sqrt(v.size()));
         for (const hal::node& node : v)
         {
             m_boxes.append(create_box(node, level_x + x_offset, y));
@@ -470,7 +190,7 @@ void standard_module_layouter::create_boxes()
 
 void standard_module_layouter::calculate_nets()
 {
-    for (const u32 id : m_nets)
+    for (const u32 id : m_context->internal_nets()) // CURRENTLY IGNORES OTHER NETS
     {
         std::shared_ptr<net> n = g_netlist->get_net_by_id(id);
 
@@ -979,7 +699,7 @@ void standard_module_layouter::reset_roads_and_junctions()
 void standard_module_layouter::draw_nets()
 {
     // ROADS AND JUNCTIONS FILLED LEFT TO RIGHT, TOP TO BOTTOM
-    for (const u32 id : m_nets)
+    for (const u32 id : m_context->internal_nets()) // CURRENTLY IGNORES OTHER NETS
     {
         std::shared_ptr<net> n = g_netlist->get_net_by_id(id);
 
@@ -1725,6 +1445,7 @@ standard_module_layouter::node_box standard_module_layouter::create_box(const ha
 
 void standard_module_layouter::add_gate(const u32 gate_id, const int level)
 {
+    /*
     assert(!m_gates.contains(gate_id));
 
     std::shared_ptr<gate> g = g_netlist->get_gate_by_id(gate_id);
@@ -1782,6 +1503,7 @@ void standard_module_layouter::add_gate(const u32 gate_id, const int level)
             if (!m_nets.contains(net_id))
                 m_nets.append(net_id);
         }
+        */
 }
 
 bool standard_module_layouter::box_exists(const int x, const int y) const
@@ -2201,4 +1923,131 @@ void standard_module_layouter::commit_used_paths(const standard_module_layouter:
 
     for (junction* j : used.far_bottom_junctions)
         j->far_bottom_lane_changes += 1;
+}
+
+void standard_module_layouter::recalculate_levels()
+{
+    // INEFFICIENT BUT EASIER, OPTIMIZE LATER...
+
+    m_node_levels.clear();
+
+    m_zero_nodes.clear();
+
+    m_positive_nodes.clear();
+    m_negative_nodes.clear();
+
+    QVector<hal::node> unvisited;
+
+    for (u32 id : m_context->gates())
+        unvisited.append(hal::node{hal::node_type::gate, id});
+
+    for (u32 id : m_context->modules())
+        unvisited.append(hal::node{hal::node_type::module, id});
+
+    std::shared_ptr<module> m = g_netlist->get_module_by_id(m_context->get_id());
+
+    // LEVEL ZERO
+    QVector<u32> level_zero_gates;
+
+    for (const std::shared_ptr<net>& n : m->get_input_nets())
+    {
+        for (const endpoint& e: n->get_dsts())
+            level_zero_gates.append(e.get_gate()->get_id());
+    }
+
+    for (const u32 id: level_zero_gates)
+    {
+        hal::node node;
+
+        if (!m_context->node_for_gate(node, id))
+            continue;
+
+        m_node_levels.insert(node, 0);
+        m_zero_nodes.append(node);
+
+        unvisited.removeOne(node);
+    }
+
+    // REMAINING LEVELS
+    int level = 1;
+
+    while (!unvisited.isEmpty())
+    {
+        QVector<hal::node> visited;
+
+        for (const hal::node& node : unvisited)
+        {
+            switch (node.type)
+            {
+            case hal::node_type::module:
+            {
+                std::shared_ptr<module> m = g_netlist->get_module_by_id(node.id);
+
+                for (const std::shared_ptr<net>& n : m->get_input_nets())
+                {
+                    hal::node src_node;
+
+                    if (!m_context->node_for_gate(src_node, n->get_src().gate->get_id()))
+                        continue;
+
+                    if (m_node_levels.contains(src_node))
+                    {
+                        visited.append(node);
+                        break;
+                    }
+                }
+
+                break;
+            }
+            case hal::node_type::gate:
+            {
+                std::shared_ptr<gate> g = g_netlist->get_gate_by_id(node.id);
+
+                for (std::shared_ptr<net> n : g->get_fan_in_nets())
+                {
+                    hal::node src_node;
+
+                    if (!m_context->node_for_gate(src_node, n->get_src().gate->get_id()))
+                        continue;
+
+                    if (m_node_levels.contains(src_node))
+                    {
+                        visited.append(node);
+                        break;
+                    }
+                }
+
+                break;
+            }
+            }
+        }
+
+        if (visited.isEmpty())
+        {
+            // HACK SOLUTIONS TM
+            // PROBABLY GOING TO NEED SOME KIND OF GROUP SYSTEM
+            for (const hal::node& node : unvisited)
+            {
+                m_node_levels.insert(node, 0);
+                m_zero_nodes.append(node);
+            }
+
+            return;
+        }
+        else
+        {
+            if (m_positive_nodes.size() < level)
+                m_positive_nodes.append(QVector<hal::node>());
+
+            for (const hal::node& node : visited)
+            {
+                m_node_levels.insert(node, level);
+                m_positive_nodes[level - 1].append(node);
+
+                unvisited.removeOne(node);
+            }
+
+            ++level;
+        }
+    }
 }
