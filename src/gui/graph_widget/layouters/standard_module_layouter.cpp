@@ -110,6 +110,7 @@ void standard_module_layouter::layout()
     update_scene_rect();
 
     draw_nets();
+    draw_global_io_nets();
     m_scene->move_nets_to_background();
 
     m_scene->handle_extern_selection_changed(nullptr);
@@ -1399,6 +1400,54 @@ void standard_module_layouter::draw_nets()
     }
 }
 
+void standard_module_layouter::draw_global_io_nets()
+{
+    for (const u32 id : m_context->global_io_nets())
+    {
+        std::shared_ptr<net> n = g_netlist->get_net_by_id(id);
+        assert(n);
+        assert(n->is_unrouted());
+
+        io_graphics_net* net_item = new io_graphics_net(n);
+        endpoint src_end = n->get_src();
+
+        if (src_end.get_gate())
+        {
+            hal::node node;
+
+            if (!m_context->node_for_gate(node, src_end.get_gate()->get_id()))
+                continue;
+
+            for (const node_box& box : m_boxes)
+            {
+                if (box.node == node)
+                {
+                    net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src_end.pin_type)));
+                    net_item->add_output();
+                }
+            }
+        }
+
+        for (const endpoint& dst_end : n->get_dsts())
+        {
+            hal::node node;
+
+            if (!m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
+                continue;
+
+            for (const node_box& box : m_boxes)
+            {
+                if (box.node == node)
+                    net_item->add_input(box.item->get_input_scene_position(n->get_id(), QString::fromStdString(dst_end.pin_type)));
+            }
+        }
+
+        net_item->finalize();
+        m_scene->add_item(net_item);
+        continue;
+    }
+}
+
 void standard_module_layouter::clear_net_layout_data()
 {
     for (const standard_module_layouter::road* r : m_h_roads)
@@ -1441,69 +1490,6 @@ standard_module_layouter::node_box standard_module_layouter::create_box(const ha
     box.output_padding = minimum_gate_io_padding;
 
     return box;
-}
-
-void standard_module_layouter::add_gate(const u32 gate_id, const int level)
-{
-    /*
-    assert(!m_gates.contains(gate_id));
-
-    std::shared_ptr<gate> g = g_netlist->get_gate_by_id(gate_id);
-    assert(g);
-
-    m_gates.append(gate_id);
-    m_node_levels.insert(hal::node{hal::node_type::gate, gate_id}, level);
-
-    // ARE LEVEL VECTORS ACTUALLY NECESSARY ?
-    if (level == 0)
-    {
-        m_zero_nodes.append(hal::node{hal::node_type::gate, gate_id});
-    }
-    else
-    {
-        if (level > 0)
-        {
-            if (level > m_positive_nodes.size())
-            {
-                m_positive_nodes.append(QVector<hal::node>());
-                m_positive_nodes.last().append(hal::node{hal::node_type::gate, gate_id});
-            }
-            else
-                m_positive_nodes[level - 1].append(hal::node{hal::node_type::gate, gate_id});
-        }
-        else // if (new_level < 0)
-        {
-            int abs_level = abs(level);
-
-            if (abs_level > m_negative_nodes.size())
-            {
-                m_negative_nodes.append(QVector<hal::node>());
-                m_negative_nodes.last().append(hal::node{hal::node_type::gate, gate_id});
-            }
-            else
-                m_negative_nodes[abs_level - 1].append(hal::node{hal::node_type::gate, gate_id});
-        }
-    }
-
-    // USE SEPARATE GLOBAL NET VECTOR ?
-    for (const std::shared_ptr<net>& n : g->get_fan_in_nets())
-        if (n->is_unrouted())
-        {
-            u32 net_id = n->get_id();
-
-            if (!m_nets.contains(net_id))
-                m_nets.append(net_id);
-        }
-
-    for (const std::shared_ptr<net>& n : g->get_fan_out_nets())
-        if (n->is_unrouted())
-        {
-            u32 net_id = n->get_id();
-
-            if (!m_nets.contains(net_id))
-                m_nets.append(net_id);
-        }
-        */
 }
 
 bool standard_module_layouter::box_exists(const int x, const int y) const

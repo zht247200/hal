@@ -125,12 +125,11 @@ private:
     void update_scene_rect();
     void reset_roads_and_junctions();
     void draw_nets();
+    void draw_global_io_nets();
 
     void clear_net_layout_data();
 
     node_box create_box(const hal::node& node, const int x, const int y) const;
-
-    void add_gate(const u32 gate_id, const int level);
 
     bool box_exists(const int x, const int y) const;
 
