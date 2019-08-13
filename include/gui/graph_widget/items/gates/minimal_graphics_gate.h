@@ -21,10 +21,10 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#ifndef STANDARD_GRAPHICS_GATE_H
-#define STANDARD_GRAPHICS_GATE_H
+#ifndef MINIMAL_GRAPHICS_GATE_H
+#define MINIMAL_GRAPHICS_GATE_H
 
-#include "graphics_gate.h"
+#include "gui/graph_widget/items/graphics_gate.h"
 
 class minimal_graphics_gate : public graphics_gate
 {
@@ -77,4 +77,4 @@ private:
     QVector<QPointF> m_output_pin_positions;
 };
 
-#endif // STANDARD_GRAPHICS_GATE_H
+#endif // MINIMAL_GRAPHICS_GATE_H

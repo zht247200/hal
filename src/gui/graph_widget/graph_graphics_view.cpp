@@ -4,13 +4,13 @@
 #include "gui/graph_widget/graph_widget_constants.h"
 #include "gui/graph_widget/graphics_scene.h"
 #include "gui/graph_widget/graphics_view_zoom.h"
-#include "gui/graph_widget/items/io_graphics_net.h"
 #include "gui/graph_widget/items/graphics_gate.h"
 #include "gui/graph_widget/items/graphics_item.h"
-#include "gui/graph_widget/items/separated_graphics_net.h"
-#include "gui/graph_widget/items/standard_graphics_gate.h"
-#include "gui/graph_widget/items/standard_graphics_module.h"
-#include "gui/graph_widget/items/standard_graphics_net.h"
+#include "gui/graph_widget/items/gates/standard_graphics_gate.h"
+#include "gui/graph_widget/items/modules/standard_graphics_module.h"
+#include "gui/graph_widget/items/nets/io_graphics_net.h"
+#include "gui/graph_widget/items/nets/separated_graphics_net.h"
+#include "gui/graph_widget/items/nets/standard_graphics_net.h"
 #include "gui/gui_globals.h"
 
 #include <QAction>

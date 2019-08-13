@@ -1,4 +1,4 @@
-#include "graph_widget/items/utility_items/gate_navigation_popup.h"
+#include "graph_widget/items/popups/gate_navigation_popup.h"
 
 #include "graph_widget/items/graphics_gate.h"
 

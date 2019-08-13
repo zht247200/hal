@@ -2,11 +2,11 @@
 
 #include "gui/graph_widget/contexts/module_context.h"
 #include "gui/graph_widget/graphics_scene.h"
+#include "gui/graph_widget/items/gates/minimal_graphics_gate.h"
 #include "gui/graph_widget/items/graphics_gate.h"
-#include "gui/graph_widget/items/io_graphics_net.h"
-#include "gui/graph_widget/items/minimal_graphics_gate.h"
-#include "gui/graph_widget/items/separated_graphics_net.h"
-#include "gui/graph_widget/items/standard_graphics_net.h"
+#include "gui/graph_widget/items/nets/io_graphics_net.h"
+#include "gui/graph_widget/items/nets/separated_graphics_net.h"
+#include "gui/graph_widget/items/nets/standard_graphics_net.h"
 #include "gui/graph_widget/graphics_factory.h"
 #include "gui_globals.h"
 

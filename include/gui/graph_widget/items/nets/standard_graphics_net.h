@@ -24,7 +24,7 @@
 #ifndef STANDARD_GRAPHICS_NET_H
 #define STANDARD_GRAPHICS_NET_H
 
-#include "graphics_net.h"
+#include "gui/graph_widget/items/graphics_net.h"
 
 #include <QLineF>
 #include <QVector>
@@ -67,8 +67,9 @@ public:
     //standard_graphics_net(const std::shared_ptr<const net> n, const lines& l);
     standard_graphics_net(const std::shared_ptr<const net> n, lines& l);
 
-    virtual void set_visuals(const visuals& v) Q_DECL_OVERRIDE;
-    virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) Q_DECL_OVERRIDE;
+    virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+
+    virtual void set_visuals(const visuals& v) override;
 
 private:
     static qreal s_alpha;
