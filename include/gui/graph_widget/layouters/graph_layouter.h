@@ -38,7 +38,7 @@ class graph_context;
 class graphics_gate;
 class graphics_item;
 class graphics_net;
-class separated_graphics_net;
+class labeled_separated_net;
 class standard_graphics_net;
 class graphics_scene;
 

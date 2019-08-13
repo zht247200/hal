@@ -9,7 +9,7 @@
 #include "gui/graph_widget/items/gates/standard_graphics_gate.h"
 #include "gui/graph_widget/items/modules/standard_graphics_module.h"
 #include "gui/graph_widget/items/nets/io_graphics_net.h"
-#include "gui/graph_widget/items/nets/separated_graphics_net.h"
+#include "gui/graph_widget/items/nets/labeled_separated_net.h"
 #include "gui/graph_widget/items/nets/standard_graphics_net.h"
 #include "gui/gui_globals.h"
 
@@ -85,7 +85,7 @@ void graph_graphics_view::paintEvent(QPaintEvent* event)
     standard_graphics_module::update_alpha();
     standard_graphics_gate::update_alpha();
     standard_graphics_net::update_alpha();
-    separated_graphics_net::update_alpha();
+    labeled_separated_net::update_alpha();
     io_graphics_net::update_alpha();
 
     QGraphicsView::paintEvent(event);

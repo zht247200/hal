@@ -8,7 +8,7 @@
 #include "gui/graph_widget/items/gates/standard_graphics_gate.h"
 #include "gui/graph_widget/items/modules/standard_graphics_module.h"
 #include "gui/graph_widget/items/nets/io_graphics_net.h"
-#include "gui/graph_widget/items/nets/separated_graphics_net.h"
+#include "gui/graph_widget/items/nets/labeled_separated_net.h"
 #include "gui/graph_widget/items/nets/standard_graphics_net.h"
 #include "gui/gui_globals.h"
 #include "gui/svg_icon_engine/svg_icon_engine.h"
@@ -203,7 +203,7 @@ namespace style
         graphics_net::load_settings();
         standard_graphics_net::load_settings();
         io_graphics_net::load_settings();
-        separated_graphics_net::load_settings();
+        labeled_separated_net::load_settings();
     }
 
 } // namespace style

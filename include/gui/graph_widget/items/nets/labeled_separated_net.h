@@ -21,28 +21,42 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#ifndef SEPARATED_GRAPHICS_NET_H
-#define SEPARATED_GRAPHICS_NET_H
+#ifndef LABELED_SEPARATED_NET_H
+#define LABELED_SEPARATED_NET_H
 
 #include "graph_widget/items/graphics_net.h"
 
-class separated_graphics_net : public graphics_net
+class labeled_separated_net : public graphics_net
 {
 public:
+    static void load_settings();
     static void update_alpha();
 
-    separated_graphics_net(const std::shared_ptr<const net> n);
+    labeled_separated_net(const std::shared_ptr<const net> n, const QString& text);
 
-    virtual void add_output() = 0;
-    virtual void add_input(const QPointF& scene_position) = 0;
-    virtual void finalize() = 0;
+    virtual void set_visuals(const visuals& v) override;
+    virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+
+    void add_output();
+    void add_input(const QPointF& scene_position);
+
+    void finalize();
 
 private:
     static qreal s_alpha;
 
+    static qreal s_wire_length;
+    static qreal s_text_offset;
+
+    static QFont s_font;
+    static qreal s_font_height;
+    static qreal s_font_ascend;
+
+    QString m_text;
+    qreal m_text_width;
     QVector<QPointF> m_input_wires;
     line_style m_line_style;
     bool m_draw_output;
 };
 
-#endif // SEPARATED_GRAPHICS_NET_H
+#endif // LABELED_SEPARATED_NET_H
