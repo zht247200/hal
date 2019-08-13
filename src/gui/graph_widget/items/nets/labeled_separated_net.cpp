@@ -8,8 +8,6 @@
 
 static const qreal baseline = 1;
 
-qreal labeled_separated_net::s_alpha;
-
 qreal labeled_separated_net::s_wire_length;
 qreal labeled_separated_net::s_text_offset;
 
@@ -31,18 +29,8 @@ void labeled_separated_net::load_settings()
     s_pen.setColor(QColor(160, 160, 160)); // USE STYLESHEETS
 }
 
-void labeled_separated_net::update_alpha()
-{
-    if (s_lod >= graph_widget_constants::net_fade_in_lod && s_lod <= graph_widget_constants::net_fade_out_lod)
-        s_alpha = (s_lod - graph_widget_constants::net_fade_in_lod) / (graph_widget_constants::net_fade_out_lod - graph_widget_constants::net_fade_in_lod);
-    else
-        s_alpha = 1;
-}
-
-labeled_separated_net::labeled_separated_net(const std::shared_ptr<const net> n, const QString& text) : graphics_net(n),
-  m_text(text),
-  m_line_style(line_style::solid),
-  m_draw_output(false)
+labeled_separated_net::labeled_separated_net(const std::shared_ptr<const net> n, const QString& text) : separated_graphics_net(n),
+  m_text(text)
 {
     QFontMetricsF fm(s_font);
     m_text_width = fm.width(m_text);

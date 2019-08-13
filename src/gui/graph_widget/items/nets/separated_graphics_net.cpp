@@ -2,8 +2,6 @@
 
 #include "graph_widget/graph_widget_constants.h"
 
-static const qreal baseline = 1;
-
 qreal separated_graphics_net::s_alpha;
 
 void separated_graphics_net::update_alpha()

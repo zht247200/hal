@@ -24,27 +24,24 @@
 #ifndef LABELED_SEPARATED_NET_H
 #define LABELED_SEPARATED_NET_H
 
-#include "graph_widget/items/graphics_net.h"
+#include "graph_widget/items/nets/separated_graphics_net.h"
 
-class labeled_separated_net : public graphics_net
+class labeled_separated_net : public separated_graphics_net
 {
 public:
     static void load_settings();
-    static void update_alpha();
 
     labeled_separated_net(const std::shared_ptr<const net> n, const QString& text);
 
     virtual void set_visuals(const visuals& v) override;
     virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
-    void add_output();
-    void add_input(const QPointF& scene_position);
+    virtual void add_output() override;
+    virtual void add_input(const QPointF& scene_position) override;
 
-    void finalize();
+    virtual void finalize() override;
 
 private:
-    static qreal s_alpha;
-
     static qreal s_wire_length;
     static qreal s_text_offset;
 
@@ -54,9 +51,6 @@ private:
 
     QString m_text;
     qreal m_text_width;
-    QVector<QPointF> m_input_wires;
-    line_style m_line_style;
-    bool m_draw_output;
 };
 
 #endif // LABELED_SEPARATED_NET_H

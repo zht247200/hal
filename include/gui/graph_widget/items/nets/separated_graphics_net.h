@@ -37,7 +37,7 @@ public:
     virtual void add_input(const QPointF& scene_position) = 0;
     virtual void finalize() = 0;
 
-private:
+protected:
     static qreal s_alpha;
 
     QVector<QPointF> m_input_wires;
