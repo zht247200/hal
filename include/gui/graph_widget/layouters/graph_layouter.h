@@ -33,7 +33,7 @@
 
 #include <QObject>
 
-class io_graphics_net;
+class circle_separated_net;
 class graph_context;
 class graphics_gate;
 class graphics_item;

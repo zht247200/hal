@@ -4,7 +4,7 @@
 #include "gui/graph_widget/graphics_scene.h"
 #include "gui/graph_widget/items/gates/minimal_graphics_gate.h"
 #include "gui/graph_widget/items/graphics_gate.h"
-#include "gui/graph_widget/items/nets/io_graphics_net.h"
+#include "gui/graph_widget/items/nets/circle_separated_net.h"
 #include "gui/graph_widget/items/nets/labeled_separated_net.h"
 #include "gui/graph_widget/items/nets/standard_graphics_net.h"
 #include "gui/graph_widget/graphics_factory.h"
@@ -88,7 +88,7 @@ void minimal_module_layouter::layout()
         std::shared_ptr<net> n = g_netlist->get_net_by_id(id);
         assert(n);
 
-        io_graphics_net* net_item = new io_graphics_net(n);
+        circle_separated_net* net_item = new circle_separated_net(n);
 
         endpoint src_end = n->get_src();
 

@@ -7,7 +7,7 @@
 #include "gui/graph_widget/contexts/graph_context.h"
 #include "gui/graph_widget/graphics_factory.h"
 #include "gui/graph_widget/graphics_scene.h"
-#include "gui/graph_widget/items/nets/io_graphics_net.h"
+#include "gui/graph_widget/items/nets/circle_separated_net.h"
 #include "gui/graph_widget/items/nets/labeled_separated_net.h"
 #include "gui/graph_widget/items/nets/standard_graphics_net.h"
 #include "gui/gui_globals.h"
@@ -861,7 +861,7 @@ void standard_cone_layouter::draw_nets()
         if (n->is_unrouted())
         {
             // HANDLE GLOBAL NETS
-            io_graphics_net* net_item = new io_graphics_net(n);
+            circle_separated_net* net_item = new circle_separated_net(n);
 
             endpoint src_end = n->get_src();
 
