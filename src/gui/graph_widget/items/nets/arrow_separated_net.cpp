@@ -106,11 +106,14 @@ void arrow_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIte
         painter->setRenderHint(QPainter::Antialiasing, false);
     }
 
-#ifdef HAL_DEBUG_GUI_GRAPHICS
+//#ifdef HAL_DEBUG_GUI_GRAPHICS
+    bool original_value = s_pen.isCosmetic();
+    s_pen.setCosmetic(true);
     s_pen.setColor(Qt::green);
     painter->setPen(s_pen);
     painter->drawPath(m_shape);
-#endif
+    s_pen.setCosmetic(original_value);
+//#endif
 
     painter->setBrush(QBrush());
 }
@@ -154,13 +157,13 @@ void arrow_separated_net::add_input(const QPointF& scene_position)
     qreal x = mapped_position.x();
     const qreal y = mapped_position.y();
 
-    m_shape.moveTo(QPointF(x, y + -s_stroke_width / 2));
-    m_shape.lineTo(QPointF(x - s_wire_length, y + -s_stroke_width / 2));
+    m_shape.moveTo(QPointF(x, y - s_stroke_width / 2));
+    m_shape.lineTo(QPointF(x - s_wire_length, y - s_stroke_width / 2));
     m_shape.lineTo(QPointF(x - s_wire_length, y + s_stroke_width / 2));
     m_shape.lineTo(QPointF(x, y + s_stroke_width / 2));
     m_shape.closeSubpath();
 
-    x -= s_wire_length - s_arrow_offset;
+    x -= s_wire_length + s_arrow_offset;
 
     m_shape.moveTo(QPointF(x, y));
     m_shape.lineTo(QPointF(x - s_arrow_right, y - s_arrow_height / 2));
