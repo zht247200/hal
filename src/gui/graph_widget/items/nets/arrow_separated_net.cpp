@@ -132,10 +132,10 @@ void arrow_separated_net::add_output()
 
     m_draw_output = true;
 
-    m_shape.moveTo(QPointF(0, -s_stroke_width / 2));
-    m_shape.lineTo(QPointF(s_wire_length, -s_stroke_width / 2));
-    m_shape.lineTo(QPointF(s_wire_length, s_stroke_width / 2));
-    m_shape.lineTo(QPointF(0, s_stroke_width / 2));
+    m_shape.moveTo(QPointF(0, -s_shape_width / 2));
+    m_shape.lineTo(QPointF(s_wire_length, -s_shape_width / 2));
+    m_shape.lineTo(QPointF(s_wire_length, s_shape_width / 2));
+    m_shape.lineTo(QPointF(0, s_shape_width / 2));
     m_shape.closeSubpath();
 
     qreal x = s_wire_length + s_arrow_offset;
@@ -157,10 +157,10 @@ void arrow_separated_net::add_input(const QPointF& scene_position)
     qreal x = mapped_position.x();
     const qreal y = mapped_position.y();
 
-    m_shape.moveTo(QPointF(x, y - s_stroke_width / 2));
-    m_shape.lineTo(QPointF(x - s_wire_length, y - s_stroke_width / 2));
-    m_shape.lineTo(QPointF(x - s_wire_length, y + s_stroke_width / 2));
-    m_shape.lineTo(QPointF(x, y + s_stroke_width / 2));
+    m_shape.moveTo(QPointF(x, y - s_shape_width / 2));
+    m_shape.lineTo(QPointF(x - s_wire_length, y - s_shape_width / 2));
+    m_shape.lineTo(QPointF(x - s_wire_length, y + s_shape_width / 2));
+    m_shape.lineTo(QPointF(x, y + s_shape_width / 2));
     m_shape.closeSubpath();
 
     x -= s_wire_length + s_arrow_offset;
