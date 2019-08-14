@@ -38,6 +38,8 @@ public:
 
     virtual void finalize() = 0;
 
+    virtual qreal width() const = 0;
+
 protected:
     static qreal s_alpha;
 

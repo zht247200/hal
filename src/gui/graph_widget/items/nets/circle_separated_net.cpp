@@ -114,3 +114,8 @@ void circle_separated_net::finalize()
     m_rect = m_shape.boundingRect();
     m_rect.adjust(-1, -1, 1, 1);
 }
+
+qreal circle_separated_net::width() const
+{
+    return s_wire_length + s_circle_offset + 2 * s_radius;
+}

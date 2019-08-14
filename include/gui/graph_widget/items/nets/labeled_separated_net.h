@@ -41,6 +41,8 @@ public:
 
     virtual void finalize() override;
 
+    virtual qreal width() const override;
+
 private:
     static qreal s_wire_length;
     static qreal s_text_offset;
