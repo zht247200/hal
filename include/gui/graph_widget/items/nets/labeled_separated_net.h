@@ -41,7 +41,8 @@ public:
 
     virtual void finalize() override;
 
-    virtual qreal width() const override;
+    virtual qreal input_width() const override;
+    virtual qreal output_width() const override;
 
 private:
     static qreal s_wire_length;

@@ -41,12 +41,25 @@ public:
 
     virtual void finalize() override;
 
-    virtual qreal width() const override;
+    virtual qreal input_width() const override;
+    virtual qreal output_width() const override;
 
 private:
     static qreal s_wire_length;
-    static qreal s_circle_offset;
-    static qreal s_radius;
+    static qreal s_arrow_offset;
+
+    // FIND BETTER NAMES
+    static qreal s_arrow_length;
+    static qreal s_arrow_height;
+    static qreal s_arrow_left;
+    static qreal s_arrow_right;
+
+    static qreal s_input_offset;
+
+    static qreal s_input_width;
+    static qreal s_output_width;
+
+    static QPainterPath s_arrow;
 
     static QBrush s_brush;
 };

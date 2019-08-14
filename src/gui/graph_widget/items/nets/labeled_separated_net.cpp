@@ -118,7 +118,12 @@ void labeled_separated_net::finalize()
     m_rect.adjust(-1, -1, 1, 1);
 }
 
-qreal labeled_separated_net::width() const
+qreal labeled_separated_net::input_width() const
+{
+    return s_wire_length + s_text_offset + m_text_width;
+}
+
+qreal labeled_separated_net::output_width() const
 {
     return s_wire_length + s_text_offset + m_text_width;
 }
