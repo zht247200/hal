@@ -11,11 +11,6 @@
 #include "gui/content_layout_area/content_layout_area.h"
 #include "gui/content_widget/content_widget.h"
 #include "gui/docking_system/tab_widget.h"
-#include "gui/graph_layouter/graph_layouter_view.h"
-#include "gui/graph_layouter/gui_graph_gate.h"
-#include "gui/graph_layouter/old_graph_layouter.h"
-#include "gui/graph_manager/hal_graph_widget.h"
-#include "gui/graph_navigation_widget/old_graph_navigation_widget.h"
 #include "gui/graph_widget/graph_widget.h"
 #include "gui/gui_utility.h"
 #include "gui/hal_graphics/hal_graphics_view.h"
@@ -69,13 +64,9 @@ void hal_content_manager::handle_open_document(const QString& file_name)
 
     m_main_window->add_content(new graph_widget(), 2, content_anchor::center);
 
-    //module_widget* m = new module_widget();
-    //m_main_window->add_content(m, 0, content_anchor::left);
-    //m->open();
-
-    old_graph_navigation_widget* nav_widget = new old_graph_navigation_widget();
-    m_main_window->add_content(nav_widget, 0, content_anchor::left);
-    nav_widget->open();
+    module_widget* m = new module_widget();
+    m_main_window->add_content(m, 0, content_anchor::left);
+    m->open();
 
     selection_details_widget* details = new selection_details_widget();
     m_main_window->add_content(details, 0, content_anchor::bottom);
@@ -154,11 +145,4 @@ void hal_content_manager::handle_filsystem_doc_changed(const QString& file_name)
 void hal_content_manager::handle_save_triggered()
 {
     Q_EMIT save_triggered();
-}
-
-void hal_content_manager::handle_relayout_button_clicked()
-{
-    layouter->relayout_graph();
-    m_layouter_view->handle_graph_relayouted();
-    m_graph_scene->update();
 }

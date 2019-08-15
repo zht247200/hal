@@ -28,8 +28,6 @@
 #include <QObject>
 #include <QStringList>
 
-//#include "gui/graph_manager/hal_graph_widget.h"
-#include "gui/graph_layouter/old_graph_layouter.h"
 #include "netlist_watcher/netlist_watcher.h"
 
 class main_window;
@@ -64,8 +62,6 @@ public Q_SLOTS:
     void handle_close_document();
 
     void handle_filsystem_doc_changed(const QString& file_name);
-
-    void handle_relayout_button_clicked();
 
     void handle_save_triggered();
 
