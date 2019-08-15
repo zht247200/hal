@@ -82,13 +82,13 @@ void circle_separated_net::add_output()
 
     m_draw_output = true;
 
-    m_shape.moveTo(QPointF(0, -s_shape_width / 2));
+    m_shape.moveTo(QPointF(0, -s_shape_spacing / 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_wire_length + s_circle_offset, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_width / 2));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_spacing / 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_radius * 2, m_shape.currentPosition().y()));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() + s_radius * 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_radius * 2, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_width / 2));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_spacing / 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_circle_offset, m_shape.currentPosition().y()));
     m_shape.closeSubpath();
 }
@@ -98,13 +98,13 @@ void circle_separated_net::add_input(const QPointF& scene_position)
     QPointF mapped_position = mapFromScene(scene_position);
     m_input_wires.append(mapped_position);
 
-    m_shape.moveTo(QPointF(mapped_position.x(), mapped_position.y() - s_shape_width / 2));
+    m_shape.moveTo(QPointF(mapped_position.x(), mapped_position.y() - s_shape_spacing / 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_circle_offset, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_width / 2));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_spacing / 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_radius * 2, m_shape.currentPosition().y()));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() + s_radius * 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_radius * 2, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_width / 2));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_spacing / 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_wire_length + s_circle_offset, m_shape.currentPosition().y()));
     m_shape.closeSubpath();
 }

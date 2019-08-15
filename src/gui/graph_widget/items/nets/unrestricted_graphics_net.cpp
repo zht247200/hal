@@ -38,7 +38,7 @@ void unrestricted_graphics_net::paint(QPainter* painter, const QStyleOptionGraph
 void unrestricted_graphics_net::finalize()
 {
     QPainterPathStroker stroker;
-    stroker.setWidth(s_shape_width);
+    stroker.setWidth(s_shape_spacing);
     m_rect  = m_path.boundingRect();
     m_shape = stroker.createStroke(m_path);
 }
