@@ -76,7 +76,7 @@ void arrow_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIte
 {
     Q_UNUSED(widget);
 
-    if (s_lod < graph_widget_constants::global_net_min_lod)
+    if (s_lod < graph_widget_constants::separated_net_min_lod)
         return;
 
     QColor color = (option->state & QStyle::State_Selected) ? s_selection_color : m_color;
@@ -187,7 +187,7 @@ void arrow_separated_net::finalize()
 {
     qreal spacing = 1;
 
-    if (s_pen_width > 1)
+    if (s_pen_width > spacing)
         spacing = s_pen_width; // TOO BIG, DOESNT MATTER
 
     m_rect = m_shape.boundingRect();

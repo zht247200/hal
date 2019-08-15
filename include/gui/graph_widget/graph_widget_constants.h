@@ -18,9 +18,6 @@ static const qreal net_max_lod = 0.4; // if current lod > than this use highest 
 static const qreal separated_net_min_lod = 0.1; // if current lod < than this use lowest level of detail
 static const qreal separated_net_max_lod = 0.4; // if current lod > than this use highest level of detail
 
-static const qreal global_net_min_lod = 0.1; // if current lod < than this use lowest level of detail
-static const qreal global_net_max_lod = 0.4; // if current lod > than this use highest level of detail
-
 static const qreal net_fade_in_lod = 0.1;
 static const qreal net_fade_out_lod = 0.4;
 

@@ -31,7 +31,7 @@ void circle_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIt
 {
     Q_UNUSED(widget);
 
-    if (s_lod < graph_widget_constants::global_net_min_lod)
+    if (s_lod < graph_widget_constants::separated_net_min_lod)
         return;
 
     QColor color = (option->state & QStyle::State_Selected) ? s_selection_color : m_color;
@@ -45,24 +45,32 @@ void circle_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIt
     if (m_draw_output)
     {
         painter->drawLine(QPointF(0, 0), QPointF(s_wire_length, 0));
+        bool original_antialiasing = painter->renderHints() & QPainter::Antialiasing;
         painter->setRenderHint(QPainter::Antialiasing, true);
-        painter->drawEllipse(QPointF(s_wire_length + s_circle_offset + s_radius, 0), s_radius, s_radius);
-        painter->setRenderHint(QPainter::Antialiasing, false);
+        painter->drawEllipse(QPointF(s_wire_length + s_circle_offset, 0), s_radius, s_radius);
+        painter->setRenderHint(QPainter::Antialiasing, original_antialiasing);
     }
+
+    bool original_antialiasing = painter->renderHints() & QPainter::Antialiasing;
 
     for (const QPointF& position : m_input_wires)
     {
         QPointF to(position.x() - s_wire_length, position.y());
         painter->drawLine(position, to);
         painter->setRenderHint(QPainter::Antialiasing, true);
-        painter->drawEllipse(QPointF(to.x() - s_circle_offset - s_radius, to.y()), s_radius, s_radius);
-        painter->setRenderHint(QPainter::Antialiasing, false);
+        painter->drawEllipse(QPointF(to.x() - s_circle_offset, to.y()), s_radius, s_radius);
+        painter->setRenderHint(QPainter::Antialiasing, original_antialiasing);
     }
 
 #ifdef HAL_DEBUG_GUI_GRAPHICS
+    bool original_cosmetic = s_pen.isCosmetic();
+    s_pen.setCosmetic(true);
+    painter->setRenderHint(QPainter::Antialiasing, true);
     s_pen.setColor(Qt::green);
     painter->setPen(s_pen);
     painter->drawPath(m_shape);
+    painter->setRenderHint(QPainter::Antialiasing, original_antialiasing);
+    s_pen.setCosmetic(original_cosmetic);
 #endif
 
     painter->setBrush(QBrush());
@@ -77,20 +85,20 @@ void circle_separated_net::set_visuals(const graphics_net::visuals& v)
 
 void circle_separated_net::add_output()
 {
-    if (m_draw_output)
-        return;
+    assert(!m_draw_output);
 
     m_draw_output = true;
 
-    m_shape.moveTo(QPointF(0, -s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_wire_length + s_circle_offset, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_radius * 2, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() + s_radius * 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_radius * 2, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_circle_offset, m_shape.currentPosition().y()));
+    m_shape.moveTo(QPointF(-s_shape_spacing, -s_shape_spacing));
+    m_shape.lineTo(QPointF(s_wire_length + s_shape_spacing, -s_shape_spacing));
+    m_shape.lineTo(QPointF(s_wire_length + s_shape_spacing, s_shape_spacing));
+    m_shape.lineTo(QPointF(-s_shape_spacing, s_shape_spacing));
     m_shape.closeSubpath();
+
+    const QPointF point(s_wire_length + s_circle_offset, 0);
+    const qreal radius = s_radius + s_shape_spacing;
+
+    m_shape.addEllipse(point, radius, radius);
 }
 
 void circle_separated_net::add_input(const QPointF& scene_position)
@@ -98,21 +106,30 @@ void circle_separated_net::add_input(const QPointF& scene_position)
     QPointF mapped_position = mapFromScene(scene_position);
     m_input_wires.append(mapped_position);
 
-    m_shape.moveTo(QPointF(mapped_position.x(), mapped_position.y() - s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_circle_offset, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_radius * 2, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() + s_radius * 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_radius * 2, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - s_radius + s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_wire_length + s_circle_offset, m_shape.currentPosition().y()));
+    const qreal x = mapped_position.x() + s_shape_spacing;
+    const qreal y = mapped_position.y();
+
+    m_shape.moveTo(QPointF(x, y - s_shape_spacing));
+    m_shape.lineTo(QPointF(x - s_wire_length - s_shape_spacing * 2, y - s_shape_spacing));
+    m_shape.lineTo(QPointF(x - s_wire_length - s_shape_spacing * 2, y + s_shape_spacing));
+    m_shape.lineTo(QPointF(x, y + s_shape_spacing));
     m_shape.closeSubpath();
+
+    const QPointF point(mapped_position.x() - s_wire_length - s_circle_offset, mapped_position.y());
+    const qreal radius = s_radius + s_shape_spacing;
+
+    m_shape.addEllipse(point, radius, radius);
 }
 
 void circle_separated_net::finalize()
 {
+    qreal spacing = 1;
+
+    if (s_pen_width > spacing)
+        spacing = s_pen_width; // TOO BIG, DOESNT MATTER
+
     m_rect = m_shape.boundingRect();
-    m_rect.adjust(-1, -1, 1, 1);
+    m_rect.adjust(-spacing, -spacing, spacing, spacing);
 }
 
 qreal circle_separated_net::input_width() const
