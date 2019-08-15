@@ -85,15 +85,26 @@ void labeled_separated_net::add_output()
 
     m_draw_output = true;
 
-    m_shape.moveTo(QPointF(0, -s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_wire_length + s_text_offset, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - QFontMetricsF(s_font).height() / 2 + s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + m_text_width, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() + QFontMetricsF(s_font).height()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - m_text_width, m_shape.currentPosition().y()));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - QFontMetricsF(s_font).height() / 2 + s_shape_spacing / 2));
-    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_text_offset, m_shape.currentPosition().y()));
+    // 1 SUBPATH
+
+    // 2 SUBPATHS
+    m_shape.moveTo(QPointF(-s_shape_spacing, -s_shape_spacing));
+    m_shape.lineTo(QPointF(s_wire_length + s_shape_spacing, -s_shape_spacing));
+    m_shape.lineTo(QPointF(s_wire_length + s_shape_spacing, s_shape_spacing));
+    m_shape.lineTo(QPointF(-s_shape_spacing, s_shape_spacing));
     m_shape.closeSubpath();
+
+    // TBC...
+
+//    m_shape.moveTo(QPointF(0, -s_shape_spacing / 2));
+//    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_wire_length + s_text_offset, m_shape.currentPosition().y()));
+//    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - QFontMetricsF(s_font).height() / 2 + s_shape_spacing / 2));
+//    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + m_text_width, m_shape.currentPosition().y()));
+//    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() + QFontMetricsF(s_font).height()));
+//    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - m_text_width, m_shape.currentPosition().y()));
+//    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - QFontMetricsF(s_font).height() / 2 + s_shape_spacing / 2));
+//    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_text_offset, m_shape.currentPosition().y()));
+//    m_shape.closeSubpath();
 }
 
 void labeled_separated_net::add_input(const QPointF& scene_position)

@@ -99,6 +99,8 @@ void circle_separated_net::add_output()
     const qreal radius = s_radius + s_shape_spacing;
 
     m_shape.addEllipse(point, radius, radius);
+
+    // MAYBE BOUNDING RECT IS BETTER HERE
 }
 
 void circle_separated_net::add_input(const QPointF& scene_position)
@@ -119,6 +121,8 @@ void circle_separated_net::add_input(const QPointF& scene_position)
     const qreal radius = s_radius + s_shape_spacing;
 
     m_shape.addEllipse(point, radius, radius);
+
+    // MAYBE BOUNDING RECT IS BETTER HERE
 }
 
 void circle_separated_net::finalize()
