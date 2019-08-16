@@ -1,5 +1,7 @@
 #include "gui/graph_widget/contexts/cone_context.h"
 
+#include "gui/graph_widget/layouters/cone_layouter.h"
+#include "gui/graph_widget/shaders/cone_shader.h"
 #include "gui/gui_globals.h"
 
 cone_context::cone_context(const QString& name) : graph_context(type::dynamic, g_graph_context_manager.get_default_layouter(this), g_graph_context_manager.get_default_shader(this)),

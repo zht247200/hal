@@ -1,7 +1,6 @@
 #include "gui/graph_widget/shaders/graph_shader.h"
 
-graph_shader::graph_shader(const graph_context* const context) :
-    m_context(context)
+graph_shader::graph_shader()
 {
 
 }

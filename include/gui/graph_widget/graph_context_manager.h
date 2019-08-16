@@ -11,10 +11,14 @@ class module;
 class net;
 
 class cone_context;
+class cone_layouter;
+class cone_shader;
 class dynamic_context;
-class graph_layouter;
-class graph_shader;
+class dynamic_layouter;
+class dynamic_shader;
 class module_context;
+class module_layouter;
+class module_shader;
 
 class graph_context_manager
 {
@@ -56,13 +60,13 @@ public:
     void handle_net_dst_added(const std::shared_ptr<net> n, const u32 dst_gate_id) const;
     void handle_net_dst_removed(const std::shared_ptr<net> n, const u32 dst_gate_id) const;
 
-    graph_layouter* get_default_layouter(module_context* const context) const;
-    graph_layouter* get_default_layouter(cone_context* const context) const;
-    graph_layouter* get_default_layouter(dynamic_context* const context) const;
+    module_layouter* get_default_layouter(module_context* const context) const;
+    cone_layouter* get_default_layouter(cone_context* const context) const;
+    dynamic_layouter* get_default_layouter(dynamic_context* const context) const;
 
-    graph_shader* get_default_shader(module_context* const context) const;
-    graph_shader* get_default_shader(cone_context* const context) const;
-    graph_shader* get_default_shader(dynamic_context* const context) const;
+    module_shader* get_default_shader(module_context* const context) const;
+    cone_shader* get_default_shader(cone_context* const context) const;
+    dynamic_shader* get_default_shader(dynamic_context* const context) const;
 
 private:
     static int s_max_module_contexts;

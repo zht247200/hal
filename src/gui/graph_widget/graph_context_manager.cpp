@@ -286,7 +286,7 @@ void graph_context_manager::handle_net_dst_removed(const std::shared_ptr<net> n,
     // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
 }
 
-graph_layouter* graph_context_manager::get_default_layouter(module_context* const context) const
+module_layouter* graph_context_manager::get_default_layouter(module_context* const context) const
 {
     // USE SETTINGS + FACTORY
     return new standard_module_layouter(context);
@@ -294,32 +294,34 @@ graph_layouter* graph_context_manager::get_default_layouter(module_context* cons
     //return new minimal_graph_layouter(context);
 }
 
-graph_layouter *graph_context_manager::get_default_layouter(cone_context* const context) const
+cone_layouter *graph_context_manager::get_default_layouter(cone_context* const context) const
 {
     // USE SETTINGS + FACTORY
     return new standard_cone_layouter(context);
 }
 
-graph_layouter* graph_context_manager::get_default_layouter(dynamic_context* const context) const
+dynamic_layouter* graph_context_manager::get_default_layouter(dynamic_context* const context) const
 {
     // USE SETTINGS + FACTORY
     //return new standard_dynamic_layouter(context);
     return nullptr;
 }
 
-graph_shader* graph_context_manager::get_default_shader(module_context* const context) const
+module_shader* graph_context_manager::get_default_shader(module_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new standard_dynamic_shader(context);
+    //return new standard_dynamic_shader(context);
+    return nullptr;
 }
 
-graph_shader *graph_context_manager::get_default_shader(cone_context* const context) const
+cone_shader *graph_context_manager::get_default_shader(cone_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new standard_dynamic_shader(context);
+    //return new standard_dynamic_shader(context);
+    return nullptr;
 }
 
-graph_shader* graph_context_manager::get_default_shader(dynamic_context* const context) const
+dynamic_shader* graph_context_manager::get_default_shader(dynamic_context* const context) const
 {
     // USE SETTINGS + FACTORY
     return new standard_dynamic_shader(context);

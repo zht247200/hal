@@ -1,6 +1,7 @@
 #include "gui/graph_widget/contexts/module_context.h"
 
 #include "gui/graph_widget/layouters/module_layouter.h"
+#include "gui/graph_widget/shaders/module_shader.h"
 #include "gui/gui_globals.h"
 
 module_context::module_context(const std::shared_ptr<const module> m) : graph_context(type::module, g_graph_context_manager.get_default_layouter(this), g_graph_context_manager.get_default_shader(this)),
@@ -35,7 +36,7 @@ module_context::module_context(const std::shared_ptr<const module> m) : graph_co
     }
 
     static_cast<module_layouter*>(m_layouter)->add(m_modules, m_gates, m_internal_nets, m_local_io_nets, m_global_io_nets);
-    m_shader->add(m_modules, m_gates, m_internal_nets);
+    static_cast<module_shader*>(m_shader)->add(m_modules, m_gates, m_internal_nets);
 
     schedule_relayout();
 }
@@ -250,8 +251,8 @@ void module_context::apply_changes()
     static_cast<module_layouter*>(m_layouter)->remove(m_removed_modules, m_removed_gates, m_removed_internal_nets, m_removed_local_io_nets, m_removed_global_io_nets);
     static_cast<module_layouter*>(m_layouter)->add(m_added_modules, m_added_gates, m_added_internal_nets, m_added_local_io_nets, m_added_global_io_nets);
 
-    m_shader->remove(m_removed_modules, m_removed_gates, m_removed_internal_nets);
-    m_shader->add(m_added_modules, m_added_gates, m_added_internal_nets);
+    static_cast<module_shader*>(m_shader)->remove(m_removed_modules, m_removed_gates, m_removed_internal_nets);
+    static_cast<module_shader*>(m_shader)->add(m_added_modules, m_added_gates, m_added_internal_nets);
 
     m_added_modules.clear();
     m_added_gates.clear();

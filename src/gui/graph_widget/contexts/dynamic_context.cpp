@@ -1,6 +1,7 @@
 #include "gui/graph_widget/contexts/dynamic_context.h"
 
 #include "gui/graph_widget/layouters/dynamic_layouter.h"
+#include "gui/graph_widget/shaders/dynamic_shader.h"
 #include "gui/gui_globals.h"
 
 bool dynamic_context::m_expand_all_nets = false;
@@ -116,8 +117,8 @@ void dynamic_context::apply_changes()
     static_cast<dynamic_layouter*>(m_layouter)->remove(m_removed_modules, m_removed_gates, m_removed_nets);
     static_cast<dynamic_layouter*>(m_layouter)->add(m_added_modules, m_added_gates, m_added_nets);
 
-    m_shader->remove(m_removed_modules, m_removed_gates, m_removed_nets);
-    m_shader->add(m_added_modules, m_added_gates, m_added_nets);
+    static_cast<dynamic_shader*>(m_shader)->remove(m_removed_modules, m_removed_gates, m_removed_nets);
+    static_cast<dynamic_shader*>(m_shader)->add(m_added_modules, m_added_gates, m_added_nets);
 
     m_added_modules.clear();
     m_added_gates.clear();
