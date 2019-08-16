@@ -59,6 +59,8 @@ bool module_context::contains_net(const u32 id) const
 
 void module_context::add(const QSet<u32>& modules, const QSet<u32>& gates)
 {
+    // ASSERT INPUT VALIDITY ???
+
     QSet<u32> new_modules = modules - m_modules;
     QSet<u32> new_gates = gates - m_gates;
 
@@ -116,6 +118,8 @@ void module_context::add(const QSet<u32>& modules, const QSet<u32>& gates)
 
 void module_context::remove(const QSet<u32>& modules, const QSet<u32>& gates)
 {
+    // ASSERT INPUT VALIDITY ???
+
     QSet<u32> old_modules = modules & m_modules;
     QSet<u32> old_gates = gates & m_gates;
 
@@ -227,22 +231,6 @@ const QSet<u32>& module_context::global_io_nets() const
     return m_global_io_nets;
 }
 
-void module_context::evaluate_changes()
-{
-    if (!m_added_modules.isEmpty()          ||
-        !m_added_gates.isEmpty()            ||
-        !m_added_internal_nets.isEmpty()    ||
-        !m_added_local_io_nets.isEmpty()    ||
-        !m_added_global_io_nets.isEmpty()   ||
-        !m_removed_modules.isEmpty()        ||
-        !m_removed_gates.isEmpty()          ||
-        !m_removed_internal_nets.isEmpty()  ||
-        !m_removed_local_io_nets.isEmpty()  ||
-        !m_removed_global_io_nets.isEmpty())
-
-        m_unapplied_changes = true;
-}
-
 void module_context::apply_changes()
 {
     assert(m_unapplied_changes);
@@ -280,4 +268,20 @@ void module_context::apply_changes()
     m_unapplied_changes = false;
 
     schedule_relayout();
+}
+
+void module_context::evaluate_changes()
+{
+    if (!m_added_modules.isEmpty()         ||
+        !m_added_gates.isEmpty()           ||
+        !m_added_internal_nets.isEmpty()   ||
+        !m_added_local_io_nets.isEmpty()   ||
+        !m_added_global_io_nets.isEmpty()  ||
+        !m_removed_modules.isEmpty()       ||
+        !m_removed_gates.isEmpty()         ||
+        !m_removed_internal_nets.isEmpty() ||
+        !m_removed_local_io_nets.isEmpty() ||
+        !m_removed_global_io_nets.isEmpty())
+
+        m_unapplied_changes = true;
 }

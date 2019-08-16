@@ -29,8 +29,8 @@ public:
     const QSet<u32>& global_io_nets() const;
 
 private:
-    void evaluate_changes();
     void apply_changes() override;
+    void evaluate_changes();
 
     const u32 m_id;
 
