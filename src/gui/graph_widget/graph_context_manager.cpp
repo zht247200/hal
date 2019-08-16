@@ -7,7 +7,7 @@
 #include "gui/graph_widget/layouters/standard_module_layouter.h"
 #include "gui/graph_widget/layouters/standard_module_layouter_v2.h"
 #include "gui/graph_widget/layouters/minimal_module_layouter.h"
-#include "gui/graph_widget/shaders/module_shader.h"
+#include "gui/graph_widget/shaders/standard_dynamic_shader.h"
 #include "gui/gui_globals.h"
 
 int graph_context_manager::s_max_module_contexts = 10; // USE SETTINGS FOR THIS
@@ -310,17 +310,17 @@ graph_layouter* graph_context_manager::get_default_layouter(dynamic_context* con
 graph_shader* graph_context_manager::get_default_shader(module_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new module_shader(context);
+    return new standard_dynamic_shader(context);
 }
 
 graph_shader *graph_context_manager::get_default_shader(cone_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new module_shader(context);
+    return new standard_dynamic_shader(context);
 }
 
 graph_shader* graph_context_manager::get_default_shader(dynamic_context* const context) const
 {
     // USE SETTINGS + FACTORY
-    return new module_shader(context);
+    return new standard_dynamic_shader(context);
 }

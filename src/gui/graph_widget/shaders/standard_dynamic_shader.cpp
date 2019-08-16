@@ -1,31 +1,31 @@
-#include "gui/graph_widget/shaders/module_shader.h"
+#include "gui/graph_widget/shaders/standard_dynamic_shader.h"
 
 #include "gui/graph_widget/contexts/graph_context.h"
 #include "gui/gui_globals.h"
 #include "gui/module_model/module_item.h"
 
-bool module_shader::s_color_gates = true; // SET VIA SETTING
+bool standard_dynamic_shader::s_color_gates = true; // SET VIA SETTING
 
-module_shader::module_shader(const graph_context* const context) : graph_shader(context)
+standard_dynamic_shader::standard_dynamic_shader(const graph_context* const context) : graph_shader(context)
 {
 
 }
 
-void module_shader::add(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
-{
-    Q_UNUSED(modules)
-    Q_UNUSED(gates)
-    Q_UNUSED(nets)
-}
-
-void module_shader::remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
+void standard_dynamic_shader::add(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
 {
     Q_UNUSED(modules)
     Q_UNUSED(gates)
     Q_UNUSED(nets)
 }
 
-void module_shader::update()
+void standard_dynamic_shader::remove(const QSet<u32> modules, const QSet<u32> gates, const QSet<u32> nets)
+{
+    Q_UNUSED(modules)
+    Q_UNUSED(gates)
+    Q_UNUSED(nets)
+}
+
+void standard_dynamic_shader::update()
 {
     m_shading.module_visuals.clear();
     m_shading.gate_visuals.clear();
