@@ -3,6 +3,7 @@
 #include "gui/graph_widget/contexts/cone_context.h"
 #include "gui/graph_widget/contexts/dynamic_context.h"
 #include "gui/graph_widget/contexts/module_context.h"
+#include "gui/graph_widget/layouters/debug_layouter.h"
 #include "gui/graph_widget/layouters/standard_cone_layouter.h"
 #include "gui/graph_widget/layouters/standard_module_layouter.h"
 #include "gui/graph_widget/layouters/standard_module_layouter_v2.h"
@@ -293,6 +294,7 @@ module_layouter* graph_context_manager::get_default_layouter(module_context* con
     return new standard_module_layouter(context);
     //return new standard_graph_layouter_v2(context);
     //return new minimal_graph_layouter(context);
+    //return new debug_layouter(context);
 }
 
 cone_layouter *graph_context_manager::get_default_layouter(cone_context* const context) const

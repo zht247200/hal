@@ -11,11 +11,11 @@
 #include "gui/graph_widget/graph_graphics_view.h"
 #include "gui/graph_widget/graph_navigation_widget.h"
 #include "gui/graph_widget/graph_layout_progress_widget.h"
-#include "gui/graph_widget/graph_layout_spinner_widget.h"
 #include "gui/graph_widget/graphics_scene.h"
 #include "gui/graph_widget/items/graphics_gate.h"
 #include "gui/gui_globals.h"
 #include "gui/overlay/dialog_overlay.h"
+#include "gui/spinner_widget/spinner_widget.h"
 #include "gui/toolbar/toolbar.h"
 
 #include <QInputDialog>
@@ -31,7 +31,7 @@ graph_widget::graph_widget(QWidget* parent) : content_widget("Graph", parent),
     m_overlay(new dialog_overlay(this)),
     m_navigation_widget(new graph_navigation_widget(nullptr)),
     m_progress_widget(new graph_layout_progress_widget(this)),
-    m_spinner_widget(new graph_layout_spinner_widget(this)),
+    m_spinner_widget(new spinner_widget(this)),
     m_current_expansion(0)
 {
     connect(m_navigation_widget, &graph_navigation_widget::navigation_requested, this, &graph_widget::handle_navigation_jump_requested);
@@ -44,6 +44,9 @@ graph_widget::graph_widget(QWidget* parent) : content_widget("Graph", parent),
 
     m_overlay->hide();
     m_overlay->set_widget(m_navigation_widget);
+
+    m_spinner_widget->hide();
+    m_spinner_widget->setFixedSize(200, 200);
 
     m_content_layout->addWidget(m_view);
 
@@ -105,15 +108,8 @@ void graph_widget::handle_scene_unavailable()
 
     disconnect(m_overlay, &dialog_overlay::clicked, m_overlay, &dialog_overlay::hide);
 
-    //m_progress_widget->set_direction(graph_layout_progress_widget::direction::right);
-    //m_progress_widget->set_direction(graph_layout_progress_widget::direction::left);
-
-    //m_overlay->set_widget(m_progress_widget);
     m_overlay->set_widget(m_spinner_widget);
-    //m_progress_widget->start();
-
-    if (m_overlay->isHidden())
-        m_overlay->show();
+    m_overlay->show();
 }
 
 void graph_widget::handle_context_about_to_be_deleted()
@@ -534,6 +530,8 @@ void graph_widget::change_context(graph_context* const context)
 
     if (m_context->scene_available())
         m_view->setScene(m_context->scene());
+    else
+        handle_scene_unavailable();
 }
 
 void graph_widget::reset_focus()
