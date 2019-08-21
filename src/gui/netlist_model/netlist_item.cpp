@@ -2,7 +2,7 @@
 
 #include "gui/gui_utility.h"
 
-netlist_item::netlist_item(const QString& name, const int id) :
+netlist_item::netlist_item(const QString& name, const u32 id) :
     m_parent(nullptr),
     m_name(name),
     m_id(id),
@@ -13,7 +13,8 @@ netlist_item::netlist_item(const QString& name, const int id) :
 
 netlist_item::~netlist_item()
 {
-    for (const netlist_item* const& item : m_child_items)
+    // UNSURE ABOUT THIS
+    for (const netlist_item* const item : m_child_items)
         delete item;
 }
 
@@ -25,18 +26,6 @@ void netlist_item::insert_child(int row, netlist_item* child)
 void netlist_item::remove_child(netlist_item* child)
 {
     m_child_items.removeOne(child);
-}
-
-void netlist_item::append_child(netlist_item* child)
-{
-    // PROBABLY OBSOLETE
-    m_child_items.append(child);
-}
-
-void netlist_item::prepend_child(netlist_item* child)
-{
-    // PROBABLY OBSOLETE
-    m_child_items.prepend(child);
 }
 
 netlist_item* netlist_item::parent()

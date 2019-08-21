@@ -34,14 +34,11 @@
 class netlist_item
 {
 public:
-    netlist_item(const QString& name, const int id);
+    netlist_item(const QString& name, const u32 id);
     ~netlist_item();
 
     void insert_child(int row, netlist_item* child);
     void remove_child(netlist_item* child);
-
-    void append_child(netlist_item* child);
-    void prepend_child(netlist_item* child);
 
     netlist_item* parent();
     netlist_item* child(int row);
