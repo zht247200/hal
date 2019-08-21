@@ -25,28 +25,16 @@
 #ifndef MODULE_WIDGET_H
 #define MODULE_WIDGET_H
 
-#include "def.h"
-
-#include "netlist/event_system/module_event_handler.h"
-#include "netlist/module.h"
-
 #include "gui/content_widget/content_widget.h"
-#include "gui/searchbar/searchbar.h"
 #include "gui/selection_relay/selection_relay.h"
 
-#include <QAction>
 #include <QItemSelection>
-#include <QList>
 #include <QObject>
-#include <QSortFilterProxyModel>
-#include <QTreeView>
 
-class graph_navigation_model;
-class QTreeView;
-class graph_navigation_proxy_model;
-
-class tree_navigation_model;
 class module_proxy_model;
+class searchbar;
+
+class QTreeView;
 
 class module_widget : public content_widget
 {
@@ -55,32 +43,22 @@ class module_widget : public content_widget
 public:
     module_widget(QWidget* parent = nullptr);
 
-    virtual void setup_toolbar(toolbar* toolbar) Q_DECL_OVERRIDE;
-    virtual QList<QShortcut*> create_shortcuts() Q_DECL_OVERRIDE;
+    virtual void setup_toolbar(toolbar* toolbar) override;
+    virtual QList<QShortcut*> create_shortcuts() override;
 
 public Q_SLOTS:
-    //void filter();
     void toggle_searchbar();
     void filter(const QString& text);
-    void handle_tree_view_context_menu_requested(const QPoint& point);
-    void handle_filter_action_triggered();
-    void handle_tree_selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
-
-    void toggle_resize_columns();
+    void handle_intern_selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
+    void handle_custom_context_menu_requested(const QPoint& point);
 
 private:
     QTreeView* m_tree_view;
-    searchbar m_searchbar;
-
-    QAction* m_filter_action;
-
-    QSortFilterProxyModel* m_current_model;
-
-    QList<QRegExp*> m_regexps;
-
-    bool m_ignore_selection_change;
+    searchbar* m_searchbar;
 
     module_proxy_model* m_module_proxy_model;
+
+    bool m_ignore_selection_change;
 };
 
 #endif // MODULE_WIDGET_H
