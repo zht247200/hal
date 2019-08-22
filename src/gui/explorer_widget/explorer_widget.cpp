@@ -16,7 +16,9 @@
 explorer_widget::explorer_widget(QWidget* parent) : content_widget("Explorer", parent),
     m_tree_view(new QTreeView(this)),
     m_searchbar(new searchbar(this)),
-    m_netlist_proxy_model(new netlist_proxy_model(this))
+    m_netlist_proxy_model(new netlist_proxy_model(this)),
+    m_show_gates(true),
+    m_show_nets(true)
 {
     connect(m_tree_view->selectionModel(), &QItemSelectionModel::selectionChanged, this, &explorer_widget::handle_intern_selection_changed);
     connect(m_tree_view, &QTreeView::customContextMenuRequested, this, &explorer_widget::handle_custom_context_menu_requested);
@@ -60,6 +62,16 @@ QList<QShortcut*> explorer_widget::create_shortcuts()
     list.append(search_shortcut);
 
     return list;
+}
+
+bool explorer_widget::show_gates() const
+{
+    return m_show_gates;
+}
+
+bool explorer_widget::show_nets() const
+{
+    return m_show_nets;
 }
 
 void explorer_widget::toggle_searchbar()

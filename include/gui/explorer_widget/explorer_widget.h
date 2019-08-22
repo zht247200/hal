@@ -46,6 +46,9 @@ public:
     virtual void setup_toolbar(toolbar* toolbar) override;
     virtual QList<QShortcut*> create_shortcuts() override;
 
+    bool show_gates() const;
+    bool show_nets() const;
+
 public Q_SLOTS:
     void toggle_searchbar();
     void filter(const QString& text);
@@ -57,6 +60,9 @@ private:
     searchbar* m_searchbar;
 
     netlist_proxy_model* m_netlist_proxy_model;
+
+    bool m_show_gates;
+    bool m_show_nets;
 
     bool m_ignore_selection_change;
 };

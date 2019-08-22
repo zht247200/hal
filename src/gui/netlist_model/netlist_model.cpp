@@ -1,13 +1,12 @@
 #include "gui/netlist_model/netlist_model.h"
 
-#include "gui/netlist_model/netlist_item.h"
-
-#include "gui/gui_globals.h"
-#include "gui/gui_utility.h"
-
 #include "netlist/gate.h"
 #include "netlist/net.h"
 #include "netlist/module.h"
+
+#include "gui/gui_globals.h"
+#include "gui/gui_utility.h"
+#include "gui/netlist_model/netlist_item.h"
 
 netlist_model::netlist_model(QObject* parent) : QAbstractItemModel(parent)
 {

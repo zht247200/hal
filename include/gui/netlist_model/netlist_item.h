@@ -26,48 +26,44 @@
 
 #include "def.h"
 
+#include "gui/gui_def.h"
+
 #include <QColor>
 #include <QList>
 #include <QString>
 #include <QVariant>
 
+class module_netlist_item;
+
 class netlist_item
 {
 public:
-    netlist_item(const QString& name, const u32 id);
-    ~netlist_item();
+    netlist_item(const hal::item_type type, const u32 id, const QString& name);
+    virtual ~netlist_item() = default;
 
-    void insert_child(int row, netlist_item* child);
-    void remove_child(netlist_item* child);
+    module_netlist_item* parent() const;
+    const module_netlist_item* const_parent() const;
 
-    netlist_item* parent();
-    netlist_item* child(int row);
-
-    const netlist_item* const_parent() const;
-    const netlist_item* const_child(int row) const;
-
-    int childCount() const;
     QVariant data(int column) const;
-    int row() const;
 
+    hal::item_type type() const;
     QString name() const;
     u32 id() const;
-    QColor color() const;
     bool highlighted() const;
 
-    void set_parent(netlist_item* parent);
+    void set_parent(module_netlist_item* parent);
     void set_name(const QString& name);
-    void set_color(const QColor& color);
     void set_highlighted(const bool highlighted);
 
+protected:
+    module_netlist_item* m_parent;
+
 private:
-    netlist_item* m_parent;
-    QList<netlist_item*> m_child_items;
+    hal::item_type m_item_type;
 
-    QString m_name;
     u32 m_id;
+    QString m_name;
 
-    QColor m_color;
     bool m_highlighted;
 };
 

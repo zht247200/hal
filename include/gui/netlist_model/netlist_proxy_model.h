@@ -26,15 +26,20 @@
 
 #include <QSortFilterProxyModel>
 
-class netlist_proxy_model : public QSortFilterProxyModel
+class explorer_widget;
+
+class netlist_proxy_model final : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
-    netlist_proxy_model(QObject* parent = nullptr);
+    explicit netlist_proxy_model(explorer_widget* parent = nullptr);
 
 protected:
-    bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const override;
+    bool filterAcceptsRow(const int sourceRow, const QModelIndex& sourceParent) const override;
+
+private:
+    explorer_widget* m_widget;
 };
 
 #endif // NETLIST_PROXY_MODEL_H
