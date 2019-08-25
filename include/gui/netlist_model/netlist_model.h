@@ -22,6 +22,7 @@
  * SOFTWARE.
  */
 
+/*
 #ifndef NETLIST_MODEL_H
 #define NETLIST_MODEL_H
 
@@ -31,7 +32,9 @@
 #include <QModelIndex>
 #include <QVariant>
 
-class netlist_item;
+class module_netlist_item;
+class gate_netlist_item;
+class net_netlist_item;
 
 class netlist_model : public QAbstractItemModel
 {
@@ -55,11 +58,21 @@ public:
     netlist_item* get_item(const QModelIndex& index) const;
     QModelIndex get_index(const netlist_item* const item) const;
 
-    void add_item(netlist_item* item, netlist_item* parent = nullptr);
-    void remove_item(netlist_item* item);
+    void add_module(const u32 id, const u32 parent_module);
+    void add_gate(const u32 id, const u32 parent_module);
+    void add_net(const u32 id, const u32 parent_module);
+
+    void remove_module(const u32 id);
+    void remove_gate(const u32 id);
+    void remove_net(const u32 id);
 
 private:
-    netlist_item* m_root_item; // IF TOP MODULE CANT BE DELETED THIS IS NOT NECESSARY
+    module_netlist_item* m_root_item;
+
+    QMap<u32, module_netlist_item*> m_module_items;
+    QMap<u32, gate_netlist_item*> m_gate_items;
+    QMap<u32, net_netlist_item*> m_net_items;
 };
 
 #endif // NETLIST_MODEL_H
+*/

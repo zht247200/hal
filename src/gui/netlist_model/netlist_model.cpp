@@ -1,3 +1,4 @@
+/*
 #include "gui/netlist_model/netlist_model.h"
 
 #include "netlist/gate.h"
@@ -6,11 +7,11 @@
 
 #include "gui/gui_globals.h"
 #include "gui/gui_utility.h"
-#include "gui/netlist_model/netlist_item.h"
+#include "gui/netlist_model/module_netlist_item.h"
 
 netlist_model::netlist_model(QObject* parent) : QAbstractItemModel(parent)
 {
-    m_root_item = new netlist_item("", 0);
+    m_root_item = new module_netlist_item(1); // USE TOP ITEM AS ROOT ???
 }
 
 netlist_model::~netlist_model()
@@ -172,16 +173,19 @@ QModelIndex netlist_model::get_index(const netlist_item* const item) const
     return model_index;
 }
 
-void netlist_model::add_item(netlist_item* item, netlist_item* parent)
+void netlist_model::add_module(const u32 id, const u32 parent_module)
 {
-    if (!item)
-        return; //SHOULD NEVER BE REACHED
+    assert(g_netlist->get_module_by_id(id));
+    assert(g_netlist->get_module_by_id(parent_module));
+    assert(!m_module_items.contains(id));
+    assert(!m_module_items.contains(parent_module));
 
-    if (!parent)
-        parent = m_root_item;
+    module_netlist_item* item = new module_netlist_item(id);
+    module_netlist_item* parent = m_module_items.value(parent_module);
 
     item->set_parent(parent);
 
+    // INSERT BY CATEGORY
     QModelIndex index = get_index(parent);
 
     int row = 0;
@@ -197,23 +201,28 @@ void netlist_model::add_item(netlist_item* item, netlist_item* parent)
     beginInsertRows(index, row, row);
     parent->insert_child(row, item);
     endInsertRows();
+
+    m_module_items.insert(id, item);
 }
 
-void netlist_model::remove_item(netlist_item* item)
+void netlist_model::remove_module(const u32 id)
 {
-    if (!item)
-        return; // SHOULD NEVER BE REACHED
+    assert(g_netlist->get_module_by_id(id));
+    assert(m_module_items.contains(id));
+    assert(id != 1);
+
+    module_netlist_item* item = m_module_items.value(id);
+    module_netlist_item* parent = item->parent();
+    assert(parent);
+
+    QModelIndex index = get_index(parent);
 
     int row = item->row();
 
-    netlist_item* parent_item = item->parent();
-
-    if (!parent_item)
-        return; // SHOULD NEVER BE REACHED
-
-    QModelIndex index = get_index(parent_item);
-
     beginRemoveRows(index, row, row);
-    parent_item->remove_child(item);
+    parent->remove_child(item);
     endRemoveRows();
+
+    m_module_items.remove(id);
 }
+*/
