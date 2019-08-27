@@ -7,6 +7,8 @@
 #include "gui/graph_widget/contexts/module_context.h"
 #include "gui/graph_widget/graphics_factory.h"
 #include "gui/graph_widget/graphics_scene.h"
+#include "gui/graph_widget/items/graphics_gate.h"
+#include "gui/graph_widget/items/graphics_module.h"
 #include "gui/graph_widget/items/nets/arrow_separated_net.h"
 #include "gui/graph_widget/items/nets/circle_separated_net.h"
 #include "gui/graph_widget/items/nets/labeled_separated_net.h"

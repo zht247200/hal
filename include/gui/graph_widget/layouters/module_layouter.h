@@ -6,7 +6,7 @@
 class module_context;
 
 class module_layouter : public graph_layouter
-{
+{   
 public:
     explicit module_layouter(const module_context* const context);
 

@@ -223,28 +223,31 @@ void graph_context_manager::handle_net_created(const std::shared_ptr<net> n) con
 
 void graph_context_manager::handle_net_removed(const std::shared_ptr<net> n) const
 {
-    // IF NET IS PART OF CONTEXT UPDATE
-//    for (module_context* context : m_module_contexts)
-//        if (context->nets().contains(n->get_id()))
-//            context->request_update();
+    for (module_context* const context : m_module_contexts)
+        if (context->internal_nets().contains(n->get_id()) || context->local_io_nets().contains(n->get_id()) || context->global_io_nets().contains(n->get_id()))
+            context->schedule_relayout();
+    // CANT REMOVE NET FROM MODULE CONTEXT ATM, FIX
 
-//    for (dynamic_context* context : m_dynamic_contexts)
-//        if (context->nets().contains(n->get_id()))
-//            context->request_update();
-
-    // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
+    for (dynamic_context* const context : m_dynamic_contexts)
+        if (context->nets().contains(n->get_id()))
+            context->remove(QSet<u32>(), QSet<u32>(), QSet<u32>{n->get_id()});
+        else
+            context->schedule_relayout();
 }
 
 void graph_context_manager::handle_net_name_changed(const std::shared_ptr<net> n) const
 {
     Q_UNUSED(n)
 
-    // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
+    debug_relayout_all();
 }
 
 void graph_context_manager::handle_net_src_changed(const std::shared_ptr<net> n) const
 {
-    // IF NET IS PART OF CONTEXT UPDATE
+    Q_UNUSED(n)
+
+    debug_relayout_all();
+
 //    for (module_context* context : m_module_contexts)
 //        if (context->nets().contains(n->get_id()))
 //            context->request_update();
@@ -252,68 +255,44 @@ void graph_context_manager::handle_net_src_changed(const std::shared_ptr<net> n)
 //    for (dynamic_context* context : m_dynamic_contexts)
 //        if (context->nets().contains(n->get_id()))
 //            context->request_update();
-
-    // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
 }
 
 void graph_context_manager::handle_net_dst_added(const std::shared_ptr<net> n, const u32 dst_gate_id) const
 {
+    Q_UNUSED(n)
     Q_UNUSED(dst_gate_id)
 
-    // IF NET OR DST GATE IS PART OF CONTEXT UPDATE
-//    for (module_context* context : m_module_contexts)
-//        if (context->nets().contains(n->get_id()) || context->gates().contains(dst_gate_id))
-//            context->request_update();
+    debug_relayout_all();
 
-//    for (dynamic_context* context : m_dynamic_contexts)
-//        if (context->nets().contains(n->get_id()) || context->gates().contains(dst_gate_id))
-//            context->request_update();
+//    for (module_context* const context : m_module_contexts)
+//        if (context->internal_nets().contains(n->get_id()) || context->local_io_nets().contains(n->get_id()) || context->global_io_nets().contains(n->get_id()) || context->gates().contains(dst_gate_id))
+//            context->schedule_relayout();
 
-    // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
+//    for (dynamic_context* const context : m_dynamic_contexts)
+//        if (context->nets().contains(n->get_id()) || context->gates().contains(dst_gate_id))
+//            context->schedule_relayout();
 }
 
 void graph_context_manager::handle_net_dst_removed(const std::shared_ptr<net> n, const u32 dst_gate_id) const
 {
+    Q_UNUSED(n)
     Q_UNUSED(dst_gate_id)
 
-    // IF NET IS PART OF CONTEXT UPDATE
+    debug_relayout_all();
+
 //    for (module_context* context : m_module_contexts)
-//        if (context->nets().contains(n->get_id()))
-//            context->request_update();
+//        if (context->internal_nets().contains(n->get_id()) || context->local_io_nets().contains(n->get_id()) || context->global_io_nets().contains(n->get_id()))
+//            context->schedule_relayout();
 
 //    for (dynamic_context* context : m_dynamic_contexts)
 //        if (context->nets().contains(n->get_id()))
-//            context->request_update();
-
-    // TRIGGER RESHADE FOR ALL CONTEXTS THAT RECURSIVELY CONTAIN THE MODULE
-}
-
-module_layouter* graph_context_manager::get_default_layouter(module_context* const context) const
-{
-    // USE SETTINGS + FACTORY
-    return new standard_module_layouter(context);
-    //return new standard_graph_layouter_v2(context);
-    //return new minimal_graph_layouter(context);
-    //return new debug_layouter(context);
+//            context->schedule_relayout();
 }
 
 cone_layouter *graph_context_manager::get_default_layouter(cone_context* const context) const
 {
     // USE SETTINGS + FACTORY
     return new standard_cone_layouter(context);
-}
-
-dynamic_layouter* graph_context_manager::get_default_layouter(dynamic_context* const context) const
-{
-    // USE SETTINGS + FACTORY
-    //return new standard_dynamic_layouter(context);
-    return nullptr;
-}
-
-module_shader* graph_context_manager::get_default_shader(module_context* const context) const
-{
-    // USE SETTINGS + FACTORY
-    return new standard_module_shader(context);
 }
 
 cone_shader *graph_context_manager::get_default_shader(cone_context* const context) const
@@ -323,8 +302,14 @@ cone_shader *graph_context_manager::get_default_shader(cone_context* const conte
     return nullptr;
 }
 
-dynamic_shader* graph_context_manager::get_default_shader(dynamic_context* const context) const
+void graph_context_manager::debug_relayout_all() const
 {
-    // USE SETTINGS + FACTORY
-    return new standard_dynamic_shader(context);
+    for (module_context* const context : m_module_contexts)
+            context->schedule_relayout();
+
+    for (cone_context* const context : m_cone_contexts)
+            context->schedule_relayout();
+
+    for (dynamic_context* const context : m_dynamic_contexts)
+            context->schedule_relayout();
 }

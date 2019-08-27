@@ -5,8 +5,11 @@
 
 #include "gui/graph_widget/contexts/graph_context.h"
 
+class module_layouter;
+class module_shader;
+
 class module_context final : public graph_context
-{
+{   
 public:
     module_context(const std::shared_ptr<const module> m);
 
@@ -29,6 +32,23 @@ public:
     const QSet<u32>& global_io_nets() const;
 
 private:
+    enum class layouter
+    {
+        standard = 0,
+        minimal = 1
+    };
+
+    enum class shader
+    {
+        standard = 0
+    };
+
+    static module_layouter* create_layouter(const layouter type, module_context* const context);
+    static module_shader* create_shader(const shader type, module_context* const context);
+
+    static layouter s_default_layouter;
+    static shader s_default_shader;
+
     void apply_changes() override;
     void evaluate_changes();
 
@@ -51,6 +71,8 @@ private:
     QSet<u32> m_removed_internal_nets;
     QSet<u32> m_removed_local_io_nets;
     QSet<u32> m_removed_global_io_nets;
+
+    layouter m_layouter_type;
 };
 
 #endif // MODULE_CONTEXT_H

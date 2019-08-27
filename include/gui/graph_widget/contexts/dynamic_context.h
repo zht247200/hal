@@ -3,6 +3,9 @@
 
 #include "gui/graph_widget/contexts/graph_context.h"
 
+class dynamic_layouter;
+class dynamic_shader;
+
 class dynamic_context final : public graph_context
 {
 public:
@@ -22,6 +25,22 @@ public:
     QString name() const;
 
 private:
+    enum class layouter
+    {
+        standard = 0
+    };
+
+    enum class shader
+    {
+        standard = 0
+    };
+
+    static dynamic_layouter* create_layouter(const layouter type, dynamic_context* const context);
+    static dynamic_shader* create_shader(const shader type, dynamic_context* const context);
+
+    static layouter s_default_layouter;
+    static shader s_default_shader;
+
     static bool m_expand_all_nets;
     static bool m_expand_gnd_nets;
     static bool m_expand_vcc_nets;
@@ -43,6 +62,8 @@ private:
     QSet<u32> m_removed_modules;
     QSet<u32> m_removed_gates;
     QSet<u32> m_removed_nets;
+
+    layouter m_layouter_type;
 };
 
 #endif // DYNAMIC_CONTEXT_H

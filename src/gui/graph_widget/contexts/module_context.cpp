@@ -1,11 +1,16 @@
 #include "gui/graph_widget/contexts/module_context.h"
 
-#include "gui/graph_widget/layouters/module_layouter.h"
-#include "gui/graph_widget/shaders/module_shader.h"
+#include "gui/graph_widget/layouters/minimal_module_layouter.h"
+#include "gui/graph_widget/layouters/standard_module_layouter.h"
+#include "gui/graph_widget/shaders/standard_module_shader.h"
 #include "gui/gui_globals.h"
 
-module_context::module_context(const std::shared_ptr<const module> m) : graph_context(type::module, g_graph_context_manager.get_default_layouter(this), g_graph_context_manager.get_default_shader(this)),
-    m_id(m->get_id())
+module_context::layouter module_context::s_default_layouter = module_context::layouter::standard;
+module_context::shader module_context::s_default_shader = module_context::shader::standard;
+
+module_context::module_context(const std::shared_ptr<const module> m) : graph_context(type::module, create_layouter(s_default_layouter, this), create_shader(s_default_shader, this)),
+    m_id(m->get_id()),
+    m_layouter_type(s_default_layouter)
 {
     for (const std::shared_ptr<module>& s : m->get_submodules())
         m_modules.insert(s->get_id());
@@ -230,6 +235,23 @@ const QSet<u32>& module_context::local_io_nets() const
 const QSet<u32>& module_context::global_io_nets() const
 {
     return m_global_io_nets;
+}
+
+module_layouter* module_context::create_layouter(const module_context::layouter type, module_context* const context)
+{
+    switch (type)
+    {
+    case layouter::standard: return new standard_module_layouter(context);
+    case layouter::minimal: return new minimal_module_layouter(context);
+    }
+}
+
+module_shader* module_context::create_shader(const module_context::shader type, module_context* const context)
+{
+    switch (type)
+    {
+    case shader::standard: return new standard_module_shader(context);
+    }
 }
 
 void module_context::apply_changes()

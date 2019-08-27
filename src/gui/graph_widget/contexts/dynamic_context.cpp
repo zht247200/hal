@@ -1,16 +1,20 @@
 #include "gui/graph_widget/contexts/dynamic_context.h"
 
 #include "gui/graph_widget/layouters/dynamic_layouter.h"
-#include "gui/graph_widget/shaders/dynamic_shader.h"
+#include "gui/graph_widget/shaders/standard_dynamic_shader.h"
 #include "gui/gui_globals.h"
+
+dynamic_context::layouter dynamic_context::s_default_layouter = dynamic_context::layouter::standard;
+dynamic_context::shader dynamic_context::s_default_shader = dynamic_context::shader::standard;
 
 bool dynamic_context::m_expand_all_nets = false;
 bool dynamic_context::m_expand_gnd_nets = false;
 bool dynamic_context::m_expand_vcc_nets = false;
 bool dynamic_context::m_expand_global_nets = false;
 
-dynamic_context::dynamic_context(const QString& name) : graph_context(type::dynamic, g_graph_context_manager.get_default_layouter(this), g_graph_context_manager.get_default_shader(this)),
-    m_name(name)
+dynamic_context::dynamic_context(const QString& name) : graph_context(type::dynamic, create_layouter(s_default_layouter, this), create_shader(s_default_shader, this)),
+    m_name(name),
+    m_layouter_type(s_default_layouter)
 {
 
 }
@@ -100,6 +104,25 @@ const QSet<u32>& dynamic_context::nets() const
 QString dynamic_context::name() const
 {
     return m_name;
+}
+
+dynamic_layouter* dynamic_context::create_layouter(const dynamic_context::layouter type, dynamic_context* const context)
+{
+//    switch (type)
+//    {
+//    case layouter::standard: return new standard_dynamic_layouter(context);
+//    }
+
+    // LAYOUTER NOT IMPLEMENTED YET, RETURNING NULL INSTEAD TO COMPILE, FIX LATER
+    return nullptr;
+}
+
+dynamic_shader* dynamic_context::create_shader(const dynamic_context::shader type, dynamic_context* const context)
+{
+    switch (type)
+    {
+    case shader::standard: return new standard_dynamic_shader(context);
+    }
 }
 
 void dynamic_context::apply_changes()

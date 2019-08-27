@@ -60,15 +60,12 @@ public:
     void handle_net_dst_added(const std::shared_ptr<net> n, const u32 dst_gate_id) const;
     void handle_net_dst_removed(const std::shared_ptr<net> n, const u32 dst_gate_id) const;
 
-    module_layouter* get_default_layouter(module_context* const context) const;
     cone_layouter* get_default_layouter(cone_context* const context) const;
-    dynamic_layouter* get_default_layouter(dynamic_context* const context) const;
-
-    module_shader* get_default_shader(module_context* const context) const;
     cone_shader* get_default_shader(cone_context* const context) const;
-    dynamic_shader* get_default_shader(dynamic_context* const context) const;
 
 private:
+    void debug_relayout_all() const;
+
     static int s_max_module_contexts;
 
     QVector<module_context*> m_module_contexts;
