@@ -13,6 +13,8 @@ public:
 
     void set_color(const QColor& color);
 
+    const QList<netlist_item*>& child_items() const;
+
     netlist_item* child(const int row) const;
     const netlist_item* const_child(const int row) const;
 

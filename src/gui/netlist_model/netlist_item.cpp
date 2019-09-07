@@ -1,6 +1,7 @@
 #include "gui/netlist_model/netlist_item.h"
 
 #include "gui/gui_utility.h"
+#include "gui/netlist_model/module_netlist_item.h"
 
 netlist_item::netlist_item(const hal::item_type type, const u32 id, const QString& name) :
     m_parent(nullptr),
@@ -28,6 +29,23 @@ QVariant netlist_item::data(int column) const
     if (column != 0)
         return QVariant();
     return m_name;
+}
+
+int netlist_item::row() const
+{
+    if (m_parent)
+    {
+        return m_parent->child_items().indexOf(const_cast<netlist_item*>(this));
+
+//        switch (m_item_type)
+//        {
+//        case hal::item_type::module: return m_parent->child_items().indexOf(const_cast<netlist_item*>(this));
+//        case hal::item_type::gate: return m_parent->child_items().indexOf(const_cast<netlist_item*>(this));
+//        case hal::item_type::net: return m_parent->child_items().indexOf(const_cast<netlist_item*>(this));
+//        }
+    }
+    else
+        return 0;
 }
 
 hal::item_type netlist_item::type() const

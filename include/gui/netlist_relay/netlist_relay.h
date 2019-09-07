@@ -32,6 +32,9 @@
 #include <QMap>
 #include <QObject>
 
+class netlist_item;
+class netlist_model;
+
 class module_item;
 class module_model;
 
@@ -44,6 +47,8 @@ public:
     ~netlist_relay();
 
     void register_callbacks();
+
+    netlist_model* get_netlist_model();
 
     module_item* get_module_item(const u32 id);
     module_model* get_module_model();
@@ -105,6 +110,9 @@ private:
 
     QMap<u32, QString> m_gate_aliases;
     QMap<u32, QString> m_net_aliases;
+
+    //QMap<u32, module_item*> m_module_items;
+    netlist_model* m_netlist_model;
 
     QMap<u32, module_item*> m_module_items;
     module_model* m_module_model;

@@ -45,6 +45,7 @@ public:
     const module_netlist_item* const_parent() const;
 
     QVariant data(int column) const;
+    int row() const;
 
     hal::item_type type() const;
     QString name() const;

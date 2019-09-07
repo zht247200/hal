@@ -1,4 +1,3 @@
-/*
 #include "gui/netlist_model/netlist_model.h"
 
 #include "netlist/gate.h"
@@ -7,11 +6,13 @@
 
 #include "gui/gui_globals.h"
 #include "gui/gui_utility.h"
+#include "gui/netlist_model/gate_netlist_item.h"
 #include "gui/netlist_model/module_netlist_item.h"
+#include "gui/netlist_model/net_netlist_item.h"
 
 netlist_model::netlist_model(QObject* parent) : QAbstractItemModel(parent)
 {
-    m_root_item = new module_netlist_item(1); // USE TOP ITEM AS ROOT ???
+    //m_root_item = new module_netlist_item(1); // USE TOP ITEM AS ROOT ???
 }
 
 netlist_model::~netlist_model()
@@ -24,16 +25,15 @@ QModelIndex netlist_model::index(int row, int column, const QModelIndex& parent)
     // BEHAVIOR FOR ILLEGAL INDICES IS UNDEFINED
     // SEE QT DOCUMENTATION
 
-    // NECESSARY ???
-    if (column != 0)
-        return QModelIndex();
-
-    // PROBABLY REDUNDANT
-    if (parent.isValid() && parent.column() != 0)
+    if (column != 0 || parent.column() != 0)
         return QModelIndex();
 
     netlist_item* parent_item = get_item(parent);
-    netlist_item* child_item = parent_item->child(row);
+
+    if (parent_item->type() != hal::item_type::module) // CAN THIS BE ASSERTED ?
+        return QModelIndex();
+
+    netlist_item* child_item = static_cast<module_netlist_item*>(parent_item)->child(row);
 
     if (child_item)
         return createIndex(row, column, child_item);
@@ -57,12 +57,15 @@ QModelIndex netlist_model::parent(const QModelIndex& index) const
 
 int netlist_model::rowCount(const QModelIndex& parent) const
 {
-//    module_item* parent_item;
 //    if (parent.column() > 0)
 //        return 0;
 
     netlist_item* parent_item = get_item(parent);
-    return parent_item->childCount();
+
+    if (parent_item->type() == hal::item_type::module)
+        return static_cast<module_netlist_item*>(parent_item)->childCount();
+    else
+        return 0;
 }
 
 int netlist_model::columnCount(const QModelIndex& parent) const
@@ -85,14 +88,18 @@ QVariant netlist_model::data(const QModelIndex& index, int role) const
     {
     case Qt::DecorationRole:
     {
-        if (index.column() == 0)
+        if (item->type() == hal::item_type::module)
         {
-            QString run_icon_style = "all->" + item->color().name();
-            QString run_icon_path  = ":/icons/filled-circle";
+            if (index.column() == 0)
+            {
+                QString run_icon_style = "all->" + static_cast<module_netlist_item*>(item)->color().name();
+                QString run_icon_path  = ":/icons/filled-circle";
 
-            return gui_utility::get_styled_svg_icon(run_icon_style, run_icon_path);
+                return gui_utility::get_styled_svg_icon(run_icon_style, run_icon_path);
+            }
         }
-        break;
+
+        return QVariant();
     }
     case Qt::DisplayRole:
     {
@@ -136,6 +143,7 @@ QVariant netlist_model::headerData(int section, Qt::Orientation orientation, int
     Q_UNUSED(section)
     Q_UNUSED(orientation)
     Q_UNUSED(role)
+
     return QVariant();
 }
 
@@ -225,4 +233,3 @@ void netlist_model::remove_module(const u32 id)
 
     m_module_items.remove(id);
 }
-*/

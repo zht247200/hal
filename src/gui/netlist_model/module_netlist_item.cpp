@@ -19,6 +19,11 @@ void module_netlist_item::remove_child(netlist_item* child)
     m_child_items.removeOne(child);
 }
 
+const QList<netlist_item*> &module_netlist_item::child_items() const
+{
+    return m_child_items;
+}
+
 netlist_item* module_netlist_item::child(const int row) const
 {
     return m_child_items.value(row);

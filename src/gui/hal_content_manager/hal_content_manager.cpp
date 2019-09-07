@@ -8,6 +8,7 @@
 #include "file_manager/file_manager.h"
 #include "graph_widget/graph_widget.h"
 #include "gui/module_widget/module_widget.h"
+#include "gui/explorer_widget/explorer_widget.h"
 #include "gui/content_layout_area/content_layout_area.h"
 #include "gui/content_widget/content_widget.h"
 #include "gui/docking_system/tab_widget.h"
@@ -64,9 +65,13 @@ void hal_content_manager::handle_open_document(const QString& file_name)
 
     m_main_window->add_content(new graph_widget(), 2, content_anchor::center);
 
-    module_widget* m = new module_widget();
-    m_main_window->add_content(m, 0, content_anchor::left);
-    m->open();
+//    module_widget* m = new module_widget();
+//    m_main_window->add_content(m, 0, content_anchor::left);
+//    m->open();
+
+    explorer_widget* e = new explorer_widget();
+    m_main_window->add_content(e, 0, content_anchor::left);
+    e->open();
 
     selection_details_widget* details = new selection_details_widget();
     m_main_window->add_content(details, 0, content_anchor::bottom);

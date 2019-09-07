@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-/*
 #ifndef NETLIST_MODEL_H
 #define NETLIST_MODEL_H
 
@@ -32,9 +31,10 @@
 #include <QModelIndex>
 #include <QVariant>
 
-class module_netlist_item;
 class gate_netlist_item;
+class module_netlist_item;
 class net_netlist_item;
+class netlist_item;
 
 class netlist_model : public QAbstractItemModel
 {
@@ -75,4 +75,3 @@ private:
 };
 
 #endif // NETLIST_MODEL_H
-*/

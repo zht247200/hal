@@ -7,6 +7,9 @@
 #include "gui/module_model/module_item.h"
 #include "gui/module_model/module_model.h"
 
+#include "gui/netlist_model/module_netlist_item.h"
+#include "gui/netlist_model/netlist_model.h"
+
 #include "gui/file_manager/file_manager.h" // DEBUG LINE
 #include "gui/gui_globals.h" // DEBUG LINE
 
@@ -17,6 +20,7 @@
 #include <QDebug>
 
 netlist_relay::netlist_relay(QObject* parent) : QObject(parent),
+    m_netlist_model(new netlist_model(this)),
     m_module_model(new module_model(this))
 {
     connect(file_manager::get_instance(), &file_manager::file_opened, this, &netlist_relay::debug_handle_file_opened); // DEBUG LINE
@@ -52,6 +56,11 @@ void netlist_relay::register_callbacks()
                 "relay",
                 std::function<void(module_event_handler::event, std::shared_ptr<module>, u32)>
                 (std::bind(&netlist_relay::relay_module_event, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)));
+}
+
+netlist_model* netlist_relay::get_netlist_model()
+{
+    return m_netlist_model;
 }
 
 module_item* netlist_relay::get_module_item(const u32 id)
@@ -426,9 +435,17 @@ void netlist_relay::relay_net_event(net_event_handler::event ev, std::shared_ptr
 void netlist_relay::debug_handle_file_opened()
 {
     std::shared_ptr<module> top_module = g_netlist->get_top_module();
-    module_item* item = new module_item(QString::fromStdString(top_module->get_name()), top_module->get_id());
-    item->set_color(QColor(96, 110, 112)); // DEBUG LINE
 
-    m_module_items.insert(top_module->get_id(), item);
-    m_module_model->add_item(item, nullptr);
+//    module_netlist_item* item1 = new module_netlist_item(top_module->get_id());
+//    item1->set_color(QColor(96, 110, 112)); // DEBUG LINE
+
+//    m_module_items.insert(top_module->get_id(), item1);
+//    m_module_model->add_item(item1, nullptr);
+
+
+    module_item* item2 = new module_item(QString::fromStdString(top_module->get_name()), top_module->get_id());
+    item2->set_color(QColor(96, 110, 112)); // DEBUG LINE
+
+    m_module_items.insert(top_module->get_id(), item2);
+    m_module_model->add_item(item2, nullptr);
 }
