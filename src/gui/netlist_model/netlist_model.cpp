@@ -12,7 +12,7 @@
 
 netlist_model::netlist_model(QObject* parent) : QAbstractItemModel(parent)
 {
-    //m_root_item = new module_netlist_item(1); // USE TOP ITEM AS ROOT ???
+    m_root_item = new module_netlist_item(0, ""); // USE TOP ITEM AS ROOT ???
 }
 
 netlist_model::~netlist_model()
@@ -181,12 +181,24 @@ QModelIndex netlist_model::get_index(const netlist_item* const item) const
     return model_index;
 }
 
+void netlist_model::add_top_module()
+{
+    module_netlist_item* item = new module_netlist_item(1);
+    //item->set_parent(m_root_item); // ???
+    item->set_color(QColor(96, 110, 112));
+
+    QModelIndex index = get_index(m_root_item);
+    beginInsertRows(index, 0, 0);
+    m_root_item->insert_child(0, item);
+    endInsertRows();
+}
+
 void netlist_model::add_module(const u32 id, const u32 parent_module)
 {
     assert(g_netlist->get_module_by_id(id));
     assert(g_netlist->get_module_by_id(parent_module));
     assert(!m_module_items.contains(id));
-    assert(!m_module_items.contains(parent_module));
+    assert(m_module_items.contains(parent_module));
 
     module_netlist_item* item = new module_netlist_item(id);
     module_netlist_item* parent = m_module_items.value(parent_module);

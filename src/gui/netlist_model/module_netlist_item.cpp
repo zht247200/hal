@@ -9,6 +9,12 @@ module_netlist_item::module_netlist_item(const u32 id) : netlist_item(hal::item_
     // SET COLOR
 }
 
+module_netlist_item::module_netlist_item(const u32 id, const QString& name) : netlist_item(hal::item_type::module, id, name)
+{
+    // THIS CONSTRUCTOR IS ONLY USED FOR THE ROOT ITEM
+    // SET COLOR
+}
+
 void module_netlist_item::insert_child(const int row, netlist_item* child)
 {
     m_child_items.insert(row, child);

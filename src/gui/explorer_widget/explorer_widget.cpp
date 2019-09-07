@@ -1,6 +1,7 @@
 #include "gui/explorer_widget/explorer_widget.h"
 
 #include "gui/gui_globals.h"
+#include "gui/netlist_model/netlist_model.h"
 #include "gui/netlist_model/netlist_proxy_model.h"
 #include "gui/searchbar/searchbar.h"
 
@@ -25,7 +26,7 @@ explorer_widget::explorer_widget(QWidget* parent) : content_widget("Explorer", p
     connect(m_searchbar, &searchbar::text_edited, this, &explorer_widget::filter);
 
     m_netlist_proxy_model->setFilterKeyColumn(-1);
-    //m_netlist_proxy_model->setSourceModel(g_netlist_relay.get_module_model());
+    m_netlist_proxy_model->setSourceModel(g_netlist_relay.get_netlist_model());
     m_netlist_proxy_model->setRecursiveFilteringEnabled(true);
 
     //m_tree_view->setAnimated(true); ADD TO SETTINGS
