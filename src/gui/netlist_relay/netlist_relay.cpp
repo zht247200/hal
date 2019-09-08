@@ -438,16 +438,9 @@ void netlist_relay::debug_handle_file_opened()
 
     m_netlist_model->add_top_module();
 
-//    module_netlist_item* item1 = new module_netlist_item(top_module->get_id());
-//    item1->set_color(QColor(96, 110, 112)); // DEBUG LINE
+    module_item* item = new module_item(QString::fromStdString(top_module->get_name()), top_module->get_id());
+    item->set_color(QColor(96, 110, 112)); // DEBUG LINE
 
-//    m_module_items.insert(top_module->get_id(), item1);
-//    m_module_model->add_item(item1, nullptr);
-
-
-    module_item* item2 = new module_item(QString::fromStdString(top_module->get_name()), top_module->get_id());
-    item2->set_color(QColor(96, 110, 112)); // DEBUG LINE
-
-    m_module_items.insert(top_module->get_id(), item2);
-    m_module_model->add_item(item2, nullptr);
+    m_module_items.insert(top_module->get_id(), item);
+    m_module_model->add_item(item, nullptr);
 }

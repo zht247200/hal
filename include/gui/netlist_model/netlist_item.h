@@ -48,8 +48,8 @@ public:
     int row() const;
 
     hal::item_type type() const;
-    QString name() const;
     u32 id() const;
+    QString name() const;
     bool highlighted() const;
 
     void set_parent(module_netlist_item* parent);

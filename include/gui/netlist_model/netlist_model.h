@@ -69,7 +69,7 @@ public:
     void remove_net(const u32 id);
 
 private:
-    module_netlist_item* m_root_item;
+    module_netlist_item* m_top_module_item;
 
     QMap<u32, module_netlist_item*> m_module_items;
     QMap<u32, gate_netlist_item*> m_gate_items;

@@ -12,12 +12,12 @@
 
 netlist_model::netlist_model(QObject* parent) : QAbstractItemModel(parent)
 {
-    m_root_item = new module_netlist_item(0, ""); // USE TOP ITEM AS ROOT ???
+    m_top_module_item = new module_netlist_item(0, ""); // USE TOP ITEM AS ROOT ???
 }
 
 netlist_model::~netlist_model()
 {
-    delete m_root_item;
+    delete m_top_module_item;
 }
 
 QModelIndex netlist_model::index(int row, int column, const QModelIndex& parent) const
@@ -49,7 +49,7 @@ QModelIndex netlist_model::parent(const QModelIndex& index) const
     netlist_item* child_item  = get_item(index);
     netlist_item* parent_item = child_item->parent();
 
-    if (parent_item == m_root_item)
+    if (parent_item == m_top_module_item)
         return QModelIndex();
 
     return createIndex(parent_item->row(), 0, parent_item);
@@ -57,8 +57,8 @@ QModelIndex netlist_model::parent(const QModelIndex& index) const
 
 int netlist_model::rowCount(const QModelIndex& parent) const
 {
-//    if (parent.column() > 0)
-//        return 0;
+    if (parent.column() != 0)
+        return 0;
 
     netlist_item* parent_item = get_item(parent);
 
@@ -71,6 +71,7 @@ int netlist_model::rowCount(const QModelIndex& parent) const
 int netlist_model::columnCount(const QModelIndex& parent) const
 {
     Q_UNUSED(parent)
+
     return 1;
 }
 
@@ -152,11 +153,12 @@ netlist_item* netlist_model::get_item(const QModelIndex& index) const
     if (index.isValid())
     {
         netlist_item* item = static_cast<netlist_item*>(index.internalPointer());
+
         if (item)
             return item;
     }
 
-    return m_root_item;
+    return m_top_module_item;
 }
 
 QModelIndex netlist_model::get_index(const netlist_item* const item) const
@@ -164,7 +166,7 @@ QModelIndex netlist_model::get_index(const netlist_item* const item) const
     QVector<int> row_numbers;
     const netlist_item* current_item = item;
 
-    while (current_item != m_root_item)
+    while (current_item != m_top_module_item)
     {
         if (!current_item)
             return QModelIndex(); // SHOULD NEVER BE REACHED
@@ -184,12 +186,13 @@ QModelIndex netlist_model::get_index(const netlist_item* const item) const
 void netlist_model::add_top_module()
 {
     module_netlist_item* item = new module_netlist_item(1);
-    //item->set_parent(m_root_item); // ???
+    item->set_parent(m_top_module_item);
     item->set_color(QColor(96, 110, 112));
 
-    QModelIndex index = get_index(m_root_item);
-    beginInsertRows(index, 0, 0);
-    m_root_item->insert_child(0, item);
+    //QModelIndex index = get_index(m_root_item);
+
+    beginInsertRows(index(0, 0, QModelIndex()), 0, 0);
+    m_top_module_item->insert_child(0, item);
     endInsertRows();
 }
 

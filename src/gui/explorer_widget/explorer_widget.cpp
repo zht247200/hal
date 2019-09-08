@@ -26,11 +26,12 @@ explorer_widget::explorer_widget(QWidget* parent) : content_widget("Explorer", p
     connect(m_searchbar, &searchbar::text_edited, this, &explorer_widget::filter);
 
     m_netlist_proxy_model->setFilterKeyColumn(-1);
-    m_netlist_proxy_model->setSourceModel(g_netlist_relay.get_netlist_model());
     m_netlist_proxy_model->setRecursiveFilteringEnabled(true);
+    //m_netlist_proxy_model->setSourceModel(g_netlist_relay.get_netlist_model());
 
     //m_tree_view->setAnimated(true); ADD TO SETTINGS
-    m_tree_view->setModel(m_netlist_proxy_model);
+    //m_tree_view->setModel(m_netlist_proxy_model);
+    m_tree_view->setModel(g_netlist_relay.get_netlist_model());
     m_tree_view->setContextMenuPolicy(Qt::CustomContextMenu);
     m_tree_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_tree_view->setFrameStyle(QFrame::NoFrame);
