@@ -34,7 +34,7 @@
 class module_item
 {
 public:
-    module_item(const QString& name, const int id);
+    module_item(const QString& name, const u32 id);
     ~module_item();
 
     void insert_child(int row, module_item* child);

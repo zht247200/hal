@@ -4,15 +4,10 @@
 
 #include "gui/gui_globals.h"
 
-module_netlist_item::module_netlist_item(const u32 id) : netlist_item(hal::item_type::module, id, QString::fromStdString(g_netlist->get_module_by_id(id)->get_name()))
+module_netlist_item::module_netlist_item(const u32 id) : netlist_item(hal::item_type::module, id, QString::fromStdString(g_netlist->get_module_by_id(id)->get_name())),
+    m_color(g_netlist_relay.get_module_color(id))
 {
-    // SET COLOR
-}
 
-module_netlist_item::module_netlist_item(const u32 id, const QString& name) : netlist_item(hal::item_type::module, id, name)
-{
-    // THIS CONSTRUCTOR IS ONLY USED FOR THE ROOT ITEM
-    // SET COLOR
 }
 
 void module_netlist_item::insert_child(const int row, netlist_item* child)

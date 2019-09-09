@@ -7,7 +7,6 @@ class module_netlist_item : public netlist_item
 {
 public:
     module_netlist_item(const u32 id);
-    module_netlist_item(const u32 id, const QString& name);
 
     void insert_child(const int row, netlist_item* child);
     void remove_child(netlist_item* child);

@@ -48,9 +48,10 @@ public:
 
     void register_callbacks();
 
-    netlist_model* get_netlist_model();
+    QColor get_module_color(const u32 id) const;
+    void set_module_color(const u32 id, const QColor& color);
 
-    module_item* get_module_item(const u32 id);
+    netlist_model* get_netlist_model();
     module_model* get_module_model();
 
     void debug_change_module_color(module_item* item);
@@ -108,13 +109,12 @@ private:
     void relay_gate_event(gate_event_handler::event ev, std::shared_ptr<gate> object, u32 associated_data);
     void relay_net_event(net_event_handler::event ev, std::shared_ptr<net> object, u32 associated_data);
 
+    QMap<u32, QColor> m_module_colors;
+
     QMap<u32, QString> m_gate_aliases;
     QMap<u32, QString> m_net_aliases;
 
-    //QMap<u32, module_item*> m_module_items;
     netlist_model* m_netlist_model;
-
-    QMap<u32, module_item*> m_module_items;
     module_model* m_module_model;
 };
 
