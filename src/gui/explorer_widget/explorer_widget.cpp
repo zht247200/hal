@@ -1,6 +1,7 @@
 #include "gui/explorer_widget/explorer_widget.h"
 
 #include "gui/gui_globals.h"
+#include "gui/netlist_model/netlist_item.h"
 #include "gui/netlist_model/netlist_model.h"
 #include "gui/netlist_model/netlist_proxy_model.h"
 #include "gui/searchbar/searchbar.h"
@@ -27,11 +28,11 @@ explorer_widget::explorer_widget(QWidget* parent) : content_widget("Explorer", p
 
     m_netlist_proxy_model->setFilterKeyColumn(-1);
     m_netlist_proxy_model->setRecursiveFilteringEnabled(true);
-    //m_netlist_proxy_model->setSourceModel(g_netlist_relay.get_netlist_model());
+    m_netlist_proxy_model->setSourceModel(g_netlist_relay.get_netlist_model());
 
     //m_tree_view->setAnimated(true); ADD TO SETTINGS
-    //m_tree_view->setModel(m_netlist_proxy_model);
-    m_tree_view->setModel(g_netlist_relay.get_netlist_model());
+    m_tree_view->setModel(m_netlist_proxy_model);
+    //m_tree_view->setModel(g_netlist_relay.get_netlist_model());
     m_tree_view->setContextMenuPolicy(Qt::CustomContextMenu);
     m_tree_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_tree_view->setFrameStyle(QFrame::NoFrame);
@@ -147,6 +148,9 @@ void explorer_widget::handle_custom_context_menu_requested(const QPoint& point)
     if (!index.isValid())
         return;
 
+    if (g_netlist_relay.get_netlist_model()->get_item(m_netlist_proxy_model->mapToSource(index))->type() != hal::item_type::module)
+        return;
+
     QMenu context_menu;
 
     QAction select_action("Select Module", &context_menu);
@@ -169,10 +173,10 @@ void explorer_widget::handle_custom_context_menu_requested(const QPoint& point)
         return;
 
 //    if (clicked == &add_selection_action)
-//        g_netlist_relay.debug_add_selection_to_module(g_netlist_relay.get_module_model()->get_item(m_module_proxy_model->mapToSource(index)));
+//        g_netlist_relay.debug_add_selection_to_module(g_netlist_relay.get_netlist_model()->get_item(m_netlist_proxy_model->mapToSource(index)));
 
-//    if (clicked == &add_child_action)
-//        g_netlist_relay.debug_add_child_module(g_netlist_relay.get_module_model()->get_item(m_module_proxy_model->mapToSource(index)));
+    if (clicked == &add_child_action)
+        g_netlist_relay.debug_add_child_module(g_netlist_relay.get_netlist_model()->get_item(m_netlist_proxy_model->mapToSource(index))->id());
 
 //    if (clicked == &change_color_action)
 //        g_netlist_relay.debug_change_module_color(g_netlist_relay.get_module_model()->get_item(m_module_proxy_model->mapToSource(index)));

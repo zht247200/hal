@@ -125,7 +125,7 @@ void netlist_relay::debug_add_selection_to_module(module_item* item)
 //    }
 }
 
-void netlist_relay::debug_add_child_module(module_item* item)
+void netlist_relay::debug_add_child_module(const u32 id)
 {
     // NOT THREADSAFE
 
@@ -135,10 +135,7 @@ void netlist_relay::debug_add_child_module(module_item* item)
     if (!ok || name.isEmpty())
         return;
 
-    if (!item)
-        return;
-
-    std::shared_ptr<module> m = g_netlist->get_module_by_id(item->id());
+    std::shared_ptr<module> m = g_netlist->get_module_by_id(id);
 
     if (!m)
         return;
