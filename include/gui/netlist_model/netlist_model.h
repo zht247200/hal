@@ -42,7 +42,6 @@ class netlist_model : public QAbstractItemModel
 
 public:
     explicit netlist_model(QObject* parent = nullptr);
-    ~netlist_model() override;
 
     // PURE VIRTUAL
     QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;

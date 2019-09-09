@@ -10,20 +10,24 @@
 #include "gui/netlist_model/module_netlist_item.h"
 #include "gui/netlist_model/net_netlist_item.h"
 
-netlist_model::netlist_model(QObject* parent) : QAbstractItemModel(parent)
+netlist_model::netlist_model(QObject* parent) : QAbstractItemModel(parent),
+    m_top_module_item(nullptr)
 {
-    m_top_module_item = new module_netlist_item(0, ""); // USE TOP ITEM AS ROOT ???
-}
 
-netlist_model::~netlist_model()
-{
-    delete m_top_module_item;
 }
 
 QModelIndex netlist_model::index(int row, int column, const QModelIndex& parent) const
 {
     // BEHAVIOR FOR ILLEGAL INDICES IS UNDEFINED
     // SEE QT DOCUMENTATION
+
+    if (!parent.isValid())
+    {
+        if (row == 0 && column == 0 && m_top_module_item)
+            return createIndex(0, 0, m_top_module_item);
+        else
+            return QModelIndex();
+    }
 
     if (column != 0 || parent.column() != 0)
         return QModelIndex();
@@ -34,11 +38,9 @@ QModelIndex netlist_model::index(int row, int column, const QModelIndex& parent)
         return QModelIndex();
 
     netlist_item* child_item = static_cast<module_netlist_item*>(parent_item)->child(row);
+    assert(child_item);
 
-    if (child_item)
-        return createIndex(row, column, child_item);
-    else
-        return QModelIndex();
+    return createIndex(row, column, child_item);
 }
 
 QModelIndex netlist_model::parent(const QModelIndex& index) const
@@ -46,17 +48,20 @@ QModelIndex netlist_model::parent(const QModelIndex& index) const
     if (!index.isValid())
         return QModelIndex();
 
-    netlist_item* child_item  = get_item(index);
-    netlist_item* parent_item = child_item->parent();
+    netlist_item* item  = get_item(index);
 
-    if (parent_item == m_top_module_item)
+    if (item == m_top_module_item)
         return QModelIndex();
 
+    netlist_item* parent_item = item->parent();
     return createIndex(parent_item->row(), 0, parent_item);
 }
 
 int netlist_model::rowCount(const QModelIndex& parent) const
 {
+    if (!parent.isValid()) // ??
+        return 1;
+
     if (parent.column() != 0)
         return 0;
 
@@ -151,31 +156,25 @@ QVariant netlist_model::headerData(int section, Qt::Orientation orientation, int
 netlist_item* netlist_model::get_item(const QModelIndex& index) const
 {
     if (index.isValid())
-    {
-        netlist_item* item = static_cast<netlist_item*>(index.internalPointer());
-
-        if (item)
-            return item;
-    }
-
-    return m_top_module_item;
+        return static_cast<netlist_item*>(index.internalPointer());
+    else
+        return nullptr;
 }
 
 QModelIndex netlist_model::get_index(const netlist_item* const item) const
 {
+    assert(item);
+
     QVector<int> row_numbers;
     const netlist_item* current_item = item;
 
     while (current_item != m_top_module_item)
     {
-        if (!current_item)
-            return QModelIndex(); // SHOULD NEVER BE REACHED
-
         row_numbers.append(current_item->row());
         current_item = current_item->const_parent();
     }
 
-    QModelIndex model_index = QModelIndex();
+    QModelIndex model_index = index(0, 0, QModelIndex());
 
     for (QVector<int>::const_reverse_iterator i = row_numbers.crbegin(); i != row_numbers.crend(); ++i)
         model_index = index(*i, 0, model_index);
@@ -186,13 +185,12 @@ QModelIndex netlist_model::get_index(const netlist_item* const item) const
 void netlist_model::add_top_module()
 {
     module_netlist_item* item = new module_netlist_item(1);
-    item->set_parent(m_top_module_item);
     item->set_color(QColor(96, 110, 112));
 
-    //QModelIndex index = get_index(m_root_item);
+    m_module_items.insert(1, item);
 
     beginInsertRows(index(0, 0, QModelIndex()), 0, 0);
-    m_top_module_item->insert_child(0, item);
+    m_top_module_item = item;
     endInsertRows();
 }
 
@@ -230,9 +228,9 @@ void netlist_model::add_module(const u32 id, const u32 parent_module)
 
 void netlist_model::remove_module(const u32 id)
 {
+    assert(id != 1);
     assert(g_netlist->get_module_by_id(id));
     assert(m_module_items.contains(id));
-    assert(id != 1);
 
     module_netlist_item* item = m_module_items.value(id);
     module_netlist_item* parent = item->parent();
