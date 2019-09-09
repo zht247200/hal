@@ -240,6 +240,8 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
     {
         //< no associated_data
 
+        m_netlist_model->add_module(object->get_id(), object->get_parent_module()->get_id());
+
         module_item* item = new module_item(QString::fromStdString(object->get_name()), object->get_id());
         std::shared_ptr<module> parent_module = object->get_parent_module();
         module_item* parent_item = nullptr;
@@ -258,6 +260,8 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
     case module_event_handler::event::removed:
     {
         //< no associated_data
+
+        m_netlist_model->remove_module(object->get_id());
 
         g_graph_context_manager.handle_module_removed(object);
         g_selection_relay.handle_module_removed(object->get_id());
