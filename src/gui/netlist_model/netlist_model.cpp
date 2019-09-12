@@ -350,3 +350,46 @@ void netlist_model::remove_net(const u32 id)
     m_net_items.remove(id);
     delete item;
 }
+
+void netlist_model::update_module(const u32 id)
+{
+    assert(g_netlist->get_module_by_id(id));
+    assert(m_module_items.contains(id));
+
+    module_netlist_item* item = m_module_items.value(id);
+    assert(item);
+
+    item->set_name(QString::fromStdString(g_netlist->get_module_by_id(id)->get_name()));
+    item->set_color(g_netlist_relay.get_module_color(id));
+
+    QModelIndex index = get_index(item);
+    Q_EMIT dataChanged(index, index);
+}
+
+void netlist_model::update_gate(const u32 id)
+{
+    assert(g_netlist->get_gate_by_id(id));
+    assert(m_gate_items.contains(id));
+
+    gate_netlist_item* item = m_gate_items.value(id);
+    assert(item);
+
+    item->set_name(QString::fromStdString(g_netlist->get_gate_by_id(id)->get_name()));
+
+    QModelIndex index = get_index(item);
+    Q_EMIT dataChanged(index, index);
+}
+
+void netlist_model::update_net(const u32 id)
+{
+    assert(g_netlist->get_net_by_id(id));
+    assert(m_net_items.contains(id));
+
+    net_netlist_item* item = m_net_items.value(id);
+    assert(item);
+
+    item->set_name(QString::fromStdString(g_netlist->get_net_by_id(id)->get_name()));
+
+    QModelIndex index = get_index(item);
+    Q_EMIT dataChanged(index, index);
+}

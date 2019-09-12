@@ -67,6 +67,10 @@ public:
     void remove_gate(const u32 id);
     void remove_net(const u32 id);
 
+    void update_module(const u32 id);
+    void update_gate(const u32 id);
+    void update_net(const u32 id);
+
 private:
     module_netlist_item* m_top_module_item;
 

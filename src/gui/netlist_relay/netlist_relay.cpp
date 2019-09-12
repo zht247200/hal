@@ -1,24 +1,21 @@
 #include "netlist_relay/netlist_relay.h"
 
 #include "netlist/gate.h"
-#include "netlist/net.h"
 #include "netlist/module.h"
-
-#include "gui/module_model/module_item.h"
-#include "gui/module_model/module_model.h"
-
-#include "gui/netlist_model/module_netlist_item.h"
-#include "gui/netlist_model/netlist_model.h"
+#include "netlist/net.h"
 
 #include "gui/file_manager/file_manager.h" // DEBUG LINE
 #include "gui/gui_globals.h" // DEBUG LINE
 #include "gui/gui_utility.h"
-
-#include <functional>
+#include "gui/module_model/module_item.h"
+#include "gui/module_model/module_model.h"
+#include "gui/netlist_model/module_netlist_item.h"
+#include "gui/netlist_model/netlist_model.h"
 
 #include <QColorDialog> // DEBUG LINE
 #include <QInputDialog> // DEBUG LINE
-#include <QDebug>
+
+#include <functional>
 
 netlist_relay::netlist_relay(QObject* parent) : QObject(parent),
     m_netlist_model(new netlist_model(this)),
@@ -268,7 +265,7 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
 
         g_selection_relay.handle_module_created();
         m_module_colors.insert(object->get_id(), gui_utility::get_random_color());
-        m_netlist_model->add_module(object->get_id(), object->get_parent_module()->get_id());
+        //m_netlist_model->add_module(object->get_id(), object->get_parent_module()->get_id());
 
 //        module_item* item = new module_item(QString::fromStdString(object->get_name()), object->get_id());
 //        std::shared_ptr<module> parent_module = object->get_parent_module();
@@ -288,7 +285,8 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
         //< no associated_data
 
         g_selection_relay.handle_module_removed(object->get_id());
-        m_netlist_model->remove_module(object->get_id());
+        //m_netlist_model->remove_module(object->get_id());
+        m_module_colors.remove(object->get_id());
         g_graph_context_manager.handle_module_removed(object);
 
         Q_EMIT module_removed(object);
@@ -298,6 +296,7 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
     {
         //< no associated_data
 
+        m_netlist_model->update_module(object->get_id());
         g_graph_context_manager.handle_module_name_changed(object);
 
         Q_EMIT module_name_changed(object);
@@ -314,6 +313,7 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
     {
         //< associated_data = id of added module
 
+        m_netlist_model->add_module(associated_data, object->get_id());
         g_graph_context_manager.handle_module_submodule_added(object, associated_data);
 
         Q_EMIT module_submodule_added(object, associated_data);
@@ -323,6 +323,7 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
     {
         //< associated_data = id of removed module
 
+        m_netlist_model->remove_module(associated_data);
         g_graph_context_manager.handle_module_submodule_removed(object, associated_data);
 
         Q_EMIT module_submodule_removed(object, associated_data);
@@ -332,6 +333,7 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
     {
         //< associated_data = id of inserted gate
 
+        m_netlist_model->add_gate(associated_data, object->get_id());
         g_graph_context_manager.handle_module_gate_assigned(object, associated_data);
 
         Q_EMIT module_gate_assigned(object, associated_data);
@@ -341,6 +343,7 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
     {
         //< associated_data = id of removed gate
 
+        m_netlist_model->remove_gate(associated_data);
         g_graph_context_manager.handle_module_gate_removed(object, associated_data);
 
         Q_EMIT module_gate_removed(object, associated_data);
@@ -381,6 +384,7 @@ void netlist_relay::relay_gate_event(gate_event_handler::event ev, std::shared_p
     {
         //< no associated_data
 
+        m_netlist_model->update_gate(object->get_id());
         g_graph_context_manager.handle_gate_name_changed(object);
 
         Q_EMIT gate_name_changed(object);
@@ -413,7 +417,6 @@ void netlist_relay::relay_net_event(net_event_handler::event ev, std::shared_ptr
         //< no associated_data
 
         g_selection_relay.handle_net_removed(object->get_id());
-
         g_graph_context_manager.handle_net_removed(object);
 
         Q_EMIT net_removed(object);
@@ -423,6 +426,7 @@ void netlist_relay::relay_net_event(net_event_handler::event ev, std::shared_ptr
     {
         //< no associated_data
 
+        m_netlist_model->update_net(object->get_id());
         g_graph_context_manager.handle_net_name_changed(object);
 
         Q_EMIT net_name_changed(object);
