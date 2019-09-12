@@ -3,8 +3,8 @@
 #include <core/log.h>
 
 #include "gui/gui_globals.h"
+#include "gui/module_model/module_model.h"
 #include "gui/module_model/module_proxy_model.h"
-#include "gui/module_relay/module_relay.h"
 #include "gui/searchbar/searchbar.h"
 
 #include <QHeaderView>
