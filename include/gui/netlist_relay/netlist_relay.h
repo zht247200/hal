@@ -51,20 +51,14 @@ public:
     QColor get_module_color(const u32 id) const;
     void set_module_color(const u32 id, const QColor& color);
 
-    netlist_model* get_netlist_model();
-    module_model* get_module_model();
+    netlist_model* get_netlist_model() const;
+    module_model* get_module_model() const;
 
     void debug_change_module_color(module_item* item);
     void debug_add_selection_to_module(module_item* item);
     void debug_add_child_module(const u32 id);
 
 Q_SIGNALS:
-    // PROBABLY OBSOLETE
-    void netlist_event(netlist_event_handler::event ev, std::shared_ptr<netlist> object, u32 associated_data) const;
-    void module_event(module_event_handler::event ev, std::shared_ptr<module> object, u32 associated_data) const;
-    void gate_event(gate_event_handler::event ev, std::shared_ptr<gate> object, u32 associated_data) const;
-    void net_event(net_event_handler::event ev, std::shared_ptr<net> object, u32 associated_data) const;
-
     void netlist_id_changed(const std::shared_ptr<netlist> n, const u32 associated_data) const;
     void netlist_input_filename_changed(const std::shared_ptr<netlist> n) const;
     void netlist_design_name_changed(const std::shared_ptr<netlist> n) const;

@@ -205,6 +205,7 @@ void netlist_model::add_module(const u32 id, const u32 parent_module)
     module_netlist_item* parent = m_module_items.value(parent_module);
 
     item->set_parent(parent);
+    m_module_items.insert(id, item);
 
     // INSERT BY CATEGORY
     QModelIndex index = get_index(parent);
@@ -222,8 +223,68 @@ void netlist_model::add_module(const u32 id, const u32 parent_module)
     beginInsertRows(index, row, row);
     parent->insert_child(row, item);
     endInsertRows();
+}
 
-    m_module_items.insert(id, item);
+void netlist_model::add_gate(const u32 id, const u32 parent_module)
+{
+    assert(g_netlist->get_gate_by_id(id));
+    assert(g_netlist->get_module_by_id(parent_module));
+    assert(!m_gate_items.contains(id));
+    assert(m_module_items.contains(parent_module));
+
+    gate_netlist_item* item = new gate_netlist_item(id);
+    module_netlist_item* parent = m_module_items.value(parent_module);
+
+    item->set_parent(parent);
+    m_gate_items.insert(id, item);
+
+    // INSERT BY CATEGORY
+    QModelIndex index = get_index(parent);
+
+    int row = 0;
+
+    while (row < parent->childCount())
+    {
+        if (item->name() < parent->child(row)->name())
+            break;
+        else
+            ++row;
+    }
+
+    beginInsertRows(index, row, row);
+    parent->insert_child(row, item);
+    endInsertRows();
+}
+
+void netlist_model::add_net(const u32 id, const u32 parent_module)
+{
+    assert(g_netlist->get_net_by_id(id));
+    assert(g_netlist->get_module_by_id(parent_module));
+    assert(!m_net_items.contains(id));
+    assert(m_module_items.contains(parent_module));
+
+    net_netlist_item* item = new net_netlist_item(id);
+    module_netlist_item* parent = m_module_items.value(parent_module);
+
+    item->set_parent(parent);
+    m_net_items.insert(id, item);
+
+    // INSERT BY CATEGORY
+    QModelIndex index = get_index(parent);
+
+    int row = 0;
+
+    while (row < parent->childCount())
+    {
+        if (item->name() < parent->child(row)->name())
+            break;
+        else
+            ++row;
+    }
+
+    beginInsertRows(index, row, row);
+    parent->insert_child(row, item);
+    endInsertRows();
 }
 
 void netlist_model::remove_module(const u32 id)
@@ -245,4 +306,47 @@ void netlist_model::remove_module(const u32 id)
     endRemoveRows();
 
     m_module_items.remove(id);
+    delete item;
+}
+
+void netlist_model::remove_gate(const u32 id)
+{
+    assert(g_netlist->get_gate_by_id(id));
+    assert(m_gate_items.contains(id));
+
+    gate_netlist_item* item = m_gate_items.value(id);
+    module_netlist_item* parent = item->parent();
+    assert(parent);
+
+    QModelIndex index = get_index(parent);
+
+    int row = item->row();
+
+    beginRemoveRows(index, row, row);
+    parent->remove_child(item);
+    endRemoveRows();
+
+    m_gate_items.remove(id);
+    delete item;
+}
+
+void netlist_model::remove_net(const u32 id)
+{
+    assert(g_netlist->get_net_by_id(id));
+    assert(m_net_items.contains(id));
+
+    net_netlist_item* item = m_net_items.value(id);
+    module_netlist_item* parent = item->parent();
+    assert(parent);
+
+    QModelIndex index = get_index(parent);
+
+    int row = item->row();
+
+    beginRemoveRows(index, row, row);
+    parent->remove_child(item);
+    endRemoveRows();
+
+    m_net_items.remove(id);
+    delete item;
 }

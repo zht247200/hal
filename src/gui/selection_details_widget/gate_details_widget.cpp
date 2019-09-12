@@ -183,8 +183,8 @@ gate_details_widget::gate_details_widget(QWidget* parent) : QWidget(parent)
     // load and store quine mc cluskey plugin
     m_qmc = plugin_manager::get_plugin_instance<plugin_quine_mccluskey>("libquine_mccluskey");
 
-    connect(&g_netlist_relay, &netlist_relay::gate_event, this, &gate_details_widget::handle_gate_event);
-    connect(&g_netlist_relay, &netlist_relay::module_event, this, &gate_details_widget::handle_module_event);
+    //connect(&g_netlist_relay, &netlist_relay::gate_event, this, &gate_details_widget::handle_gate_event);
+    //connect(&g_netlist_relay, &netlist_relay::module_event, this, &gate_details_widget::handle_module_event);
 }
 
 gate_details_widget::~gate_details_widget()

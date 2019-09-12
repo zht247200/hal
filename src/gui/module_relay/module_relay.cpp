@@ -7,7 +7,7 @@
 module_relay::module_relay(QObject* parent) : QObject(parent),
     m_model(new module_model())
 {
-    connect(&g_netlist_relay, &netlist_relay::module_event, this, &module_relay::handle_module_event);
+    //connect(&g_netlist_relay, &netlist_relay::module_event, this, &module_relay::handle_module_event);
 }
 
 void module_relay::set_module_color(const u32 id, const QColor& color)
