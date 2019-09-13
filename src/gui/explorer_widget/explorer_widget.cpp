@@ -58,11 +58,19 @@ void explorer_widget::setup_toolbar(toolbar* toolbar)
 
 QList<QShortcut*> explorer_widget::create_shortcuts()
 {
-    QShortcut* search_shortcut = new QShortcut(QKeySequence(tr("Ctrl+f")), this);
+    QShortcut* search_shortcut = new QShortcut(QKeySequence("Ctrl+f"), this);
     connect(search_shortcut, &QShortcut::activated, this, &explorer_widget::toggle_searchbar);
+
+    QShortcut* gate_shortcut = new QShortcut(QKeySequence("Ctrl+g"), this);
+    connect(gate_shortcut, &QShortcut::activated, this, &explorer_widget::toggle_gates);
+
+    QShortcut* net_shortcut = new QShortcut(QKeySequence("Ctrl+n"), this);
+    connect(net_shortcut, &QShortcut::activated, this, &explorer_widget::toggle_nets);
 
     QList<QShortcut*> list;
     list.append(search_shortcut);
+    list.append(gate_shortcut);
+    list.append(net_shortcut);
 
     return list;
 }
@@ -86,6 +94,18 @@ void explorer_widget::toggle_searchbar()
     }
     else
         m_searchbar->hide();
+}
+
+void explorer_widget::toggle_gates()
+{
+    m_show_gates = !m_show_gates;
+    m_netlist_proxy_model->invalidate();
+}
+
+void explorer_widget::toggle_nets()
+{
+    m_show_nets = !m_show_nets;
+    m_netlist_proxy_model->invalidate();
 }
 
 void explorer_widget::filter(const QString& text)

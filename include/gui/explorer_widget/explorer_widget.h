@@ -51,6 +51,8 @@ public:
 
 public Q_SLOTS:
     void toggle_searchbar();
+    void toggle_gates();
+    void toggle_nets();
     void filter(const QString& text);
     void handle_intern_selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
     void handle_custom_context_menu_requested(const QPoint& point);
