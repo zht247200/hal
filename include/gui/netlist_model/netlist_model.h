@@ -57,7 +57,8 @@ public:
     netlist_item* get_item(const QModelIndex& index) const;
     QModelIndex get_index(const netlist_item* const item) const;
 
-    void add_top_module();
+    void init();
+    void clear();
 
     void add_module(const u32 id, const u32 parent_module);
     void add_gate(const u32 id, const u32 parent_module);

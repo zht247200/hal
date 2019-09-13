@@ -182,16 +182,43 @@ QModelIndex netlist_model::get_index(const netlist_item* const item) const
     return model_index;
 }
 
-void netlist_model::add_top_module()
+void netlist_model::init()
 {
     module_netlist_item* item = new module_netlist_item(1);
-    item->set_color(QColor(96, 110, 112));
+    item->set_color(g_netlist_relay.get_module_color(1));
 
     m_module_items.insert(1, item);
 
     beginInsertRows(index(0, 0, QModelIndex()), 0, 0);
     m_top_module_item = item;
     endInsertRows();
+
+    std::set<std::shared_ptr<module>> s = g_netlist->get_modules();
+    s.erase(g_netlist->get_top_module());
+
+    for (std::shared_ptr<module> m : s)
+        add_module(m->get_id(), m->get_parent_module()->get_id());
+
+    for (std::shared_ptr<gate> g : g_netlist->get_gates())
+        add_gate(g->get_id(), g->get_module()->get_id());
+}
+
+void netlist_model::clear()
+{
+    beginResetModel();
+
+    m_top_module_item = nullptr;
+
+    for (module_netlist_item* m : m_module_items)
+        delete m;
+
+    for (gate_netlist_item* g : m_gate_items)
+        delete g;
+
+    for (net_netlist_item* n : m_net_items)
+        delete n;
+
+    endResetModel();
 }
 
 void netlist_model::add_module(const u32 id, const u32 parent_module)

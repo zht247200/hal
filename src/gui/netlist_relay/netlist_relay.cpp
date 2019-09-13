@@ -450,14 +450,12 @@ void netlist_relay::relay_net_event(net_event_handler::event ev, std::shared_ptr
 
 void netlist_relay::debug_handle_file_opened()
 {
-    std::shared_ptr<module> top_module = g_netlist->get_top_module();
-
     for (std::shared_ptr<module> m : g_netlist->get_modules())
                 m_module_colors.insert(m->get_id(), gui_utility::get_random_color());
 
     m_module_colors.insert(1, QColor(96, 110, 112));
 
-    m_netlist_model->add_top_module();
+    m_netlist_model->init();
 
 //    module_item* item = new module_item(QString::fromStdString(top_module->get_name()), top_module->get_id());
 //    item->set_color(QColor(96, 110, 112)); // DEBUG LINE
