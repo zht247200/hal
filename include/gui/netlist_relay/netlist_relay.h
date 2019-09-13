@@ -54,8 +54,8 @@ public:
     netlist_model* get_netlist_model() const;
     module_model* get_module_model() const;
 
-    void debug_change_module_color(module_item* item);
-    void debug_add_selection_to_module(module_item* item);
+    void debug_change_module_color(const u32 id);
+    void debug_add_selection_to_module(const u32 id);
     void debug_add_child_module(const u32 id);
 
 Q_SIGNALS:
@@ -93,6 +93,9 @@ Q_SIGNALS:
     void net_src_changed(const std::shared_ptr<net> n) const;
     void net_dst_added(const std::shared_ptr<net> n, const u32 dst_gate_id) const;
     void net_dst_removed(const std::shared_ptr<net> n, const u32 dst_gate_id) const;
+
+    // GUI
+    void module_color_changed(const std::shared_ptr<module> m) const;
 
 private Q_SLOTS:
     void debug_handle_file_opened();

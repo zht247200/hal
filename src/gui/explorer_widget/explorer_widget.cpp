@@ -172,12 +172,12 @@ void explorer_widget::handle_custom_context_menu_requested(const QPoint& point)
     if (!clicked)
         return;
 
-//    if (clicked == &add_selection_action)
-//        g_netlist_relay.debug_add_selection_to_module(g_netlist_relay.get_netlist_model()->get_item(m_netlist_proxy_model->mapToSource(index)));
+    if (clicked == &add_selection_action)
+        g_netlist_relay.debug_add_selection_to_module(g_netlist_relay.get_netlist_model()->get_item(m_netlist_proxy_model->mapToSource(index))->id());
 
     if (clicked == &add_child_action)
         g_netlist_relay.debug_add_child_module(g_netlist_relay.get_netlist_model()->get_item(m_netlist_proxy_model->mapToSource(index))->id());
 
-//    if (clicked == &change_color_action)
-//        g_netlist_relay.debug_change_module_color(g_netlist_relay.get_module_model()->get_item(m_module_proxy_model->mapToSource(index)));
+    if (clicked == &change_color_action)
+        g_netlist_relay.debug_change_module_color(g_netlist_relay.get_netlist_model()->get_item(m_netlist_proxy_model->mapToSource(index))->id());
 }

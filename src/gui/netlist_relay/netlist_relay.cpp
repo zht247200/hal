@@ -61,7 +61,7 @@ QColor netlist_relay::get_module_color(const u32 id) const
     return m_module_colors.value(id);
 }
 
-void netlist_relay::set_module_color(const u32 id, const QColor &color)
+void netlist_relay::set_module_color(const u32 id, const QColor& color)
 {
     m_module_colors.insert(id, color);
 }
@@ -76,38 +76,35 @@ module_model* netlist_relay::get_module_model() const
     return m_module_model;
 }
 
-void netlist_relay::debug_change_module_color(module_item* item)
+void netlist_relay::debug_change_module_color(const u32 id)
 {
     // NOT THREADSAFE
 
-    if (!item)
-        return;
+    std::shared_ptr<module> m = g_netlist->get_module_by_id(id);
+    assert(m);
 
     QColor color = QColorDialog::getColor();
 
     if (!color.isValid())
         return;
 
-    item->set_color(color);
-    m_module_model->dataChanged(m_module_model->get_index(item), m_module_model->get_index(item));
+    m_module_colors.insert(id, color);
+    m_netlist_model->update_module(id);
+
+    Q_EMIT module_color_changed(m);
 }
 
-void netlist_relay::debug_add_selection_to_module(module_item* item)
+void netlist_relay::debug_add_selection_to_module(const u32 id)
 {
     // NOT THREADSAFE
     // DECIDE HOW TO HANDLE MODULES
 
-    if (!item)
-        return;
-
-    std::shared_ptr<module> m = g_netlist->get_module_by_id(item->id());
-
-    if (!m)
-        return;
+    std::shared_ptr<module> m = g_netlist->get_module_by_id(id);
+    assert(m);
 
     if (g_selection_relay.m_number_of_selected_gates)
     {
-        for (int i = 0; i < g_selection_relay.m_number_of_selected_gates; ++i)
+        for (u32 i = 0; i < g_selection_relay.m_number_of_selected_gates; ++i)
         {
             std::shared_ptr<gate> g = g_netlist->get_gate_by_id(g_selection_relay.m_selected_gates[i]);
 
@@ -115,17 +112,6 @@ void netlist_relay::debug_add_selection_to_module(module_item* item)
                 m->assign_gate(g);
         }
     }
-
-//    if (g_selection_relay.m_number_of_selected_nets)
-//    {
-//        for (int i = 0; i < g_selection_relay.m_number_of_selected_nets; ++i)
-//        {
-//            std::shared_ptr<net> n = g_netlist->get_net_by_id(g_selection_relay.m_selected_nets[i]);
-
-//            if (n)
-//                m->assign_net(n);
-//        }
-//    }
 }
 
 void netlist_relay::debug_add_child_module(const u32 id)
