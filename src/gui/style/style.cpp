@@ -18,6 +18,7 @@
 #include <QHash>
 #include <QRegularExpression>
 #include <QTextStream>
+#include <QDebug>
 
 namespace style
 {
@@ -204,6 +205,105 @@ namespace style
         standard_graphics_net::load_settings();
         io_graphics_net::load_settings();
         separated_graphics_net::load_settings();
+    }
+
+    QString get_stylesheet2()
+    {
+        QString stylesheet;
+        {
+            QString path = "/home/sebbe/Desktop/hal/resources/stylesheet/darcula.qss";
+            QFile file(path);
+
+            if (!file.exists())
+            {
+                log_error("gui", "Specified stylesheet '{}' does not exist, proceeding with default style", path.toStdString());
+                return default_stylesheet();
+            }
+
+            if (!file.open(QFile::ReadOnly))
+            {
+                log_error("gui", "Unable to open specified stylesheet '{}', proceeding with default style", path.toStdString());
+                return default_stylesheet();
+            }
+
+            stylesheet = QString(file.readAll());
+            file.close();
+        }
+
+        QString path = "../resources/stylesheet/test_definitions2";
+
+        if (path.isEmpty())
+            return stylesheet;
+
+        QHash<QString, QString> definitions;
+        QRegularExpression key_regex("(?<key>@[a-zA-Z0-9_]+)($|[^a-zA-Z0-9_])");
+        key_regex.optimize();
+        {
+            QFile file(path);
+
+            if (!file.exists())
+            {
+                log_error("gui", "Specified stylesheet definitions file '{}' does not exist, proceeding with default style", path.toStdString());
+                return default_stylesheet();
+            }
+
+            if (!file.open(QFile::ReadOnly))
+            {
+                log_error("gui", "Unable to open specified stylesheet definitions file '{}', proceeding with default style", path.toStdString());
+                return default_stylesheet();
+            }
+
+            QRegularExpression value_regex("^\\s*(?<value>\\S[^;]*);");
+            value_regex.optimize();
+
+            QTextStream in(&file);
+            while (!in.atEnd())
+            {
+                QString line = in.readLine();
+
+                //additional: line commet(like python), initiated with '%'
+                line = line.left(line.indexOf('%'));
+
+                if (line.isEmpty())
+                    continue;
+
+                int index          = line.indexOf(':');
+                QString key_part   = line.left(index);
+                QString value_part = line.remove(0, index + 1);
+
+                key_part.replace(',', ' ');
+                QString value = value_regex.match(value_part).captured("value");
+
+                QRegularExpressionMatchIterator it = key_regex.globalMatch(key_part);
+                while (it.hasNext())
+                {
+                    QRegularExpressionMatch match = it.next();
+                    definitions.insert(match.captured("key"), value);
+                }
+            }
+            file.close();
+        }
+        qDebug() << definitions << "Size: " << definitions.size();
+
+        QRegularExpressionMatchIterator it = key_regex.globalMatch(stylesheet);
+        int offset                         = 0;
+
+        while (it.hasNext())
+        {
+            QRegularExpressionMatch match = it.next();
+
+            QString key   = match.captured("key");
+            QString value = definitions.value(key);
+
+            int index  = match.capturedStart() + offset;
+            int length = key.length();
+
+            stylesheet.remove(index, length);
+            stylesheet.insert(index, value);
+
+            offset = offset - key.length() + value.length();
+        }
+        return stylesheet;
     }
 
 } // namespace style

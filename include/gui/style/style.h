@@ -31,6 +31,7 @@
 namespace style
 {
     extern QString get_stylesheet();
+    extern QString get_stylesheet2();
     extern QIcon get_styled_svg_icon(const QString& from_to_colors, const QString& svg_path);
 
     extern void debug_update(); // PLACEHOLDER

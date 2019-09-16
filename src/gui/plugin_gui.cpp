@@ -156,6 +156,8 @@ bool plugin_gui::exec(program_arguments& args)
 
     style::debug_update();
 
+    style::get_stylesheet2();
+
     qRegisterMetaType<spdlog::level::level_enum>("spdlog::level::level_enum");
 
 //    g_window_manager       = new window_manager();
