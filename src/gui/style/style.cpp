@@ -255,8 +255,40 @@ namespace style
 
             QRegularExpression value_regex("^\\s*(?<value>\\S[^;]*);");
             value_regex.optimize();
-
             QTextStream in(&file);
+
+            //Phase 1: search for (optional) predefined definitions
+            //QRegularExpression predef_variable_key_regex("(?<key>\$[a-zA-Z0-9_]+)($|[^a-zA-Z0-9_])");
+            //predef_variable_key_regex.optimize();
+            QHash<QString, QString> predef_definitions;
+            while(!in.atEnd())
+            {
+                QString line = in.readLine();
+                line = line.left(line.indexOf('%'));
+
+                if(line.contains("breakkeyword", Qt::CaseInsensitive))
+                    break;
+
+                //remove ';' in case user decides to add a ; for 'consistency' (or better looks)
+                line.remove(";");
+                line.replace(" ", "");
+                line.replace("\t", "");
+
+                int index = line.indexOf("=");
+                QString key_part = line.left(index);
+                QString value_part = line.remove(0, index + 1);
+
+                //perhaps use also regularexpression
+                if(!key_part.startsWith('$'))
+                    continue;
+
+                qDebug() << line << "Index: " << index << " Key: " << key_part << " Value: " << value_part;
+
+                predef_definitions.insert(key_part, value_part);
+            }
+
+            qDebug() << predef_definitions << "Size: " << predef_definitions.size();
+            //Phase 2: replace predefined definitions and construct the definitions map
             while (!in.atEnd())
             {
                 QString line = in.readLine();
@@ -285,6 +317,8 @@ namespace style
         }
         qDebug() << definitions << "Size: " << definitions.size();
 
+
+        /*Replace keywords in the stylehseet with the value*/
         QRegularExpressionMatchIterator it = key_regex.globalMatch(stylesheet);
         int offset                         = 0;
 
