@@ -76,6 +76,20 @@ module_model* netlist_relay::get_module_model() const
     return m_module_model;
 }
 
+void netlist_relay::debug_change_module_name(const u32 id)
+{
+    // NOT THREADSAFE
+
+    std::shared_ptr<module> m = g_netlist->get_module_by_id(id);
+    assert(m);
+
+    bool ok;
+    QString text = QInputDialog::getText(nullptr, "Rename Module", "New Name", QLineEdit::Normal, QString::fromStdString(m->get_name()), &ok);
+
+    if (ok && !text.isEmpty())
+        m->set_name(text.toStdString());
+}
+
 void netlist_relay::debug_change_module_color(const u32 id)
 {
     // NOT THREADSAFE
@@ -130,6 +144,14 @@ void netlist_relay::debug_add_child_module(const u32 id)
         return;
 
     std::shared_ptr<module> s = g_netlist->create_module(g_netlist->get_unique_module_id(), name.toStdString(), m);
+}
+
+void netlist_relay::debug_delete_module(const u32 id)
+{
+    std::shared_ptr<module> m = g_netlist->get_module_by_id(id);
+    assert(m);
+
+    g_netlist->delete_module(m);
 }
 
 void netlist_relay::relay_netlist_event(netlist_event_handler::event ev, std::shared_ptr<netlist> object, u32 associated_data)
@@ -251,17 +273,6 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
 
         g_selection_relay.handle_module_created();
         m_module_colors.insert(object->get_id(), gui_utility::get_random_color());
-        //m_netlist_model->add_module(object->get_id(), object->get_parent_module()->get_id());
-
-//        module_item* item = new module_item(QString::fromStdString(object->get_name()), object->get_id());
-//        std::shared_ptr<module> parent_module = object->get_parent_module();
-//        module_item* parent_item = nullptr;
-
-//        if (parent_module)
-//            parent_item = m_module_items.value(parent_module->get_id());
-
-//        m_module_items.insert(object->get_id(), item);
-//        m_module_model->add_item(item, parent_item);
 
         Q_EMIT module_created(object);
         break;
@@ -271,7 +282,6 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
         //< no associated_data
 
         g_selection_relay.handle_module_removed(object->get_id());
-        //m_netlist_model->remove_module(object->get_id());
         m_module_colors.remove(object->get_id());
         g_graph_context_manager.handle_module_removed(object);
 
@@ -300,6 +310,7 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
         //< associated_data = id of added module
 
         m_netlist_model->add_module(associated_data, object->get_id());
+        m_module_model->add_module(associated_data, object->get_id());
         g_graph_context_manager.handle_module_submodule_added(object, associated_data);
 
         Q_EMIT module_submodule_added(object, associated_data);
@@ -310,6 +321,7 @@ void netlist_relay::relay_module_event(module_event_handler::event ev, std::shar
         //< associated_data = id of removed module
 
         m_netlist_model->remove_module(associated_data);
+        m_module_model->remove_module(associated_data);
         g_graph_context_manager.handle_module_submodule_removed(object, associated_data);
 
         Q_EMIT module_submodule_removed(object, associated_data);
@@ -351,7 +363,6 @@ void netlist_relay::relay_gate_event(gate_event_handler::event ev, std::shared_p
         //< no associated_data
 
         g_selection_relay.handle_gate_created();
-        m_netlist_model->add_gate(object->get_id(), object->get_module()->get_id());
 
         Q_EMIT gate_created(object);
         break;
@@ -361,7 +372,6 @@ void netlist_relay::relay_gate_event(gate_event_handler::event ev, std::shared_p
         //< no associated_data
 
         g_selection_relay.handle_gate_removed(object->get_id());
-        m_netlist_model->remove_gate(object->get_id());
 
         Q_EMIT gate_removed(object);
         break;
@@ -390,9 +400,6 @@ void netlist_relay::relay_net_event(net_event_handler::event ev, std::shared_ptr
         //< no associated_data
 
         g_selection_relay.handle_net_created();
-
-        //m_netlist_model->add_net(object->get_id(), object->get_module()->get_id());
-
         g_graph_context_manager.handle_net_created(object);
 
         Q_EMIT net_created(object);
@@ -456,10 +463,13 @@ void netlist_relay::debug_handle_file_opened()
     m_module_colors.insert(1, QColor(96, 110, 112));
 
     m_netlist_model->init();
+    m_module_model->init();
+}
 
-//    module_item* item = new module_item(QString::fromStdString(top_module->get_name()), top_module->get_id());
-//    item->set_color(QColor(96, 110, 112)); // DEBUG LINE
+void netlist_relay::debug_handle_file_closed()
+{
+    m_netlist_model->clear();
+    m_module_model->clear();
 
-//    m_module_items.insert(top_module->get_id(), item);
-//    m_module_model->add_item(item, nullptr);
+    m_module_colors.clear();
 }

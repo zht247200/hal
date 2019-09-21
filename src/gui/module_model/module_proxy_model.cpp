@@ -4,18 +4,13 @@
 
 module_proxy_model::module_proxy_model(QObject* parent) : QSortFilterProxyModel(parent)
 {
-    // QTS PROXY MODELS ARE DUMB, IMPLEMENT CUSTOM SOLUTION OR SWITCH TO A DIFFERENT FILTER METHOD
 
-    // IN VIEW
-    // EVERY TIME FILTER CHANGES / ITEM GETS ADDED MODIFY LOCAL DATA STRUCTURE TO REFLECT CURRENT ITEM VISUALS
-    // STYLED DELEGATES USE THAT DATA STRUCTURE TO DRAW THEMSELVES
 }
 
 bool module_proxy_model::filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const
 {
     if(!filterRegExp().isEmpty())
     {
-        //QModelIndex source_index = sourceModel()->index(sourceRow, filterKeyColumn(), sourceParent);
         QModelIndex source_index = sourceModel()->index(sourceRow, 0, sourceParent);
         if(source_index.isValid())
         {
@@ -34,5 +29,4 @@ bool module_proxy_model::filterAcceptsRow(int sourceRow, const QModelIndex& sour
 
     static_cast<module_item*>(sourceModel()->index(sourceRow, 0, sourceParent).internalPointer())->set_highlighted(false);
     return true;
-    //return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }

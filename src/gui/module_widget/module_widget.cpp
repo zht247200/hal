@@ -3,6 +3,7 @@
 #include <core/log.h>
 
 #include "gui/gui_globals.h"
+#include "gui/module_model/module_item.h"
 #include "gui/module_model/module_model.h"
 #include "gui/module_model/module_proxy_model.h"
 #include "gui/searchbar/searchbar.h"
@@ -29,7 +30,7 @@ module_widget::module_widget(QWidget* parent) : content_widget("Modules", parent
     m_module_proxy_model->setSourceModel(g_netlist_relay.get_module_model());
     m_module_proxy_model->setRecursiveFilteringEnabled(true);
 
-    //m_tree_view->setAnimated(true); ADD TO SETTINGS
+    m_tree_view->setAnimated(true); // ADD TO SETTINGS
     m_tree_view->setModel(m_module_proxy_model);
     m_tree_view->setContextMenuPolicy(Qt::CustomContextMenu);
     m_tree_view->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -50,13 +51,11 @@ module_widget::module_widget(QWidget* parent) : content_widget("Modules", parent
 void module_widget::setup_toolbar(toolbar* toolbar)
 {
     Q_UNUSED(toolbar)
-
-    //toolbar->addAction(m_filter_action);
 }
 
 QList<QShortcut*> module_widget::create_shortcuts()
 {
-    QShortcut* search_shortcut = new QShortcut(QKeySequence(tr("Ctrl+f")), this);
+    QShortcut* search_shortcut = new QShortcut(QKeySequence("Ctrl+f"), this);
     connect(search_shortcut, &QShortcut::activated, this, &module_widget::toggle_searchbar);
 
     QList<QShortcut*> list;
@@ -141,14 +140,12 @@ void module_widget::handle_custom_context_menu_requested(const QPoint& point)
 
     QMenu context_menu;
 
-    QAction select_action("Select Module", &context_menu);
     QAction add_selection_action("Add Selection to Module", &context_menu);
     QAction add_child_action("Add Child Module", &context_menu);
     QAction change_name_action("Change Module Name", &context_menu);
     QAction change_color_action("Change Module Color", &context_menu);
     QAction delete_action("Delete Module", &context_menu);
 
-    context_menu.addAction(&select_action);
     context_menu.addAction(&add_selection_action);
     context_menu.addAction(&add_child_action);
     context_menu.addAction(&change_name_action);
@@ -166,6 +163,12 @@ void module_widget::handle_custom_context_menu_requested(const QPoint& point)
     if (clicked == &add_child_action)
         g_netlist_relay.debug_add_child_module(g_netlist_relay.get_module_model()->get_item(m_module_proxy_model->mapToSource(index))->id());
 
+    if (clicked == &change_name_action)
+        g_netlist_relay.debug_change_module_name(g_netlist_relay.get_module_model()->get_item(m_module_proxy_model->mapToSource(index))->id());
+
     if (clicked == &change_color_action)
         g_netlist_relay.debug_change_module_color(g_netlist_relay.get_module_model()->get_item(m_module_proxy_model->mapToSource(index))->id());
+
+    if (clicked == &delete_action)
+        g_netlist_relay.debug_delete_module(g_netlist_relay.get_module_model()->get_item(m_module_proxy_model->mapToSource(index))->id());
 }

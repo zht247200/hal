@@ -54,9 +54,11 @@ public:
     netlist_model* get_netlist_model() const;
     module_model* get_module_model() const;
 
+    void debug_change_module_name(const u32 id);
     void debug_change_module_color(const u32 id);
     void debug_add_selection_to_module(const u32 id);
     void debug_add_child_module(const u32 id);
+    void debug_delete_module(const u32 id);
 
 Q_SIGNALS:
     void netlist_id_changed(const std::shared_ptr<netlist> n, const u32 associated_data) const;
@@ -99,6 +101,7 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void debug_handle_file_opened();
+    void debug_handle_file_closed();
 
 private:
     void relay_netlist_event(netlist_event_handler::event ev, std::shared_ptr<netlist> object, u32 associated_data);
@@ -107,9 +110,6 @@ private:
     void relay_net_event(net_event_handler::event ev, std::shared_ptr<net> object, u32 associated_data);
 
     QMap<u32, QColor> m_module_colors;
-
-    QMap<u32, QString> m_gate_aliases;
-    QMap<u32, QString> m_net_aliases;
 
     netlist_model* m_netlist_model;
     module_model* m_module_model;
