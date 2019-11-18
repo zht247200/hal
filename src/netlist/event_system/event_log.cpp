@@ -185,8 +185,9 @@ namespace event_log
             }
             else if (event == module_event_handler::event::gate_removed)
             {
-                auto gate = submodule->get_netlist()->get_gate_by_id(associated_data);
-                log_info("event", "removed gate '{}' (id {:08x}) from submodule '{}' (id {:08x})", gate->get_name(), gate->get_id(), submodule->get_name(), submodule->get_id());
+                //auto gate = submodule->get_netlist()->get_gate_by_id(associated_data);
+                //log_info("event", "removed gate '{}' (id {:08x}) from submodule '{}' (id {:08x})", gate->get_name(), gate->get_id(), submodule->get_name(), submodule->get_id());
+                log_info("event", "removed gate (id {:08x}) from submodule '{}' (id {:08x})", associated_data, submodule->get_name(), submodule->get_id());
             }
             else
             {
