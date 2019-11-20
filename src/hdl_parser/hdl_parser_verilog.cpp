@@ -170,7 +170,7 @@ void hdl_parser_verilog::remove_comments(std::string& buffer, bool& multiline_co
         {
             if (single_line_comment_begin != std::string::npos)
             {
-                if (multi_line_comment_begin == std::string::npos || (multi_line_comment_begin != std::string::npos && multi_line_comment_begin > single_line_comment_begin))
+                if (multi_line_comment_begin == std::string::npos || multi_line_comment_begin > single_line_comment_begin)
                 {
                     buffer = buffer.substr(0, single_line_comment_begin);
                     repeat = true;
@@ -581,7 +581,7 @@ bool hdl_parser_verilog::parse_assign(const std::string& token, const int line)
     net_name_left       = core_utils::trim(net_name_left.substr(0, net_name_left.find("=")));
     auto net_name_right = core_utils::trim(token.substr(token.find('=') + 1));
 
-    auto nets_lhs = this->parse_net_single(net_name_left, line);
+    auto nets_lhs = this->parse_net(net_name_left, line);
     auto nets_rhs = this->parse_net(net_name_right, line);
 
     if (nets_lhs.size() != nets_rhs.size())
@@ -597,7 +597,7 @@ bool hdl_parser_verilog::parse_assign(const std::string& token, const int line)
             imploded_nets2 += net + ",";
         }
         log_error("hdl_parser",
-                  "Cannot connect nets ({}; len={}) to pins ({}; len={}) of gate {} line: {}",
+                  "Cannot connect nets ({}; len={}) to pins ({}; len={}) line: {}",
                   imploded_nets1,
                   std::to_string(nets_lhs.size()),
                   imploded_nets2,
@@ -764,7 +764,7 @@ std::vector<std::string> hdl_parser_verilog::parse_net_single(const std::string&
             // 2.b Is vector of signals
             if (token.find("[") != std::string::npos)
             {
-                auto base   = token.substr(0, token.find("["));
+                auto base   = core_utils::trim(token.substr(0, token.find("[")));
                 auto bounds = this->get_vector_bounds(token.substr(token.find("[")));
                 for (const auto& bound : bounds)
                 {
@@ -785,7 +785,7 @@ std::vector<std::string> hdl_parser_verilog::parse_net_single(const std::string&
                 int lowest = -1;
                 for (const auto& net : m_net)
                 {
-                    if (core_utils::starts_with(net.second->get_name(), token))
+                    if (core_utils::starts_with(net.second->get_name(), token + "["))
                     {
                         auto p = net.second->get_name().substr(net.second->get_name().find("[") + 1);
                         p      = p.substr(0, p.size() - 1);
