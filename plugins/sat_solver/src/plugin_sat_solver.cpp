@@ -1,7 +1,8 @@
 #include "plugin_sat_solver.h"
 #include "z3++.h"
 
-using namespace z3;
+#include "core/log.h"
+#include "netlist/boolean_function.h"
 
 extern std::shared_ptr<i_base> get_plugin_instance()
 {
@@ -20,41 +21,66 @@ std::string plugin_sat_solver::get_version() const
 
 void plugin_sat_solver::initialize()
 {
-
 }
 
+void plugin_sat_solver::sat(const boolean_function& bf)
+{
+    log("SAT for {}", bf.to_string());
 
-void plugin_sat_solver::prove_example1() {
-    std::cout << "prove_example1\n";
-    
-    context c;
-    expr x      = c.int_const("x");
-    expr y      = c.int_const("y");
-    sort I      = c.int_sort();
-    func_decl g = function("g", I, I);
-    
-    solver s(c);
-    expr conjecture1 = implies(x == y, g(x) == g(y));
-    std::cout << "conjecture 1\n" << conjecture1 << "\n";
-    s.add(!conjecture1);
-    if (s.check() == unsat) 
-        std::cout << "proved" << "\n";
-    else
-        std::cout << "failed to prove" << "\n";
+    z3::context c;
+    z3::solver s();
 
-    s.reset(); // remove all assertions from solver s
+    convert_boolean_function_to_z3_expr(bf.to_dnf());
+    //s.add(your formula here);
+    //if (s.check() == z3::sat) then std::cout << s.model() << std::endl;
+}
 
-    expr conjecture2 = implies(x == y, g(g(x)) == g(y));
-    std::cout << "conjecture 2\n" << conjecture2 << "\n";
-    s.add(!conjecture2);
-    if (s.check() == unsat) {
-        std::cout << "proved" << "\n";
+void plugin_sat_solver::convert_boolean_function_to_z3_expr(const boolean_function& bf)
+{
+    z3::context c;
+
+    std::map<std::string, bool> clause_1;
+    std::map<std::string, bool> clause_2;
+
+    clause_1.insert(std::make_pair("I0", true));
+    clause_1.insert(std::make_pair("I1", true));
+    clause_1.insert(std::make_pair("I2", false));
+    clause_1.insert(std::make_pair("I3", true));
+
+    clause_2.insert(std::make_pair("I0", false));
+    clause_2.insert(std::make_pair("I1", true));
+    clause_2.insert(std::make_pair("I2", false));
+    clause_2.insert(std::make_pair("I3", true));
+    clause_2.insert(std::make_pair("I4", true));
+    clause_2.insert(std::make_pair("I5", true));
+
+    std::vector<std::map<std::string, bool>> dnf = {clause_1, clause_2};
+
+    z3::solver s(c);
+
+    // get all variable names and add them
+    for (const auto& var : bf.get_variables())
+    {
+        c.bool_const(var.c_str());
     }
-    else {
-        std::cout << "failed to prove" << "\n";
-        model m = s.get_model();
-        std::cout << "counterexample:\n" << m << "\n";
-        std::cout << "g(g(x)) = " << m.eval(g(g(x))) << "\n";
-        std::cout << "g(y)    = " << m.eval(g(y)) << "\n";
+
+    z3::expr bf_z3(c);
+
+    for (const auto& clause : dnf)
+    {
+        z3::expr clause_z3(c);
+        for (const auto& var_it : clause)
+        {
+            auto var = var_it.first;
+            auto value = var_it.second;
+            // todo: add var to clause as &
+        }
+
+        //todo: or clause to bf_z3
     }
+
+    std::cout << bf_z3.simplify() << std::endl;
+
+
+    return;
 }
