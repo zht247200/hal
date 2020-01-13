@@ -43,8 +43,6 @@ void plugin_sat_solver::sat(const boolean_function& bf)
 
 z3::expr plugin_sat_solver::convert_boolean_function_to_z3_expr(const boolean_function& bf)
 {
-    // simple example, will be replaced with devhoffmanns function bf.get_dnf_vec()
-
     std::vector<std::vector<std::pair<std::string, bool>>> dnf_vec = bf.get_dnf_clauses();
     
     // get all variable names and add them
