@@ -44,22 +44,8 @@ void plugin_sat_solver::sat(const boolean_function& bf)
 z3::expr plugin_sat_solver::convert_boolean_function_to_z3_expr(const boolean_function& bf)
 {
     // simple example, will be replaced with devhoffmanns function bf.get_dnf_vec()
-    const auto clause_1   = std::map<std::string, bool>({
-        {"I0", true},
-        {"I1", true},
-        {"I2", false},
-        {"I3", true},
-    });
-    const auto clause_2   = std::map<std::string, bool>({
-        {"I0", false},
-        {"I1", true},
-        {"I2", false},
-        {"I3", true},
-        {"I4", true},
-        {"I5", true},
-    });
 
-    std::vector<std::map<std::string, bool>> dnf_vec = {clause_1, clause_2};
+    std::vector<std::vector<std::pair<std::string, bool>>> dnf_vec = bf.get_dnf_clauses();
     
     // get all variable names and add them
     std::map<std::string, z3::expr> input2expr;
