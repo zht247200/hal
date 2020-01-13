@@ -27,12 +27,11 @@ void plugin_sat_solver::sat(const boolean_function& bf)
 {
     log("SAT for {}", bf.to_string());
 
-    z3::context c;
-    z3::solver s();
+    z3::solver s(c);
 
     z3::expr dnf = convert_boolean_function_to_z3_expr(bf);
     
-    s.add(dnf == c.bool_val(true));
+    s.add(dnf == c.bv_val(1,1));
 
     auto check = s.check();
 
@@ -44,8 +43,6 @@ void plugin_sat_solver::sat(const boolean_function& bf)
 
 z3::expr plugin_sat_solver::convert_boolean_function_to_z3_expr(const boolean_function& bf)
 {
-    z3::context c;
-
     // simple example, will be replaced with devhoffmanns function bf.get_dnf_vec()
     const auto clause_1   = std::map<std::string, bool>({
         {"I0", true},

@@ -18,4 +18,6 @@ public:
 
 private:
     z3::expr convert_boolean_function_to_z3_expr(const boolean_function& bf);
+
+    z3::context c;
 };
