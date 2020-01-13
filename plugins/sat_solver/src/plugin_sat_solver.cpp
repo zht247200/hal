@@ -30,57 +30,68 @@ void plugin_sat_solver::sat(const boolean_function& bf)
     z3::context c;
     z3::solver s();
 
-    convert_boolean_function_to_z3_expr(bf.to_dnf());
-    //s.add(your formula here);
-    //if (s.check() == z3::sat) then std::cout << s.model() << std::endl;
+    z3::expr dnf = convert_boolean_function_to_z3_expr(bf);
+    
+    s.add(dnf == c.bool_val(true));
+
+    auto check = s.check();
+
+    if (check == z3::sat)
+    {
+        std::cout << "[+] dnf is satisfiable for: " << s.get_model() << std::endl;
+    }
 }
 
-void plugin_sat_solver::convert_boolean_function_to_z3_expr(const boolean_function& bf)
+z3::expr plugin_sat_solver::convert_boolean_function_to_z3_expr(const boolean_function& bf)
 {
     z3::context c;
 
-    std::map<std::string, bool> clause_1;
-    std::map<std::string, bool> clause_2;
+    // simple example, will be replaced with devhoffmanns function bf.get_dnf_vec()
+    const auto clause_1   = std::map<std::string, bool>({
+        {"I0", true},
+        {"I1", true},
+        {"I2", false},
+        {"I3", true},
+    });
+    const auto clause_2   = std::map<std::string, bool>({
+        {"I0", false},
+        {"I1", true},
+        {"I2", false},
+        {"I3", true},
+        {"I4", true},
+        {"I5", true},
+    });
 
-    clause_1.insert(std::make_pair("I0", true));
-    clause_1.insert(std::make_pair("I1", true));
-    clause_1.insert(std::make_pair("I2", false));
-    clause_1.insert(std::make_pair("I3", true));
-
-    clause_2.insert(std::make_pair("I0", false));
-    clause_2.insert(std::make_pair("I1", true));
-    clause_2.insert(std::make_pair("I2", false));
-    clause_2.insert(std::make_pair("I3", true));
-    clause_2.insert(std::make_pair("I4", true));
-    clause_2.insert(std::make_pair("I5", true));
-
-    std::vector<std::map<std::string, bool>> dnf = {clause_1, clause_2};
-
-    z3::solver s(c);
-
+    std::vector<std::map<std::string, bool>> dnf_vec = {clause_1, clause_2};
+    
     // get all variable names and add them
+    std::map<std::string, z3::expr> input2expr;
+
     for (const auto& var : bf.get_variables())
     {
-        c.bool_const(var.c_str());
+        input2expr.insert(std::make_pair(var, c.bv_const(var.c_str(), 1)));
     }
 
-    z3::expr bf_z3(c);
+    std::vector<z3::expr> dnfs;
 
-    for (const auto& clause : dnf)
+    for (const auto& clause : dnf_vec)
     {
-        z3::expr clause_z3(c);
-        for (const auto& var_it : clause)
+        auto clause_expr = c.bv_val(1, 1);    // initialize to true as we logically AND everything in the clause
+        for (const auto& [pin, negated] : clause)
         {
-            auto var = var_it.first;
-            auto value = var_it.second;
-            // todo: add var to clause as &
+            clause_expr = clause_expr & ((negated) ? ~input2expr.at(pin) : input2expr.at(pin));
         }
-
-        //todo: or clause to bf_z3
+        dnfs.emplace_back(clause_expr);
+        std::cout << "[+] adding " << clause_expr.simplify() << " to dnf ..." << std::endl;
     }
 
-    std::cout << bf_z3.simplify() << std::endl;
 
+    z3::expr dnf = c.bv_val(0, 1);
+    for (const auto& _dnf : dnfs)
+    {
+        dnf = dnf | _dnf;
+    }
+    std::cout << "[+] complete dnf " << dnf.simplify() << " is_bool(): " << dnf.is_bool() << std::endl;
 
-    return;
+    return dnf;
 }

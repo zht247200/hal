@@ -2,6 +2,8 @@
 
 #include "core/interface_base.h"
 #include "netlist/boolean_function.h"
+#include "z3++.h"
+
 
 class PLUGIN_API plugin_sat_solver : virtual public i_base
 {
@@ -15,5 +17,5 @@ public:
     void sat(const boolean_function& bf);
 
 private:
-    void convert_boolean_function_to_z3_expr(const boolean_function& bf);
+    z3::expr convert_boolean_function_to_z3_expr(const boolean_function& bf);
 };
