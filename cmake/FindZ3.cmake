@@ -5,68 +5,28 @@
 #  Z3_LIBRARIES - The libraries needed to use Z3
 
 
-find_path(Z3_INCLUDE_DIR z3++.h)
-find_library(Z3_LIBRARY z3)
-
-# If library found, check the version
-if (Z3_INCLUDE_DIR AND Z3_LIBRARY)
-
-  # Check version from char *msat_get_version(void)
-  file(WRITE "${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src.cpp" "
-    #include <stdio.h>
-    #include \"z3.h\"
-
-    int main() {
-      unsigned major, minor, build_number, revision_number;
-      Z3_get_version(&major, &minor, &build_number, &revision_number);
-      printf(\"%u.%u.%u.%u\\n\", major, minor, build_number, revision_number);
-      return 0;
-    }
-  ")
-
-  # Run the test program
-  try_run(
-    VERSION_TEST_EXITCODE
-    VERSION_TEST_COMPILED
-    ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/CMakeTmp/src.cpp
-    COMPILE_DEFINITIONS
-      -I"${Z3_INCLUDE_DIR}"
-      LINK_LIBRARIES ${Z3_LIBRARY} gmp
-    CMAKE_FLAGS
-      -DCMAKE_SKIP_RPATH:BOOL=${CMAKE_SKIP_RPATH}
-    RUN_OUTPUT_VARIABLE
-      VERSION_TEST_RUN_OUTPUT
+find_path (Z3_INCLUDE_DIRS z3++.h
+  PATHS ${CMAKE_EXTRA_INCLUDES} PATH_SUFFIXES z3/ z3/include NO_DEFAULT_PATH
   )
+if(NOT Z3_INCLUDE_DIRS)
+    find_path (Z3_INCLUDE_DIRS z3++.h
+      PATHS /usr/local/include /usr/include /include /sw/include /usr/lib /usr/lib64 /usr/lib/x86_64-linux-gnu/ ${CMAKE_EXTRA_INCLUDES} PATH_SUFFIXES z3/ z3/include
+      )
+endif(NOT Z3_INCLUDE_DIRS)
 
-  if (NOT VERSION_TEST_COMPILED)
-    unset(Z3_INCLUDE_DIR CACHE)
-    unset(Z3_LIBRARY CACHE)
-  elseif (NOT ("${VERSION_TEST_EXITCODE}" EQUAL 0))
-    unset(Z3_INCLUDE_DIR CACHE)
-    unset(Z3_LIBRARY CACHE)
-  else()
-    # Output is of the form: major.minor.build_number.revision
-    if("${VERSION_TEST_RUN_OUTPUT}" MATCHES "([0-9]*\\.[0-9]*\\.[0-9]*\\.[0-9]*)")
-      set(Z3_VERSION "${CMAKE_MATCH_1}")
-      if ("${Z3_VERSION}" VERSION_LESS "${Z3_FIND_VERSION}")
-    	unset(Z3_INCLUDE_DIR CACHE)
-    	unset(Z3_LIBRARY CACHE)
-      elseif (Z3_FIND_VERSION_EXACT AND NOT "${Z3_VERSION}" VERSION_EQUAL "${Z3_FIND_VERSION}")
-    	unset(Z3_INCLUDE_DIR CACHE)
-     	unset(Z3_LIBRARY CACHE)
-      endif()
-    else()
-      unset(Z3_INCLUDE_DIR CACHE)
-      unset(Z3_LIBRARY CACHE)
-    endif()
-  endif()
+## -----------------------------------------------------------------------------
+## Check for the library
+
+find_library (Z3_LIBRARIES NAMES z3
+  PATHS ${CMAKE_EXTRA_LIBRARIES} PATH_SUFFIXES z3/ NO_DEFAULT_PATH
+  )
+if(NOT Z3_LIBRARIES)
+    find_library (Z3_LIBRARIES NAMES z3
+      PATHS /usr/local/lib /usr/lib /lib /sw/lib ${CMAKE_EXTRA_LIBRARIES} PATH_SUFFIXES z3/
+      )
+endif(NOT Z3_LIBRARIES)
+
+
+if (z3_INCLUDES AND IGRAPH_LIBRARIES)
+  set (Z3_FOUND TRUE)
 endif()
-
-set(Z3_LIBRARIES ${Z3_LIBRARY})
-set(Z3_INCLUDE_DIRS ${Z3_INCLUDE_DIR})
-
-include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Z3 DEFAULT_MSG Z3_LIBRARY Z3_INCLUDE_DIR)
-
-mark_as_advanced(Z3_INCLUDE_DIR Z3_LIBRARY)
