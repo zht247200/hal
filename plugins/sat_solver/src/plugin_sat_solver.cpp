@@ -4,6 +4,10 @@
 #include "core/log.h"
 #include "netlist/boolean_function.h"
 
+#include "netlist/netlist.h"
+#include "netlist/gate.h"
+
+
 extern std::shared_ptr<i_base> get_plugin_instance()
 {
     return std::make_shared<plugin_sat_solver>();
@@ -23,6 +27,11 @@ void plugin_sat_solver::initialize()
 {
 }
 
+void plugin_sat_solver::check_adder(const std::set<std::shared_ptr<gate>>& candidate)
+{
+    
+}
+
 void plugin_sat_solver::sat(const boolean_function& bf)
 {
     log("SAT for {}", bf.to_string());
@@ -30,8 +39,8 @@ void plugin_sat_solver::sat(const boolean_function& bf)
     z3::solver s(c);
 
     z3::expr dnf = convert_boolean_function_to_z3_expr(bf);
-    
-    s.add(dnf == c.bv_val(1,1));
+
+    s.add(dnf == c.bv_val(1, 1));
 
     auto check = s.check();
 
@@ -44,7 +53,7 @@ void plugin_sat_solver::sat(const boolean_function& bf)
 z3::expr plugin_sat_solver::convert_boolean_function_to_z3_expr(const boolean_function& bf)
 {
     std::vector<std::vector<std::pair<std::string, bool>>> dnf_vec = bf.get_dnf_clauses();
-    
+
     // get all variable names and add them
     std::map<std::string, z3::expr> input2expr;
 
@@ -65,7 +74,6 @@ z3::expr plugin_sat_solver::convert_boolean_function_to_z3_expr(const boolean_fu
         dnfs.emplace_back(clause_expr);
         std::cout << "[+] adding " << clause_expr.simplify() << " to dnf ..." << std::endl;
     }
-
 
     z3::expr dnf = c.bv_val(0, 1);
     for (const auto& _dnf : dnfs)
