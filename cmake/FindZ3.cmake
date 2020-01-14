@@ -27,6 +27,10 @@ if(NOT Z3_LIBRARIES)
 endif(NOT Z3_LIBRARIES)
 
 
+<<<<<<< HEAD
 if (Z3_INCLUDE_DIRS AND Z3_LIBRARIES)
+=======
+if (Z3_LIBRARIES AND Z3_INCLUDE_DIRS)
+>>>>>>> 411f18c59ebc468796c3c27ce7cbebad306defe8
   set (Z3_FOUND TRUE)
 endif()
