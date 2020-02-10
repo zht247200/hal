@@ -24,10 +24,18 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 
+//remove this, "faulty code". Also, this does not belong here
+#include <graphviz/cgraph.h>
+#include <graphviz/gvc.h>
+
 gate_details_widget::gate_details_widget(QWidget* parent) : QWidget(parent)
 {
-    m_current_id = 0;
 
+    //some code that does not belong here
+    std::string name = "TMP_NAME";
+    Agraph_t* m_agraph = agopen(const_cast<char *>(name.c_str()), Agdirected, NULL);
+
+    m_current_id = 0;
     m_last_click_time = 0;
 
     m_content_layout = new QVBoxLayout(this);
