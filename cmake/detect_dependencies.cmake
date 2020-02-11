@@ -211,18 +211,12 @@ endif()
 #####   Graphviz
 ################################
 find_package(Graphviz REQUIRED)
-if(${Graphviz_FOUND})
-    add_library(graphviz::graphviz INTERFACE IMPORTED)
-    set_target_properties(graphviz::graphviz PROPERTIES
-                          INTERFACE_INCLUDE_DIRECTORIES ${GRAPHVIZ_INCLUDE_DIR}
-                          )
-    set_target_properties(graphviz::graphviz PROPERTIES
-                          INTERFACE_LINK_LIBRARIES ${GRAPHVIZ_LIBRARIES}
-                          )
-
+#if(${Graphviz_FOUND})
     # Use graphviz via:
-    #   target_link_libraries(xxx PUBLIC ... graphviz::graphviz ... )
+    #   target_include_directories(xxx PUBLIC ... ${GRAPHVIZ_INCLUDE_DIR} ...)
+    #   target_link_libraries(xxx PUBLIC ... ${GRAPHVIZ_LIBRARIES} ... )
     # or in plugins:
-    #   add_custom_target( ...
+    #   hal_add_plugin( ...
+    #                      INCLUDES       ... ${GRAPHVIZ_INCLUDE_DIR}
     #                      LINK_LIBRARIES ... graphviz::graphviz)
-endif()
+#endif()
