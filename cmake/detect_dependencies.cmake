@@ -210,8 +210,8 @@ endif()
 ################################
 #####   Graphviz
 ################################
-find_package(Graphviz)
-if(${graphviz_FOUND})
+find_package(Graphviz REQUIRED)
+if(${Graphviz_FOUND})
     add_library(graphviz::graphviz INTERFACE IMPORTED)
     set_target_properties(graphviz::graphviz PROPERTIES
                           INTERFACE_INCLUDE_DIRECTORIES ${GRAPHVIZ_INCLUDE_DIR}
