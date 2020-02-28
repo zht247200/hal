@@ -53,7 +53,6 @@ private:
     QPointF m_name_position;
     QPointF m_type_position;
 
-    QVector<QPointF> m_input_pin_positions;
     QVector<QPointF> m_output_pin_positions;
 };
 

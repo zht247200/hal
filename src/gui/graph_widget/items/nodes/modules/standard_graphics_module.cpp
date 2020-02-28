@@ -14,7 +14,6 @@
 
 static const qreal baseline = 1;
 
-// MAKE FIXED VALUES CONST
 qreal standard_graphics_module::s_alpha;
 
 QPen standard_graphics_module::s_pen;
@@ -85,7 +84,6 @@ void standard_graphics_module::update_alpha()
 
 standard_graphics_module::standard_graphics_module(const std::shared_ptr<const module> m, bool adjust_size_to_grid) : graphics_module(m)
 {
-    m_color = QColor(38, 70, 90, 255); // DEBUG LINE, DELETE LATER
     format(adjust_size_to_grid);
 }
 
@@ -100,10 +98,6 @@ void standard_graphics_module::paint(QPainter* painter, const QStyleOptionGraphi
     }
     else
     {
-//        QLinearGradient gradient(QPointF(0, 0), QPointF(m_width, s_color_bar_height));
-//        gradient.setColorAt(0, QColor(28, 85, 0, 255));
-//        gradient.setColorAt(1, QColor(0, 0, 0, 200));
-
         painter->fillRect(QRectF(0, 0, m_width, s_color_bar_height), m_color);
         painter->fillRect(QRectF(0, s_color_bar_height, m_width, m_height - s_color_bar_height), QColor(0, 0, 0, 200));
 
@@ -116,8 +110,13 @@ void standard_graphics_module::paint(QPainter* painter, const QStyleOptionGraphi
         painter->drawText(m_type_position, "Module");
         painter->setFont(s_pin_font);
 
+        QPointF text_pos(s_pin_outer_horizontal_spacing, s_color_bar_height + s_pin_upper_vertical_spacing + s_pin_font_ascent + baseline);
+
         for (int i = 0; i < m_input_pins.size(); ++i)
-            painter->drawText(m_input_pin_positions.at(i), m_input_pins.at(i).name);
+        {
+            painter->drawText(text_pos, m_input_pins.at(i).name);
+            text_pos.setY(text_pos.y() + s_pin_font_height + s_pin_inner_vertical_spacing);
+        }
 
         for (int i = 0; i < m_output_pins.size(); ++i)
             painter->drawText(m_output_pin_positions.at(i), m_output_pins.at(i).name);
@@ -138,8 +137,13 @@ void standard_graphics_module::paint(QPainter* painter, const QStyleOptionGraphi
                     painter->drawText(m_type_position, "Module");
                     painter->setFont(s_pin_font);
 
+                    QPointF highlight_text_pos(s_pin_outer_horizontal_spacing, s_color_bar_height + s_pin_upper_vertical_spacing + s_pin_font_ascent + baseline);
+
                     for (int i = 0; i < m_input_pins.size(); ++i)
-                        painter->drawText(m_input_pin_positions.at(i), m_input_pins.at(i).name);
+                    {
+                        painter->drawText(highlight_text_pos, m_input_pins.at(i).name);
+                        highlight_text_pos.setY(highlight_text_pos.y() + s_pin_font_height + s_pin_inner_vertical_spacing);
+                    }
 
                     for (int i = 0; i < m_output_pins.size(); ++i)
                         painter->drawText(m_output_pin_positions.at(i), m_output_pins.at(i).name);
@@ -149,7 +153,8 @@ void standard_graphics_module::paint(QPainter* painter, const QStyleOptionGraphi
                 case selection_relay::subfocus::left:
                 {
                     const int index = static_cast<int>(g_selection_relay.m_subfocus_index);
-                    painter->drawText(m_input_pin_positions.at(index), m_input_pins.at(index).name);
+                    const qreal y = s_color_bar_height + s_pin_upper_vertical_spacing + s_pin_font_ascent + baseline + index * (s_pin_font_height + s_pin_inner_vertical_spacing);
+                    painter->drawText(QPointF(s_pin_outer_horizontal_spacing, y), m_input_pins.at(index).name);
                     break;
                 }
                 case selection_relay::subfocus::right:
@@ -256,21 +261,16 @@ void standard_graphics_module::format(const bool& adjust_size_to_grid)
     qreal total_input_pin_height = 0;
 
     if (!m_input_pins.isEmpty())
-    {
         total_input_pin_height = m_input_pins.size() * s_pin_font_height +
                                 (m_input_pins.size() - 1) * s_pin_inner_vertical_spacing +
                                  s_pin_upper_vertical_spacing + s_pin_lower_vertical_spacing;
-    }
 
     qreal total_output_pin_height = 0;
 
-    // UNNECESSARY CHECK ?
     if (!m_output_pins.isEmpty())
-    {
         total_output_pin_height = m_output_pins.size() * s_pin_font_height +
                                  (m_output_pins.size() - 1) * s_pin_inner_vertical_spacing +
                                   s_pin_upper_vertical_spacing + s_pin_lower_vertical_spacing;
-    }
 
     qreal max_pin_height = std::max(total_input_pin_height, total_output_pin_height);
     qreal min_body_height = s_name_font_height + s_type_font_height + s_inner_name_type_spacing + 2 * s_outer_name_type_spacing;
@@ -280,19 +280,17 @@ void standard_graphics_module::format(const bool& adjust_size_to_grid)
 
     if (adjust_size_to_grid)
     {
-        if (m_width / graph_widget_constants::grid_size)
-        {
-            int floored = m_width;
-            int quotient = floored / graph_widget_constants::grid_size;
-            m_width = (quotient + 1) * graph_widget_constants::grid_size;
-        }
+        int floored_width = static_cast<int>(m_width);
+        int quotient = floored_width / graph_widget_constants::grid_size;
 
-        if (m_height / graph_widget_constants::grid_size)
-        {
-            int floored = m_height;
-            int quotient = floored / graph_widget_constants::grid_size;
+        if (m_width > quotient * graph_widget_constants::grid_size)
+            m_width = (quotient + 1) * graph_widget_constants::grid_size;
+
+        int floored_height = static_cast<int>(m_height);
+        quotient = floored_height / graph_widget_constants::grid_size;
+
+        if (m_height > quotient * graph_widget_constants::grid_size)
             m_height = (quotient + 1) * graph_widget_constants::grid_size;
-        }
     }
 
     m_name_position.setX(m_width / 2 - name_width / 2);
@@ -302,15 +300,6 @@ void standard_graphics_module::format(const bool& adjust_size_to_grid)
     m_type_position.setY(m_name_position.y() + s_type_font_height + s_inner_name_type_spacing / 2);
 
     qreal y = s_color_bar_height + s_pin_upper_vertical_spacing + s_pin_font_ascent + baseline;
-
-    // QVECTOR PROBABLY UNNECESSARY HERE, VALUES CAN BE CALCULATED INSIDE PAINT METHOD
-    for (int i = 0; i < m_input_pins.size(); i++)
-    {
-        m_input_pin_positions.append(QPointF(s_pin_outer_horizontal_spacing, y));
-        y += (s_pin_font_height + s_pin_inner_vertical_spacing);
-    }
-
-    y = s_color_bar_height + s_pin_upper_vertical_spacing + s_pin_font_ascent + baseline;
 
     for (const module_pin& output_pin : m_output_pins)
     {
