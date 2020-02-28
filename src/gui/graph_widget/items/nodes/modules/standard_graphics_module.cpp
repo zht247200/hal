@@ -78,11 +78,7 @@ void standard_graphics_module::load_settings()
 void standard_graphics_module::update_alpha()
 {
     if (s_lod <= graph_widget_constants::gate_max_lod)
-    {
-        const qreal difference = graph_widget_constants::gate_max_lod - graph_widget_constants::gate_min_lod;
-
-        s_alpha = 1 - (s_lod - graph_widget_constants::gate_min_lod) / difference;
-    }
+        s_alpha = 1 - (s_lod - graph_widget_constants::gate_min_lod) / (graph_widget_constants::gate_max_lod - graph_widget_constants::gate_min_lod);
     else
         s_alpha = 0;
 }
@@ -121,10 +117,10 @@ void standard_graphics_module::paint(QPainter* painter, const QStyleOptionGraphi
         painter->setFont(s_pin_font);
 
         for (int i = 0; i < m_input_pins.size(); ++i)
-            painter->drawText(m_input_pin_positions.at(i), m_input_pins.at(i).pin_type);
+            painter->drawText(m_input_pin_positions.at(i), m_input_pins.at(i).name);
 
         for (int i = 0; i < m_output_pins.size(); ++i)
-            painter->drawText(m_output_pin_positions.at(i), m_output_pins.at(i).pin_type);
+            painter->drawText(m_output_pin_positions.at(i), m_output_pins.at(i).name);
 
         if (g_selection_relay.m_focus_type == selection_relay::item_type::module)
             if (g_selection_relay.m_focus_id == m_id)
@@ -143,21 +139,23 @@ void standard_graphics_module::paint(QPainter* painter, const QStyleOptionGraphi
                     painter->setFont(s_pin_font);
 
                     for (int i = 0; i < m_input_pins.size(); ++i)
-                        painter->drawText(m_input_pin_positions.at(i), m_input_pins.at(i).pin_type);
+                        painter->drawText(m_input_pin_positions.at(i), m_input_pins.at(i).name);
 
                     for (int i = 0; i < m_output_pins.size(); ++i)
-                        painter->drawText(m_output_pin_positions.at(i), m_output_pins.at(i).pin_type);
+                        painter->drawText(m_output_pin_positions.at(i), m_output_pins.at(i).name);
 
                     break;
                 }
                 case selection_relay::subfocus::left:
                 {
-                    painter->drawText(m_input_pin_positions.at(g_selection_relay.m_subfocus_index), m_input_pins.at(g_selection_relay.m_subfocus_index).pin_type);
+                    const int index = static_cast<int>(g_selection_relay.m_subfocus_index);
+                    painter->drawText(m_input_pin_positions.at(index), m_input_pins.at(index).name);
                     break;
                 }
                 case selection_relay::subfocus::right:
                 {
-                    painter->drawText(m_output_pin_positions.at(g_selection_relay.m_subfocus_index), m_output_pins.at(g_selection_relay.m_subfocus_index).pin_type);
+                    const int index = static_cast<int>(g_selection_relay.m_subfocus_index);
+                    painter->drawText(m_output_pin_positions.at(index), m_output_pins.at(index).name);
                     break;
                 }
                 }
@@ -167,8 +165,6 @@ void standard_graphics_module::paint(QPainter* painter, const QStyleOptionGraphi
         {
             QColor fade = m_color;
             fade.setAlphaF(s_alpha);
-
-            //painter->fillRect(QRect(0, 0, m_width, m_height), fade);
             painter->fillRect(QRectF(0, s_color_bar_height, m_width, m_height - s_color_bar_height), fade);
         }
 
@@ -190,11 +186,15 @@ void standard_graphics_module::paint(QPainter* painter, const QStyleOptionGraphi
 
 QPointF standard_graphics_module::get_input_scene_position(const u32 net_id, const QString& pin_type) const
 {
-    Q_UNUSED(net_id)
+    Q_UNUSED(pin_type)
 
-    int index = m_input_pins.indexOf(module_pin{net_id, pin_type});
+    int index = 0;
 
-    assert(index != -1);
+    for (; index < m_input_pins.size(); ++index)
+        if (m_input_pins.at(index).net_id == net_id)
+            break;
+
+    assert(index < m_input_pins.size());
 
     qreal y = s_color_bar_height + s_pin_upper_vertical_spacing;
 
@@ -208,11 +208,15 @@ QPointF standard_graphics_module::get_input_scene_position(const u32 net_id, con
 
 QPointF standard_graphics_module::get_output_scene_position(const u32 net_id, const QString& pin_type) const
 {
-    Q_UNUSED(net_id)
+    Q_UNUSED(pin_type)
 
-    int index = m_output_pins.indexOf(module_pin{net_id, pin_type});
+    int index = 0;
 
-    assert(index != -1);
+    for (; index < m_output_pins.size(); ++index)
+        if (m_output_pins.at(index).net_id == net_id)
+            break;
+
+    assert(index < m_output_pins.size());
 
     qreal y = s_color_bar_height + s_pin_upper_vertical_spacing;
 
@@ -237,14 +241,14 @@ void standard_graphics_module::format(const bool& adjust_size_to_grid)
 
     for (const module_pin& input_pin : m_input_pins)
     {
-        qreal width = pin_fm.width(input_pin.pin_type);
+        qreal width = pin_fm.width(input_pin.name);
         if (width > max_pin_width)
             max_pin_width = width;
     }
 
     for (const module_pin& output_pin : m_output_pins)
     {
-        qreal width = pin_fm.width(output_pin.pin_type);
+        qreal width = pin_fm.width(output_pin.name);
         if (width > max_pin_width)
             max_pin_width = width;
     }
@@ -310,7 +314,7 @@ void standard_graphics_module::format(const bool& adjust_size_to_grid)
 
     for (const module_pin& output_pin : m_output_pins)
     {
-        qreal x = m_width - (pin_fm.size(0, output_pin.pin_type).rwidth() + s_pin_outer_horizontal_spacing);
+        qreal x = m_width - (pin_fm.size(0, output_pin.name).rwidth() + s_pin_outer_horizontal_spacing);
         m_output_pin_positions.append(QPointF(x, y));
         y += (s_pin_font_height + s_pin_inner_vertical_spacing);
     }
