@@ -118,13 +118,6 @@ void arrow_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIte
     painter->setBrush(QBrush());
 }
 
-void arrow_separated_net::set_visuals(const graphics_net::visuals& v)
-{
-    setVisible(v.visible);
-    m_color = v.color;
-    m_line_style = v.style;
-}
-
 void arrow_separated_net::add_output()
 {
     if (m_draw_output)

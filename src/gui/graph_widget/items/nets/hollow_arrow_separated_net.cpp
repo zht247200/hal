@@ -118,13 +118,6 @@ void hollow_arrow_separated_net::paint(QPainter* painter, const QStyleOptionGrap
     painter->setBrush(QBrush());
 }
 
-void hollow_arrow_separated_net::set_visuals(const graphics_net::visuals& v)
-{
-    setVisible(v.visible);
-    m_color = v.color;
-    m_line_style = v.style;
-}
-
 void hollow_arrow_separated_net::add_output()
 {
     if (m_draw_output)

@@ -36,13 +36,6 @@ labeled_separated_net::labeled_separated_net(const std::shared_ptr<const net> n,
     m_text_width = fm.width(m_text);
 }
 
-void labeled_separated_net::set_visuals(const graphics_net::visuals& v)
-{
-    setVisible(v.visible);
-    m_color = v.color;
-    m_line_style = v.style;
-}
-
 void labeled_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
 {
     Q_UNUSED(widget);

@@ -51,19 +51,21 @@ public:
 
     graphics_net(const std::shared_ptr<const net> n);
 
-    QRectF boundingRect() const Q_DECL_OVERRIDE;
-    virtual QPainterPath shape() const Q_DECL_OVERRIDE;
+    QRectF boundingRect() const override;
+    QPainterPath shape() const override;
 
-    virtual void set_visuals(const visuals& v) = 0;
+    virtual void set_visuals(const visuals& v);
 
 protected:
-    static QPen s_pen;
-
     static qreal s_line_width;
     static qreal s_stroke_width;
 
+    static QPen s_pen;
+
     QRectF m_rect;
     QPainterPath m_shape;
+
+    line_style m_line_style;
 };
 
 #endif // GRAPHICS_NET_H

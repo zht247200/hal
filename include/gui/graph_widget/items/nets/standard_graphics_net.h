@@ -67,8 +67,7 @@ public:
     //standard_graphics_net(const std::shared_ptr<const net> n, const lines& l);
     standard_graphics_net(const std::shared_ptr<const net> n, lines& l, bool draw_arrow);
 
-    virtual void set_visuals(const visuals& v) override;
-    virtual void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+    void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
 private:
     static qreal s_alpha;
@@ -78,8 +77,6 @@ private:
 
     QVector<QLineF> m_lines;
     QVector<QPointF> m_splits;
-
-    line_style m_line_style;
 
     bool m_draw_arrow;
 };

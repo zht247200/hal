@@ -35,7 +35,6 @@ void standard_graphics_net::update_alpha()
 
 //standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n, const lines& l) : graphics_net(n),
 standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n, lines& l, bool draw_arrow) : graphics_net(n),
-    m_line_style(line_style::solid),
     m_draw_arrow(draw_arrow)
 {    
     QVector<h_line> collapsed_h;
@@ -238,13 +237,6 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
 
 //    for (const v_line& v : l.v_lines)
     //        m_lines.append(QLineF(v.x - l.src_x, v.small_y - l.src_y, v.x - l.src_x, v.big_y - l.src_y));
-}
-
-void standard_graphics_net::set_visuals(const graphics_net::visuals& v)
-{
-    setVisible(v.visible);
-    m_color = v.color;
-    m_line_style = v.style;
 }
 
 void standard_graphics_net::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)

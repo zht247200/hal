@@ -26,7 +26,6 @@ void circle_separated_net::load_settings()
 
 circle_separated_net::circle_separated_net(const std::shared_ptr<const net> n) : separated_graphics_net(n)
 {
-
 }
 
 void circle_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
@@ -76,13 +75,6 @@ void circle_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIt
 #endif
 
     painter->setBrush(QBrush());
-}
-
-void circle_separated_net::set_visuals(const graphics_net::visuals& v)
-{
-    setVisible(v.visible);
-    m_color = v.color;
-    m_line_style = v.style;
 }
 
 void circle_separated_net::add_output()
