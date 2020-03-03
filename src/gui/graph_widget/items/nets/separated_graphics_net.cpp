@@ -15,8 +15,6 @@ void separated_graphics_net::update_alpha()
 }
 
 separated_graphics_net::separated_graphics_net(const std::shared_ptr<const net> n) : graphics_net(n),
-  m_line_style(line_style::solid),
   m_draw_output(false)
 {
-
 }
