@@ -67,7 +67,6 @@ void arrow_separated_net::load_settings()
 
 arrow_separated_net::arrow_separated_net(const std::shared_ptr<const net> n) : separated_graphics_net(n)
 {
-
 }
 
 void arrow_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
@@ -176,13 +175,9 @@ void arrow_separated_net::add_input(const QPointF& scene_position)
 
 void arrow_separated_net::finalize()
 {
-    qreal spacing = 1;
-
-    if (s_line_width > spacing)
-        spacing = s_line_width; // TOO BIG, DOESNT MATTER
-
+    // RECT IS INTENTIONALLY CHOSEN SLIGHTLY TOO BIG
     m_rect = m_shape.boundingRect();
-    m_rect.adjust(-spacing, -spacing, spacing, spacing);
+    m_rect.adjust(-s_line_width, -s_line_width, s_line_width, s_line_width);
 }
 
 qreal arrow_separated_net::input_width() const
