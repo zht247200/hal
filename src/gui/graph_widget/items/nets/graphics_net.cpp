@@ -39,4 +39,5 @@ void graphics_net::set_visuals(const graphics_net::visuals& v)
 
     m_color = v.color;
     m_line_style = v.style;
+    m_fill_icon = v.fill_icon;
 }

@@ -9,7 +9,6 @@
 #include "gui/graph_widget/graphics_scene.h"
 #include "gui/graph_widget/items/nets/arrow_separated_net.h"
 #include "gui/graph_widget/items/nets/circle_separated_net.h"
-#include "gui/graph_widget/items/nets/hollow_arrow_separated_net.h"
 #include "gui/graph_widget/items/nets/labeled_separated_net.h"
 #include "gui/graph_widget/items/nets/standard_graphics_net.h"
 #include "gui/gui_globals.h"
@@ -729,7 +728,7 @@ void graph_layouter::draw_nets()
         if (n->is_unrouted())
         {
             // HANDLE GLOBAL NETS
-            hollow_arrow_separated_net* net_item = new hollow_arrow_separated_net(n);
+            arrow_separated_net* net_item = new arrow_separated_net(n);
 
             endpoint src_end = n->get_source();
 
@@ -744,8 +743,8 @@ void graph_layouter::draw_nets()
                 {
                     if (box.node == node)
                     {
-                        net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src_end.get_pin())));
-                        net_item->add_output();
+                        //net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src_end.get_pin())));
+                        net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src_end.get_pin())));
                         break;
                     }
                 }
@@ -790,8 +789,8 @@ void graph_layouter::draw_nets()
                     {
                         if (box.node == node)
                         {
-                            net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
-                            net_item->add_output();
+                            //net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
+                            net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
                             break;
                         }
                     }
@@ -867,8 +866,8 @@ void graph_layouter::draw_nets()
                     {
                         if (box.node == tmp)
                         {
-                            net_item->add_output();
-                            net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
+                            //net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
+                            net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
                             break;
                         }
                     }

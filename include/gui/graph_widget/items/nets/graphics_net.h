@@ -45,6 +45,7 @@ public:
         bool visible;
         QColor color;
         line_style style;
+        bool fill_icon;
     };
 
     static void load_settings();
@@ -66,6 +67,8 @@ protected:
     QPainterPath m_shape;
 
     line_style m_line_style;
+
+    bool m_fill_icon;
 };
 
 #endif // GRAPHICS_NET_H

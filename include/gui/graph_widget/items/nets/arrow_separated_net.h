@@ -35,10 +35,8 @@ public:
 
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
-    void add_output() override;
     void add_input(const QPointF& scene_position) override;
-
-    void finalize() override;
+    void add_output(const QPointF& scene_position) override;
 
     qreal input_width() const override;
     qreal output_width() const override;

@@ -292,7 +292,7 @@ void standard_graphics_net::paint(QPainter* painter, const QStyleOptionGraphicsI
         painter->setRenderHint(QPainter::Antialiasing, original_value);
     }
 
-#ifdef HAL_DEBUG_GUI_GRAPHICS
+#ifdef HAL_DEBUG_GUI_GRAPH_WIDGET
     s_pen.setColor(Qt::green);
     const bool cosmetic = s_pen.isCosmetic();
     s_pen.setCosmetic(true);

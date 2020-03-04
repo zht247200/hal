@@ -6,7 +6,7 @@
 #include <QPen>
 #include <QStyleOptionGraphicsItem>
 
-static const qreal baseline = 1;
+static const qreal s_baseline = 1;
 
 qreal labeled_separated_net::s_wire_length;
 qreal labeled_separated_net::s_text_offset;
@@ -49,61 +49,34 @@ void labeled_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsI
     painter->setPen(s_pen);
     painter->setFont(s_font);
 
-    if (m_draw_output)
-    {
-        painter->drawLine(QPointF(0, 0), QPointF(s_wire_length, 0));
-        painter->drawText(QPointF(s_wire_length + s_text_offset, -(s_font_height / 2) + s_font_ascend + baseline), m_text);
-    }
-
-    for (const QPointF& position : m_input_wires)
+    for (const QPointF& position : m_input_positions)
     {
         QPointF to(position.x() - s_wire_length, position.y());
         painter->drawLine(position, to);
-        qreal horizontal_offset = s_text_offset + m_text_width;
-        qreal vertical_offset = -(s_font_height / 2) + s_font_ascend + baseline;
+        const qreal horizontal_offset = s_text_offset + m_text_width;
+        const qreal vertical_offset = s_baseline + s_font_ascend - (s_font_height / 2);
         painter->drawText(QPointF(to.x() - horizontal_offset, to.y() + vertical_offset), m_text);
     }
 
-#ifdef HAL_DEBUG_GUI_GRAPHICS
+    for (const QPointF& position : m_output_positions)
+    {
+        QPointF to(position.x() + s_wire_length, position.y());
+        painter->drawLine(position, to);
+        const qreal vertical_offset = s_baseline + s_font_ascend - (s_font_height / 2);
+        painter->drawText(QPointF(to.x() + s_text_offset, to.y() + vertical_offset), m_text);
+    }
+
+#ifdef HAL_DEBUG_GUI_GRAPH_WIDGET
     s_pen.setColor(Qt::green);
     painter->setPen(s_pen);
     painter->drawPath(m_shape);
 #endif
 }
 
-void labeled_separated_net::add_output()
-{
-    if (m_draw_output)
-        return;
-
-    m_draw_output = true;
-
-    // 1 SUBPATH
-
-    // 2 SUBPATHS
-    m_shape.moveTo(QPointF(-s_stroke_width, -s_stroke_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, -s_stroke_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, s_stroke_width));
-    m_shape.lineTo(QPointF(-s_stroke_width, s_stroke_width));
-    m_shape.closeSubpath();
-
-    // TBC...
-
-//    m_shape.moveTo(QPointF(0, -s_stroke_width / 2));
-//    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_wire_length + s_text_offset, m_shape.currentPosition().y()));
-//    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - QFontMetricsF(s_font).height() / 2 + s_stroke_width / 2));
-//    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + m_text_width, m_shape.currentPosition().y()));
-//    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() + QFontMetricsF(s_font).height()));
-//    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - m_text_width, m_shape.currentPosition().y()));
-//    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - QFontMetricsF(s_font).height() / 2 + s_stroke_width / 2));
-//    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_text_offset, m_shape.currentPosition().y()));
-//    m_shape.closeSubpath();
-}
-
 void labeled_separated_net::add_input(const QPointF& scene_position)
 {
     QPointF mapped_position = mapFromScene(scene_position);
-    m_input_wires.append(mapped_position);
+    m_input_positions.append(mapped_position);
 
     m_shape.moveTo(QPointF(mapped_position.x(), mapped_position.y() - s_stroke_width / 2));
     m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_text_offset, m_shape.currentPosition().y()));
@@ -116,10 +89,20 @@ void labeled_separated_net::add_input(const QPointF& scene_position)
     m_shape.closeSubpath();
 }
 
-void labeled_separated_net::finalize()
+void labeled_separated_net::add_output(const QPointF& scene_position)
 {
-    m_rect = m_shape.boundingRect();
-    m_rect.adjust(-1, -1, 1, 1);
+    QPointF mapped_position = mapFromScene(scene_position);
+    m_output_positions.append(mapped_position);
+
+    m_shape.moveTo(QPointF(mapped_position.x(), mapped_position.y() - s_stroke_width / 2));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + s_wire_length + s_text_offset, m_shape.currentPosition().y()));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - QFontMetricsF(s_font).height() / 2 + s_stroke_width / 2));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x() + m_text_width, m_shape.currentPosition().y()));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() + QFontMetricsF(s_font).height()));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - m_text_width, m_shape.currentPosition().y()));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x(), m_shape.currentPosition().y() - QFontMetricsF(s_font).height() / 2 + s_stroke_width / 2));
+    m_shape.lineTo(QPointF(m_shape.currentPosition().x() - s_wire_length - s_text_offset, m_shape.currentPosition().y()));
+    m_shape.closeSubpath();
 }
 
 qreal labeled_separated_net::input_width() const

@@ -80,21 +80,15 @@ void arrow_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIte
     color.setAlphaF(s_alpha);
 
     s_pen.setColor(color);
-    s_brush.setColor(color);
     painter->setPen(s_pen);
-    painter->setBrush(s_brush);
 
-    if (m_draw_output)
+    if (m_fill_icon)
     {
-        painter->drawLine(QPointF(0, 0), QPointF(s_wire_length, 0));
-        painter->save();
-        painter->setRenderHint(QPainter::Antialiasing, true);
-        painter->translate(QPointF(s_wire_length + s_output_arrow_offset, 0));
-        painter->drawPath(s_arrow);
-        painter->restore();
+        s_brush.setColor(color);
+        painter->setBrush(s_brush);
     }
 
-    for (const QPointF& position : m_input_wires)
+    for (const QPointF& position : m_input_positions)
     {
         QPointF to(position.x() - s_wire_length, position.y());
         painter->drawLine(position, to);
@@ -105,7 +99,20 @@ void arrow_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIte
         painter->restore();
     }
 
-#ifdef HAL_DEBUG_GUI_GRAPHICS
+    for (const QPointF& position : m_output_positions)
+    {
+        QPointF to(position.x() + s_wire_length, position.y());
+        painter->drawLine(position, to);
+        painter->save();
+        painter->setRenderHint(QPainter::Antialiasing, true);
+        painter->translate(QPointF(position.x() + s_wire_length + s_output_arrow_offset, position.y()));
+        painter->drawPath(s_arrow);
+        painter->restore();
+    }
+
+    painter->setBrush(QBrush());
+
+#ifdef HAL_DEBUG_GUI_GRAPH_WIDGET
     bool original_value = s_pen.isCosmetic();
     s_pen.setCosmetic(true);
     s_pen.setColor(Qt::green);
@@ -113,39 +120,13 @@ void arrow_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIte
     painter->drawPath(m_shape);
     s_pen.setCosmetic(original_value);
 #endif
-
-    painter->setBrush(QBrush());
-}
-
-void arrow_separated_net::add_output()
-{
-    if (m_draw_output)
-        return;
-
-    m_draw_output = true;
-
-    m_shape.moveTo(QPointF(-s_stroke_width, -s_stroke_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, -s_stroke_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, s_stroke_width));
-    m_shape.lineTo(QPointF(-s_stroke_width, s_stroke_width));
-    m_shape.closeSubpath();
-
-    const qreal x = s_wire_length + s_output_arrow_offset - s_stroke_width;
-
-    // SPACING EFFECTS NOT PROPERLY CALCULATED HERE
-    m_shape.moveTo(QPointF(x, 0));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift, -s_arrow_height / 2 - s_stroke_width));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length + s_stroke_width, -s_arrow_height / 2 - s_stroke_width));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length - s_arrow_right_outward_x_shift + 2* s_stroke_width, 0));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length + s_stroke_width, s_arrow_height / 2 + s_stroke_width));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift, s_arrow_height / 2 + s_stroke_width));
-    m_shape.closeSubpath();
 }
 
 void arrow_separated_net::add_input(const QPointF& scene_position)
 {
+    // REWRITE
     QPointF mapped_position = mapFromScene(scene_position);
-    m_input_wires.append(mapped_position);
+    m_input_positions.append(mapped_position);
 
     qreal x = mapped_position.x() + s_stroke_width;
     const qreal y = mapped_position.y();
@@ -173,11 +154,28 @@ void arrow_separated_net::add_input(const QPointF& scene_position)
     m_shape.closeSubpath();
 }
 
-void arrow_separated_net::finalize()
+void arrow_separated_net::add_output(const QPointF& scene_position)
 {
-    // RECT IS INTENTIONALLY CHOSEN SLIGHTLY TOO BIG
-    m_rect = m_shape.boundingRect();
-    m_rect.adjust(-s_line_width, -s_line_width, s_line_width, s_line_width);
+    // REWRITE
+    QPointF mapped_position = mapFromScene(scene_position);
+    m_output_positions.append(mapped_position);
+
+    m_shape.moveTo(QPointF(-s_stroke_width, -s_stroke_width));
+    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, -s_stroke_width));
+    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, s_stroke_width));
+    m_shape.lineTo(QPointF(-s_stroke_width, s_stroke_width));
+    m_shape.closeSubpath();
+
+    const qreal x = s_wire_length + s_output_arrow_offset - s_stroke_width;
+
+    // SPACING EFFECTS NOT PROPERLY CALCULATED HERE
+    m_shape.moveTo(QPointF(x, 0));
+    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift, -s_arrow_height / 2 - s_stroke_width));
+    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length + s_stroke_width, -s_arrow_height / 2 - s_stroke_width));
+    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length - s_arrow_right_outward_x_shift + 2* s_stroke_width, 0));
+    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length + s_stroke_width, s_arrow_height / 2 + s_stroke_width));
+    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift, s_arrow_height / 2 + s_stroke_width));
+    m_shape.closeSubpath();
 }
 
 qreal arrow_separated_net::input_width() const
