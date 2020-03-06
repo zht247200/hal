@@ -35,8 +35,8 @@ void arrow_separated_net::load_settings()
 
     s_input_offset = s_wire_length + s_input_arrow_offset + s_arrow_length;
 
-    s_input_width = s_wire_length + s_input_arrow_offset + s_arrow_length + s_stroke_width * 1.5;
-    s_output_width = s_wire_length + s_output_arrow_offset + s_arrow_length + s_stroke_width * 1.5;
+    s_input_width = s_wire_length + s_input_arrow_offset + s_arrow_length + s_shape_width * 1.5;
+    s_output_width = s_wire_length + s_output_arrow_offset + s_arrow_length + s_shape_width * 1.5;
 
     if (s_arrow_left_outward_x_shift > 0)
     {
@@ -124,58 +124,46 @@ void arrow_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIte
 
 void arrow_separated_net::add_input(const QPointF& scene_position)
 {
-    // REWRITE
     QPointF mapped_position = mapFromScene(scene_position);
     m_input_positions.append(mapped_position);
 
-    qreal x = mapped_position.x() + s_stroke_width;
+    const qreal half_of_shape_width = s_shape_width / 2;
+
+    qreal x = mapped_position.x() + half_of_shape_width;
     const qreal y = mapped_position.y();
 
-    m_shape.moveTo(QPointF(x, y - s_stroke_width));
-    m_shape.lineTo(QPointF(x - s_wire_length - s_stroke_width * 2, y - s_stroke_width));
-    m_shape.lineTo(QPointF(x - s_wire_length - s_stroke_width * 2, y + s_stroke_width));
-    m_shape.lineTo(QPointF(x, y + s_stroke_width));
+    m_shape.moveTo(QPointF(x, y - half_of_shape_width));
+    m_shape.lineTo(QPointF(x - s_wire_length - s_shape_width, y - half_of_shape_width));
+    m_shape.lineTo(QPointF(x - s_wire_length - s_shape_width, y + half_of_shape_width));
+    m_shape.lineTo(QPointF(x, y + half_of_shape_width));
     m_shape.closeSubpath();
 
-    // SPACING EFFECTS NOT PROPERLY CALCULATED HERE
     x -= s_wire_length + s_input_arrow_offset;
 
-    m_shape.moveTo(QPointF(x, y));
-
-    x += s_arrow_right_outward_x_shift;
-
-    qreal outwards = s_arrow_height / 2 + s_stroke_width;
-
-    m_shape.lineTo(QPointF(x, y - outwards));
-    m_shape.lineTo(QPointF(x - s_arrow_length - 2 * s_stroke_width, y - outwards));
-    m_shape.lineTo(QPointF(x - s_arrow_length - s_arrow_left_outward_x_shift - 2 * s_stroke_width, y));
-    m_shape.lineTo(QPointF(x - s_arrow_length - 2 * s_stroke_width, y + outwards));
-    m_shape.lineTo(QPointF(x, y + outwards));
+    m_shape.moveTo(QPointF(x, y - s_arrow_height / 2 - half_of_shape_width));
+    m_shape.lineTo(QPointF(x - s_arrow_length - s_shape_width, y - s_arrow_height / 2 - half_of_shape_width));
+    m_shape.lineTo(QPointF(x - s_arrow_length - s_shape_width, y + s_arrow_height / 2 + half_of_shape_width));
+    m_shape.lineTo(QPointF(x, y + s_arrow_height / 2 + half_of_shape_width));
     m_shape.closeSubpath();
 }
 
 void arrow_separated_net::add_output(const QPointF& scene_position)
 {
-    // REWRITE
     QPointF mapped_position = mapFromScene(scene_position);
     m_output_positions.append(mapped_position);
 
-    m_shape.moveTo(QPointF(-s_stroke_width, -s_stroke_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, -s_stroke_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, s_stroke_width));
-    m_shape.lineTo(QPointF(-s_stroke_width, s_stroke_width));
+    const qreal half_of_shape_width = s_shape_width / 2;
+
+    qreal x = mapped_position.x() - half_of_shape_width;
+    const qreal y = mapped_position.y();
+
+    m_shape.moveTo(QPointF(x, y - half_of_shape_width));
+    m_shape.lineTo(QPointF(x + s_wire_length + s_shape_width, y - half_of_shape_width));
+    m_shape.lineTo(QPointF(x + s_wire_length + s_shape_width, y + half_of_shape_width));
+    m_shape.lineTo(QPointF(x, y + half_of_shape_width));
     m_shape.closeSubpath();
 
-    const qreal x = s_wire_length + s_output_arrow_offset - s_stroke_width;
-
-    // SPACING EFFECTS NOT PROPERLY CALCULATED HERE
-    m_shape.moveTo(QPointF(x, 0));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift, -s_arrow_height / 2 - s_stroke_width));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length + s_stroke_width, -s_arrow_height / 2 - s_stroke_width));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length - s_arrow_right_outward_x_shift + 2* s_stroke_width, 0));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift + s_arrow_length + s_stroke_width, s_arrow_height / 2 + s_stroke_width));
-    m_shape.lineTo(QPointF(x + s_arrow_left_outward_x_shift, s_arrow_height / 2 + s_stroke_width));
-    m_shape.closeSubpath();
+    // ARROW
 }
 
 qreal arrow_separated_net::input_width() const

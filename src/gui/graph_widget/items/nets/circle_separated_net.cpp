@@ -87,17 +87,17 @@ void circle_separated_net::add_input(const QPointF& scene_position)
     QPointF mapped_position = mapFromScene(scene_position);
     m_input_positions.append(mapped_position);
 
-    const qreal x = mapped_position.x() + s_stroke_width;
+    const qreal x = mapped_position.x() + s_shape_width;
     const qreal y = mapped_position.y();
 
-    m_shape.moveTo(QPointF(x, y - s_stroke_width));
-    m_shape.lineTo(QPointF(x - s_wire_length - s_stroke_width * 2, y - s_stroke_width));
-    m_shape.lineTo(QPointF(x - s_wire_length - s_stroke_width * 2, y + s_stroke_width));
-    m_shape.lineTo(QPointF(x, y + s_stroke_width));
+    m_shape.moveTo(QPointF(x, y - s_shape_width));
+    m_shape.lineTo(QPointF(x - s_wire_length - s_shape_width * 2, y - s_shape_width));
+    m_shape.lineTo(QPointF(x - s_wire_length - s_shape_width * 2, y + s_shape_width));
+    m_shape.lineTo(QPointF(x, y + s_shape_width));
     m_shape.closeSubpath();
 
     const QPointF point(mapped_position.x() - s_wire_length - s_circle_offset, mapped_position.y());
-    const qreal radius = s_radius + s_stroke_width;
+    const qreal radius = s_radius + s_shape_width;
 
     m_shape.addEllipse(point, radius, radius);
 
@@ -110,14 +110,14 @@ void circle_separated_net::add_output(const QPointF& scene_position)
     QPointF mapped_position = mapFromScene(scene_position);
     m_input_positions.append(mapped_position);
 
-    m_shape.moveTo(QPointF(-s_stroke_width, -s_stroke_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, -s_stroke_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_stroke_width, s_stroke_width));
-    m_shape.lineTo(QPointF(-s_stroke_width, s_stroke_width));
+    m_shape.moveTo(QPointF(-s_shape_width, -s_shape_width));
+    m_shape.lineTo(QPointF(s_wire_length + s_shape_width, -s_shape_width));
+    m_shape.lineTo(QPointF(s_wire_length + s_shape_width, s_shape_width));
+    m_shape.lineTo(QPointF(-s_shape_width, s_shape_width));
     m_shape.closeSubpath();
 
     const QPointF point(s_wire_length + s_circle_offset, 0);
-    const qreal radius = s_radius + s_stroke_width;
+    const qreal radius = s_radius + s_shape_width;
 
     m_shape.addEllipse(point, radius, radius);
 

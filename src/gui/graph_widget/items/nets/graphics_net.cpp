@@ -7,13 +7,12 @@
 QPen graphics_net::s_pen;
 
 qreal graphics_net::s_line_width;
-qreal graphics_net::s_stroke_width;
+qreal graphics_net::s_shape_width;
 
 void graphics_net::load_settings()
 {
     s_line_width = 1.8;
-
-    s_stroke_width = 5;
+    s_shape_width = 5;
 
     s_pen.setWidthF(s_line_width);
     s_pen.setJoinStyle(Qt::MiterJoin);

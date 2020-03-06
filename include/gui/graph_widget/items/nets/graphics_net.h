@@ -59,7 +59,7 @@ public:
 
 protected:
     static qreal s_line_width;
-    static qreal s_stroke_width;
+    static qreal s_shape_width;
 
     static QPen s_pen;
 
