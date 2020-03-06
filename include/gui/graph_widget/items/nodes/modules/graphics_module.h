@@ -10,7 +10,7 @@ class module;
 class graphics_module : public graphics_node
 {
 public:
-    graphics_module(const std::shared_ptr<const module> m);
+    graphics_module(const std::shared_ptr<module> m);
 
 protected:
     struct module_pin

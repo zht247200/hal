@@ -22,7 +22,7 @@ QStringList graphics_gate_types()
     };
 }
 
-graphics_module* create_graphics_module(const std::shared_ptr<const module> m, const int type)
+graphics_module* create_graphics_module(const std::shared_ptr<module> m, const int type)
 {
     assert(m);
 
