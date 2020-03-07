@@ -83,45 +83,48 @@ void circle_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIt
 
 void circle_separated_net::add_input(const QPointF& scene_position)
 {
-    // REWRITE
     QPointF mapped_position = mapFromScene(scene_position);
     m_input_positions.append(mapped_position);
 
-    const qreal x = mapped_position.x() + s_shape_width;
-    const qreal y = mapped_position.y();
+    QPointF point(mapped_position.x() -s_wire_length - s_shape_width, mapped_position.y() -s_shape_width / 2);
 
-    m_shape.moveTo(QPointF(x, y - s_shape_width));
-    m_shape.lineTo(QPointF(x - s_wire_length - s_shape_width * 2, y - s_shape_width));
-    m_shape.lineTo(QPointF(x - s_wire_length - s_shape_width * 2, y + s_shape_width));
-    m_shape.lineTo(QPointF(x, y + s_shape_width));
+    m_shape.moveTo(point);
+    point.setX(point.x() + s_wire_length + s_shape_width);
+    m_shape.lineTo(point);
+    point.setY(point.y() + s_shape_width);
+    m_shape.lineTo(point);
+    point.setX(point.x() - s_wire_length - s_shape_width);
+    m_shape.lineTo(point);
     m_shape.closeSubpath();
 
-    const QPointF point(mapped_position.x() - s_wire_length - s_circle_offset, mapped_position.y());
-    const qreal radius = s_radius + s_shape_width;
+    point.setX(mapped_position.x() - s_wire_length - s_circle_offset);
+    point.setY(mapped_position.y());
+    const qreal radius = s_radius + s_shape_width / 2;
 
     m_shape.addEllipse(point, radius, radius);
-
-    // MAYBE BOUNDING RECT IS BETTER HERE
 }
 
 void circle_separated_net::add_output(const QPointF& scene_position)
 {
-    // REWRITE
     QPointF mapped_position = mapFromScene(scene_position);
-    m_input_positions.append(mapped_position);
+    m_output_positions.append(mapped_position);
 
-    m_shape.moveTo(QPointF(-s_shape_width, -s_shape_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_shape_width, -s_shape_width));
-    m_shape.lineTo(QPointF(s_wire_length + s_shape_width, s_shape_width));
-    m_shape.lineTo(QPointF(-s_shape_width, s_shape_width));
+    QPointF point(mapped_position.x() - s_shape_width, mapped_position.y() -s_shape_width / 2);
+
+    m_shape.moveTo(point);
+    point.setX(point.x() + s_wire_length + s_shape_width);
+    m_shape.lineTo(point);
+    point.setY(point.y() + s_shape_width);
+    m_shape.lineTo(point);
+    point.setX(point.x() - s_wire_length - s_shape_width);
+    m_shape.lineTo(point);
     m_shape.closeSubpath();
 
-    const QPointF point(s_wire_length + s_circle_offset, 0);
-    const qreal radius = s_radius + s_shape_width;
+    point.setX(mapped_position.x() + s_wire_length + s_circle_offset);
+    point.setY(mapped_position.y());
+    const qreal radius = s_radius + s_shape_width / 2;
 
     m_shape.addEllipse(point, radius, radius);
-
-    // MAYBE BOUNDING RECT IS BETTER HERE
 }
 
 qreal circle_separated_net::input_width() const
