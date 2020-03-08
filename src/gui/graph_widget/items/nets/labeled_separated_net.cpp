@@ -25,8 +25,6 @@ void labeled_separated_net::load_settings()
     QFontMetricsF fm(s_font);
     s_font_height = fm.height();
     s_font_ascend = fm.ascent();
-
-    s_pen.setColor(QColor(160, 160, 160)); // USE STYLESHEETS
 }
 
 labeled_separated_net::labeled_separated_net(const std::shared_ptr<const net> n, const QString& text) : separated_graphics_net(n),
@@ -49,6 +47,13 @@ void labeled_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsI
     painter->setPen(s_pen);
     painter->setFont(s_font);
 
+    if (m_fill_icon)
+    {
+        s_brush.setColor(color);
+        s_brush.setStyle(m_brush_style);
+        painter->setBrush(s_brush); // ???
+    }
+
     for (const QPointF& position : m_input_positions)
     {
         QPointF to(position.x() - s_wire_length, position.y());
@@ -56,6 +61,12 @@ void labeled_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsI
         const qreal horizontal_offset = s_text_offset + m_text_width;
         const qreal vertical_offset = s_baseline + s_font_ascend - (s_font_height / 2);
         painter->drawText(QPointF(to.x() - horizontal_offset, to.y() + vertical_offset), m_text);
+
+        if (m_fill_icon)
+        {
+            const QRectF rect(position.x() - s_wire_length - s_text_offset - m_text_width, position.y() - s_font_height / 2, m_text_width, s_font_height);
+            painter->fillRect(rect, s_brush);
+        }
     }
 
     for (const QPointF& position : m_output_positions)
@@ -64,6 +75,12 @@ void labeled_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsI
         painter->drawLine(position, to);
         const qreal vertical_offset = s_baseline + s_font_ascend - (s_font_height / 2);
         painter->drawText(QPointF(to.x() + s_text_offset, to.y() + vertical_offset), m_text);
+
+        if (m_fill_icon)
+        {
+            const QRectF rect(position.x() + s_wire_length + s_text_offset, position.y() - s_font_height / 2, m_text_width, s_font_height);
+            painter->fillRect(rect, s_brush);
+        }
     }
 
 #ifdef HAL_DEBUG_GUI_GRAPH_WIDGET

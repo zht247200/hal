@@ -63,6 +63,7 @@ protected:
     static qreal s_shape_width;
 
     static QPen s_pen;
+    static QBrush s_brush;
 
     QRectF m_rect;
     QPainterPath m_shape;

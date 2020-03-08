@@ -72,7 +72,6 @@ public:
 private:
     static qreal s_alpha;
     static qreal s_radius;
-    static QBrush s_brush;
     static QPainterPath s_arrow;
 
     QVector<QLineF> m_lines;

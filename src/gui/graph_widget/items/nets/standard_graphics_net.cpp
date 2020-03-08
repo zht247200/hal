@@ -9,7 +9,6 @@
 
 qreal standard_graphics_net::s_alpha;
 qreal standard_graphics_net::s_radius;
-QBrush standard_graphics_net::s_brush;
 QPainterPath standard_graphics_net::s_arrow;
 
 void standard_graphics_net::load_settings()

@@ -4,10 +4,11 @@
 
 #include <QPen>
 
-QPen graphics_net::s_pen;
-
 qreal graphics_net::s_line_width;
 qreal graphics_net::s_shape_width;
+
+QPen graphics_net::s_pen;
+QBrush graphics_net::s_brush;
 
 void graphics_net::load_settings()
 {

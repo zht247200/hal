@@ -58,8 +58,6 @@ private:
     static qreal s_output_width;
 
     static QPainterPath s_arrow;
-
-    static QBrush s_brush;
 };
 
 #endif // ARROW_SEPARATED_NET_H

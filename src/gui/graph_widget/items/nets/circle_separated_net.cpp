@@ -10,8 +10,6 @@ qreal circle_separated_net::s_wire_length;
 qreal circle_separated_net::s_circle_offset;
 qreal circle_separated_net::s_radius;
 
-QBrush circle_separated_net::s_brush;
-
 void circle_separated_net::load_settings()
 {
     s_wire_length   = 26;

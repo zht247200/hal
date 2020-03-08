@@ -45,8 +45,6 @@ private:
     static qreal s_wire_length;
     static qreal s_circle_offset;
     static qreal s_radius;
-
-    static QBrush s_brush;
 };
 
 #endif // CIRCLE_SEPARATED_NET_H

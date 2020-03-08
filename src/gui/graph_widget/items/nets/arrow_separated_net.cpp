@@ -20,8 +20,6 @@ qreal arrow_separated_net::s_output_width;
 
 QPainterPath arrow_separated_net::s_arrow;
 
-QBrush arrow_separated_net::s_brush;
-
 void arrow_separated_net::load_settings()
 {
     s_wire_length = 26;
