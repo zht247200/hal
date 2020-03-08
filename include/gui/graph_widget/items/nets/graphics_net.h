@@ -46,6 +46,7 @@ public:
         QColor color;
         line_style style;
         bool fill_icon;
+        Qt::BrushStyle brush_style;
     };
 
     static void load_settings();
@@ -69,6 +70,7 @@ protected:
     line_style m_line_style;
 
     bool m_fill_icon;
+    Qt::BrushStyle m_brush_style;
 };
 
 #endif // GRAPHICS_NET_H

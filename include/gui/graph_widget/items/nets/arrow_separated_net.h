@@ -43,16 +43,16 @@ public:
 
 private:
     static qreal s_wire_length;
+
     static qreal s_input_arrow_offset;
     static qreal s_output_arrow_offset;
 
-    // FIND BETTER NAMES
-    static qreal s_arrow_length;
-    static qreal s_arrow_height;
-    static qreal s_arrow_left_outward_x_shift;
-    static qreal s_arrow_right_outward_x_shift;
+    static qreal s_arrow_left_x_shift;
+    static qreal s_arrow_right_x_shift;
+    static qreal s_arrow_side_length;
 
-    static qreal s_input_offset;
+    static qreal s_arrow_width;
+    static qreal s_arrow_height;
 
     static qreal s_input_width;
     static qreal s_output_width;
