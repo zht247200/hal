@@ -71,8 +71,22 @@ public:
 
 private:
     static qreal s_alpha;
-    static qreal s_radius;
+
+    static qreal s_wire_length;
+
+    static qreal s_left_arrow_offset;
+    static qreal s_right_arrow_offset;
+
+    static qreal s_arrow_left_x_shift;
+    static qreal s_arrow_right_x_shift;
+    static qreal s_arrow_side_length;
+
+    static qreal s_arrow_width;
+    static qreal s_arrow_height;
+
     static QPainterPath s_arrow;
+
+    static qreal s_split_radius;
 
     QVector<QLineF> m_lines;
     QVector<QPointF> m_splits;

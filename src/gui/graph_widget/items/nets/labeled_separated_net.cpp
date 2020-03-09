@@ -83,6 +83,9 @@ void labeled_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsI
         }
     }
 
+    s_brush.setStyle(Qt::NoBrush);
+    painter->setBrush(s_brush);
+
 #ifdef HAL_DEBUG_GUI_GRAPH_WIDGET
     s_pen.setColor(Qt::green);
     painter->setPen(s_pen);

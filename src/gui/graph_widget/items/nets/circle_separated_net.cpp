@@ -70,7 +70,8 @@ void circle_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsIt
         painter->setRenderHint(QPainter::Antialiasing, original_antialiasing);
     }
 
-    painter->setBrush(QBrush());
+    s_brush.setStyle(Qt::NoBrush);
+    painter->setBrush(s_brush);
 
 #ifdef HAL_DEBUG_GUI_GRAPH_WIDGET
     bool original_cosmetic = s_pen.isCosmetic();

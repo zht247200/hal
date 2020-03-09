@@ -8,20 +8,51 @@
 #include <QStyleOptionGraphicsItem>
 
 qreal standard_graphics_net::s_alpha;
-qreal standard_graphics_net::s_radius;
+
+qreal standard_graphics_net::s_wire_length;
+qreal standard_graphics_net::s_left_arrow_offset;
+qreal standard_graphics_net::s_right_arrow_offset;
+qreal standard_graphics_net::s_arrow_left_x_shift;
+qreal standard_graphics_net::s_arrow_right_x_shift;
+qreal standard_graphics_net::s_arrow_side_length;
+qreal standard_graphics_net::s_arrow_width;
+qreal standard_graphics_net::s_arrow_height;
+
 QPainterPath standard_graphics_net::s_arrow;
+
+qreal standard_graphics_net::s_split_radius;
 
 void standard_graphics_net::load_settings()
 {
-    s_radius = 3;
-    s_brush.setStyle(Qt::SolidPattern);
+    s_wire_length = 26;
 
-    s_arrow.lineTo(QPointF(0, 6 / 2));
-    s_arrow.lineTo(QPointF(0 + 12, 6 / 2));
-    s_arrow.lineTo(QPointF(0 + 12 - -3, 0));
-    s_arrow.lineTo(QPointF(0 + 12, -6 / 2));
-    s_arrow.lineTo(QPointF(0, -6 / 2));
+    s_left_arrow_offset = 3;
+    s_right_arrow_offset = 3;
+
+    s_arrow_left_x_shift = 0;
+    s_arrow_right_x_shift = 3;
+    s_arrow_side_length = 12;
+
+    s_arrow_height = 6;
+    s_arrow_width = s_arrow_left_x_shift + s_arrow_side_length + s_arrow_right_x_shift;
+
+    QPointF point(s_arrow_left_x_shift, -s_arrow_height / 2);
+
+    s_arrow.clear();
+    s_arrow.lineTo(point);
+    point.setX(point.x() + s_arrow_side_length);
+    s_arrow.lineTo(point);
+    point.setX(point.x() + s_arrow_right_x_shift);
+    point.setY(0);
+    s_arrow.lineTo(point);
+    point.setX(point.x() - s_arrow_right_x_shift);
+    point.setY(s_arrow_height / 2);
+    s_arrow.lineTo(point);
+    point.setX(point.x() - s_arrow_side_length);
+    s_arrow.lineTo(point);
     s_arrow.closeSubpath();
+
+    s_split_radius = 3;
 }
 
 void standard_graphics_net::update_alpha()
@@ -161,7 +192,7 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
                 {
                     QPointF point(v.x - l.src_x, h.y - l.src_y);
                     m_splits.append(point);
-                    m_shape.addEllipse(point, s_radius, s_radius);
+                    m_shape.addEllipse(point, s_split_radius, s_split_radius);
                 }
 
             if (v.small_y <= h.y && h.y <= v.big_y)
@@ -169,7 +200,7 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
                 {
                     QPointF point(v.x - l.src_x, h.y - l.src_y);
                     m_splits.append(point);
-                    m_shape.addEllipse(point, s_radius, s_radius);
+                    m_shape.addEllipse(point, s_split_radius, s_split_radius);
                 }
         }
     }
@@ -272,31 +303,45 @@ void standard_graphics_net::paint(QPainter* painter, const QStyleOptionGraphicsI
         color.setAlphaF(s_alpha);
 
         s_pen.setColor(color);
-        s_brush.setColor(color);
         painter->setPen(s_pen);
-        painter->setBrush(s_brush);
 
-        const bool original_value = painter->renderHints().testFlag(QPainter::Antialiasing);
+        s_brush.setColor(color);
+
+        const bool original_antialiasing = painter->renderHints().testFlag(QPainter::Antialiasing);
         painter->setRenderHint(QPainter::Antialiasing, true);
-
-        for (const QPointF& point : m_splits)
-            painter->drawEllipse(point, s_radius, s_radius);
 
         if (m_draw_arrow)
         {
-            painter->translate(QPointF(26 + 3, 0));
+            if (m_fill_icon)
+            {
+                s_brush.setStyle(m_brush_style);
+                painter->setBrush(s_brush);
+            }
+
+            QPointF translation_value(s_wire_length + s_left_arrow_offset, s_arrow_height / 2);
+            painter->translate(translation_value);
             painter->drawPath(s_arrow);
+            painter->translate(-translation_value);
         }
 
-        painter->setRenderHint(QPainter::Antialiasing, original_value);
+        s_brush.setStyle(Qt::SolidPattern);
+        painter->setBrush(s_brush);
+
+        for (const QPointF& point : m_splits)
+            painter->drawEllipse(point, s_split_radius, s_split_radius);
+
+        painter->setRenderHint(QPainter::Antialiasing, original_antialiasing);
     }
+
+    s_brush.setStyle(Qt::NoBrush);
+    painter->setBrush(s_brush);
 
 #ifdef HAL_DEBUG_GUI_GRAPH_WIDGET
     s_pen.setColor(Qt::green);
-    const bool cosmetic = s_pen.isCosmetic();
+    const bool original_cosmetic = s_pen.isCosmetic();
     s_pen.setCosmetic(true);
     painter->setPen(s_pen);
     painter->drawPath(m_shape);
-    s_pen.setCosmetic(cosmetic);
+    s_pen.setCosmetic(original_cosmetic);
 #endif
 }
