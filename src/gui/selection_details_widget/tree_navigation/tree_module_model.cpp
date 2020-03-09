@@ -12,7 +12,8 @@ tree_module_model::tree_module_model(QObject* parent) : QAbstractItemModel(paren
     QVector<QVariant> rootHeaderData;
     rootHeaderData << "Name"
                    << "ID"
-                   << "Type";
+                   << "Type"
+                   << "Parent Module";
     m_root_item = new tree_module_item(rootHeaderData);
     load_data_settings();
     setup_model_data();
@@ -165,21 +166,21 @@ void tree_module_model::update(u32 module_id)
 
     for(const std::shared_ptr<gate> &_g : gates)
     {
-        tree_module_item* item = new tree_module_item(QVector<QVariant>() << QString::fromStdString(_g->get_name()) << _g->get_id() << QString::fromStdString(_g->get_type()->get_name()), tree_module_item::item_type::gate, m_gates_item);
+        tree_module_item* item = new tree_module_item(QVector<QVariant>() << QString::fromStdString(_g->get_name()) << _g->get_id() << QString::fromStdString(_g->get_type()->get_name()) << "", tree_module_item::item_type::gate, m_gates_item);
         insert_item(m_gates_item, m_gates_item->get_child_count(), item);
     }
 
     for(const std::shared_ptr<net> &_n : nets)
     {
-        tree_module_item* item = new tree_module_item(QVector<QVariant>() << QString::fromStdString(_n->get_name()) << _n->get_id() << "", tree_module_item::item_type::net, m_nets_item);
+        tree_module_item* item = new tree_module_item(QVector<QVariant>() << QString::fromStdString(_n->get_name()) << _n->get_id() << "" << "", tree_module_item::item_type::net, m_nets_item);
         insert_item(m_nets_item, m_nets_item->get_child_count(), item);
     }
 }
 
 void tree_module_model::setup_model_data()
 {
-    m_gates_item = new tree_module_item(QVector<QVariant>() << "Gates" << "" << "", tree_module_item::item_type::structure, m_root_item);
-    m_nets_item = new tree_module_item(QVector<QVariant>() << "Nets" << "" << "", tree_module_item::item_type::structure, m_root_item);
+    m_gates_item = new tree_module_item(QVector<QVariant>() << "Gates" << "" << "" << "", tree_module_item::item_type::structure, m_root_item);
+    m_nets_item = new tree_module_item(QVector<QVariant>() << "Nets" << "" << "" << "", tree_module_item::item_type::structure, m_root_item);
     m_root_item->insert_child(0, m_gates_item);
     m_root_item->insert_child(1, m_nets_item);
 }
