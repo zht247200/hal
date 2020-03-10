@@ -64,8 +64,8 @@ void standard_graphics_net::update_alpha()
 }
 
 //standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n, const lines& l) : graphics_net(n),
-standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n, lines& l, bool draw_arrow) : graphics_net(n),
-    m_draw_arrow(draw_arrow)
+standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n, lines& l, const bool complete) : graphics_net(n),
+    m_complete(complete)
 {    
     QVector<h_line> collapsed_h;
     QVector<v_line> collapsed_v;
@@ -230,7 +230,7 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
             biggest_y = y;
 
         QLineF line(small_x, y, big_x, y);
-        m_lines.append(line);
+        m_other_lines.append(line);
         QRectF rect(small_x - s_shape_width / 2, y - s_shape_width / 2, big_x - small_x + s_line_width + s_shape_width, s_line_width + s_shape_width);
         m_shape.addRect(rect);
     }
@@ -253,7 +253,7 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
             biggest_y = big_y;
 
         QLineF line(x, small_y, x, big_y);
-        m_lines.append(line);
+        m_other_lines.append(line);
         QRectF rect(x - s_shape_width / 2, small_y - s_shape_width / 2, s_line_width + s_shape_width, big_y - small_y + s_line_width + s_shape_width);
         m_shape.addRect(rect);
     }
@@ -275,28 +275,10 @@ void standard_graphics_net::paint(QPainter* painter, const QStyleOptionGraphicsI
 
     QColor color = (option->state & QStyle::State_Selected) ? s_selection_color : m_color;
     s_pen.setColor(color);
-
-    switch (m_line_style)
-    {
-    case line_style::solid:
-    {
-        s_pen.setStyle(Qt::SolidLine);
-        break;
-    }
-    case line_style::dot:
-    {
-        s_pen.setStyle(Qt::DotLine);
-        break;
-    }
-    case line_style::dash:
-    {
-        s_pen.setStyle(Qt::DashLine);
-        break;
-    }
-    }
+    s_pen.setStyle(m_pen_style);
 
     painter->setPen(s_pen);
-    painter->drawLines(m_lines);
+    painter->drawLines(m_other_lines);
 
     if (s_lod > graph_widget_constants::net_fade_in_lod)
     {
@@ -310,7 +292,7 @@ void standard_graphics_net::paint(QPainter* painter, const QStyleOptionGraphicsI
         const bool original_antialiasing = painter->renderHints().testFlag(QPainter::Antialiasing);
         painter->setRenderHint(QPainter::Antialiasing, true);
 
-        if (m_draw_arrow)
+        if (!m_complete)
         {
             if (m_fill_icon)
             {

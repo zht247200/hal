@@ -33,18 +33,11 @@ class net;
 class graphics_net : public graphics_item
 {
 public:
-    enum class line_style
-    {
-        solid,
-        dash,
-        dot
-    };
-
     struct visuals
     {
         bool visible;
         QColor color;
-        line_style style;
+        Qt::PenStyle pen_style;
         bool fill_icon;
         Qt::BrushStyle brush_style;
     };
@@ -68,7 +61,7 @@ protected:
     QRectF m_rect;
     QPainterPath m_shape;
 
-    line_style m_line_style;
+    Qt::PenStyle m_pen_style;
 
     bool m_fill_icon;
     Qt::BrushStyle m_brush_style;
