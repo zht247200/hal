@@ -12,6 +12,8 @@
 #include <queue>
 #include <iomanip>
 
+// TODO: parse attributes
+
 hdl_parser_verilog::hdl_parser_verilog(std::stringstream& stream) : hdl_parser(stream)
 {
 }
@@ -130,13 +132,13 @@ bool hdl_parser_verilog::parse_tokens()
 bool hdl_parser_verilog::parse_entity()
 {
     entity e;
+    parser_info p_info;
 
     m_token_stream.consume("module", true);
     e.line_number = m_token_stream.peek().number;
     e.name        = m_token_stream.consume();
 
     // parse generic list and port list
-    parser_info p_info;
     parse_generic_list(e.generics);
     parse_port_list(p_info.port_names);
 
@@ -179,7 +181,12 @@ bool hdl_parser_verilog::parse_entity()
 
     m_token_stream.consume("endmodule", true);
 
-    m_entities.insert(e);
+    if (m_entities.find(e.name) != m_entities.end())
+    {
+        log_error("hdl_parser", "an entity with the name '{}' does already exist (see line {} and line {}).", e.name, e.line_number, m_entities.at(e.name).line_number);
+        return false;
+    }
+    m_entities.emplace(e.name, e);
 
     return true;
 }
@@ -222,15 +229,15 @@ bool hdl_parser_verilog::parse_port_definition(entity& e, const std::set<std::st
 
     if (ports.empty())
     {
-        // error already displayed
+        // error already printed in subfunction
         return false;
     }
 
     for (const auto& port : ports)
     {
-        if (port_names.find(port.name) == port_names.end())
+        if (port_names.find(port.first) == port_names.end())
         {
-            log_error("hdl_parser", "port name '{}' in line {} has not been declared in entity port list.", port.name, line_number);
+            log_error("hdl_parser", "port name '{}' in line {} has not been declared in entity port list.", port.first, line_number);
             return false;
         }
     }
@@ -258,7 +265,7 @@ bool hdl_parser_verilog::parse_signal_definition(entity& e)
 
     if (signals.empty())
     {
-        // error already displayed
+        // error already printed in subfunction
         return false;
     }
 
@@ -285,7 +292,7 @@ bool hdl_parser_verilog::parse_assign(entity& e)
         return false;
     }
 
-    e.assignments.emplace(left_parts, right_parts);
+    e.assignments[left_parts].insert(right_parts);
 
     return true;
 }
@@ -342,20 +349,20 @@ bool hdl_parser_verilog::parse_instance(entity& e)
     while (port_str.remaining() > 0)
     {
         port_str.consume(".", true);
-
-        auto port_lhs = port_str.extract_until("(", token_stream::END_OF_STREAM, true, true).join("").string;
-
+        auto port_lhs = port_str.consume();
         port_str.consume("(", true);
-
         auto port_rhs = port_str.extract_until(")", token_stream::END_OF_STREAM, true, true);
-
         port_str.consume(")", true);
-
         port_str.consume(",", port_str.remaining() > 0);
 
         // check if port unconnected
         if (port_rhs.size() != 0)
         {
+            signal processed_lhs;
+            processed_lhs.line_number = port_lhs.number;
+            processed_lhs.name        = port_lhs.string;
+            processed_lhs.bounds      = {std::make_pair(-1, -1)};
+
             auto processed_rhs = get_assignment_signals(port_rhs, true);
 
             // verify correctness
@@ -365,7 +372,7 @@ bool hdl_parser_verilog::parse_instance(entity& e)
                 return false;
             }
 
-            inst.port_assignments.emplace(port_lhs, processed_rhs);
+            inst.port_assignments.emplace(processed_lhs, processed_rhs);
         }
     }
 
@@ -373,7 +380,12 @@ bool hdl_parser_verilog::parse_instance(entity& e)
     m_token_stream.consume(";", true);
 
     // add to vector of instances of current entity
-    e.instances.insert(inst);
+    if (e.instances.find(inst.name) != e.instances.end())
+    {
+        log_error("hdl_parser", "an instance with the name '{}' does already exist (see line {} and line {}).", inst.name, inst.line_number, e.instances.at(inst.name).line_number);
+        return false;
+    }
+    e.instances.emplace(inst.name, inst);
 
     return true;
 }
@@ -482,10 +494,9 @@ void hdl_parser_verilog::remove_comments(std::string& line, bool& multi_line_com
     }
 }
 
-std::set<hdl_parser_verilog::signal> hdl_parser_verilog::parse_signal_list()
+std::map<std::string, hdl_parser_verilog::signal> hdl_parser_verilog::parse_signal_list()
 {
-    std::set<signal> signals;
-
+    std::map<std::string, signal> signals;
     std::vector<std::pair<i32, i32>> bounds;
 
     auto signal_str = m_token_stream.extract_until(";", token_stream::END_OF_STREAM, true, true);
@@ -495,25 +506,30 @@ std::set<hdl_parser_verilog::signal> hdl_parser_verilog::parse_signal_list()
     while (signal_str.peek() == "[")
     {
         signal_str.consume("[", true);
-        auto lower = signal_str.consume();
+        auto left = signal_str.consume();
         signal_str.consume(":", true);
-        auto upper = signal_str.consume();
+        auto right = signal_str.consume();
         signal_str.consume("]", true);
 
         try
         {
-            bounds.emplace_back(std::stoi(lower.string), std::stoi(upper.string));
+            bounds.emplace_back(std::stoi(left.string), std::stoi(right.string));
         }
         catch (std::invalid_argument& e)
         {
-            log_error("hdl_parser", "no integer bounds given in entity defintion in line {}: [{}:{}] .", lower.string, upper.string, signal_str.peek().number);
+            log_error("hdl_parser", "no integer bounds given in entity defintion in line {}: [{}:{}] .", left.string, right.string, signal_str.peek().number);
             return {};
         }
         catch (std::out_of_range& e)
         {
-            log_error("hdl_parser", "bounds out of range in entity defintion in line {}: [{}:{}].", lower.string, upper.string, signal_str.peek().number);
+            log_error("hdl_parser", "bounds out of range in entity defintion in line {}: [{}:{}].", left.string, right.string, signal_str.peek().number);
             return {};
         }
+    }
+
+    if (bounds.empty())
+    {
+        bounds.emplace_back(-1, -1);
     }
 
     // extract names
@@ -523,7 +539,7 @@ std::set<hdl_parser_verilog::signal> hdl_parser_verilog::parse_signal_list()
         s.line_number = signal_str.peek().number;
         s.name        = signal_str.consume();
         s.bounds      = bounds;
-        signals.insert(s);
+        signals.emplace(s.name, s);
     } while (signal_str.consume(",", false));
 
     return signals;
@@ -538,7 +554,7 @@ std::vector<hdl_parser_verilog::signal> hdl_parser_verilog::get_assignment_signa
     //   (3) NUMBER
     //   (4) NAME[INDEX1][INDEX2]...
     //   (5) NAME[BEGIN_INDEX1:END_INDEX1][BEGIN_INDEX2:END_INDEX2]...
-    //   (6) {(1) - (5), (1) - (5), ...}
+    //   (6) {(1 - 5), (1 - 5), ...}
 
     std::vector<signal> result;
     std::vector<token_stream> parts;
@@ -550,11 +566,10 @@ std::vector<hdl_parser_verilog::signal> hdl_parser_verilog::get_assignment_signa
 
         auto assignment_list_str = signal_str.extract_until("}", token_stream::END_OF_STREAM, true, true);
 
-        while (assignment_list_str.remaining() > 0)
+        do
         {
-            parts.push_back(assignment_list_str.extract_until(",", token_stream::END_OF_STREAM, true, false));
-            assignment_list_str.consume(",", false);
-        }
+            parts.push_back(assignment_list_str.extract_until(","));
+        } while (assignment_list_str.consume(",", false));
 
         signal_str.consume("}", true);
     }
@@ -565,8 +580,7 @@ std::vector<hdl_parser_verilog::signal> hdl_parser_verilog::get_assignment_signa
 
     for (auto& part_stream : parts)
     {
-        auto stream_backup = part_stream;
-        auto signal_name   = part_stream.consume();
+        auto signal_name = part_stream.consume();
 
         // (3) NUMBER
         if (isdigit(signal_name.string[0]) || signal_name.string[0] == '\'')
@@ -581,7 +595,7 @@ std::vector<hdl_parser_verilog::signal> hdl_parser_verilog::get_assignment_signa
             s.line_number = signal_name.number;
             s.binary      = true;
             s.name        = get_bin_from_literal(signal_name);
-            s.bounds      = {std::make_pair(signal_name.string.size() - 1, 0)};
+            s.bounds      = {std::make_pair(s.name.size() - 1, 0)};
 
             result.push_back(s);
 
@@ -712,12 +726,7 @@ std::string hdl_parser_verilog::get_bin_from_literal(token& value_token)
     {
         for (const auto& c : number)
         {
-            if (c == 'x' || c == 'z' || c == '?')
-            {
-                log_error("hdl_parser", "character '{}' is not yet supported within binary number literal {} in line {}.", c, value, line_number);
-                return "";
-            }
-            else if (c >= '0' && c <= '1')
+            if (c >= '0' && c <= '1')
             {
                 res += c;
             }
@@ -732,12 +741,7 @@ std::string hdl_parser_verilog::get_bin_from_literal(token& value_token)
     {
         for (const auto& c : number)
         {
-            if (c == 'x' || c == 'z' || c == '?')
-            {
-                log_error("hdl_parser", "character '{}' is not yet supported within octal number literal {} in line {}.", c, value, line_number);
-                return "";
-            }
-            else if (c >= '0' && c <= '7')
+            if (c >= '0' && c <= '7')
             {
                 res += oct_to_bin[c];
             }
@@ -775,12 +779,7 @@ std::string hdl_parser_verilog::get_bin_from_literal(token& value_token)
     {
         for (const auto& c : number)
         {
-            if (c == 'x' || c == 'z' || c == '?')
-            {
-                log_error("hdl_parser", "character '{}' is not yet supported within hexadecimal number literal {} in line {}.", c, value, line_number);
-                return "";
-            }
-            else if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
+            if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
             {
                 res += hex_to_bin[c];
             }
