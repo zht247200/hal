@@ -88,32 +88,47 @@ namespace hdl_parser_dispatcher
 
         std::shared_ptr<netlist> g = nullptr;
 
-        // event_controls::enable_all(false);
-
         if (parser_name == "vhdl")
-            g = hdl_parser_vhdl(ss).parse(gate_library);
-        else if (parser_name == "verilog")
-            g = hdl_parser_verilog(ss).parse(gate_library);
-        else
-            log_error("hdl_parser", "parser '{}' is unkown", parser_name);
-
-        if (g != nullptr)
         {
-            g->set_input_filename(file_name.string());
-        }
+            hdl_parser_vhdl parser = hdl_parser_vhdl(ss);
 
-        // event_controls::enable_all(true);
+            if (!parser.parse())
+            {
+                log_error("hdl_parser", "VHDL parser cannot parse file '{}'.", file_name.string());
+            }
+
+            g = parser.instantiate(gate_library);
+        }
+        else if (parser_name == "verilog")
+        {
+            hdl_parser_verilog parser = hdl_parser_verilog(ss);
+
+            if (!parser.parse())
+            {
+                log_error("hdl_parser", "verilog parser cannot parse file '{}'.", file_name.string());
+            }
+
+            g = parser.instantiate(gate_library);
+        }
+        else
+        {
+            log_error("hdl_parser", "parser '{}' is unknown.", parser_name);
+            return nullptr;
+        }
 
         if (g == nullptr)
         {
-            log_error("hdl_parser", "error while parsing '{}'!", file_name.string());
+            log_error("hdl_parser", "error while instantiating '{}'.", file_name.string());
             return nullptr;
         }
+
+        g->set_input_filename(file_name.string());
 
         log_info("hdl_parser",
                  "parsed '{}' in {:2.2f} seconds.",
                  file_name.string(),
                  (double)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - begin_time).count() / 1000);
+
         return g;
     }
 

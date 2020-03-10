@@ -50,6 +50,7 @@ public:
     virtual ~hdl_parser() = default;
 
     /**
+     * TODO 
      * Parses hdl code for a specific netlist library.
      *
      * @param[in] gate_library - The gate library name.
@@ -57,6 +58,7 @@ public:
      */
     virtual bool parse() = 0;
 
+    // TODO
     std::shared_ptr<netlist> instantiate(const std::string& gate_library);
 
 protected:
@@ -64,15 +66,14 @@ protected:
     {
         u32 line_number;
 
-        // name may either be the identifier of the signal or a binary string in case of direct assignments
+        // name (may either be the identifier of the signal or a binary string in case of direct assignments)
         std::string name;
-        std::vector<std::pair<i32, i32>> bounds;
-        bool binary;
 
-        bool operator==(const signal& other) const
-        {
-            return (name == other.name && bounds == other.bounds && binary == other.binary);
-        }
+        // bounds (if bounds are both -1: single bit signal or port - OR - (port) assignment of unknown width)
+        std::vector<std::pair<i32, i32>> bounds;
+
+        // is binary string?
+        bool binary;
 
         bool operator<(const signal& other) const
         {
@@ -84,9 +85,16 @@ protected:
     {
         u32 line_number;
 
+        // name
         std::string name;
+
+        // type
         std::string type;
-        std::map<std::string, std::vector<signal>> port_assignments;
+
+        // port assignments
+        std::map<signal, std::vector<signal>> port_assignments;
+
+        // generic assignments
         std::map<std::string, std::string> generic_assignments;
 
         bool operator<(const instance& other) const
@@ -103,21 +111,26 @@ protected:
         std::string name;
 
         // ports
-        std::set<signal> in_ports;
-        std::set<signal> out_ports;
-        std::set<signal> inout_ports;
+        std::map<std::string, signal> in_ports;
+        std::map<std::string, signal> out_ports;
+        std::map<std::string, signal> inout_ports;
+
+        // attributes
+        std::set<std::tuple<std::string, std::string, std::string>> entity_attributes;
+        std::map<std::string, std::tuple<std::string, std::string, std::string>> instance_attributes;
+        std::map<std::string, std::tuple<std::string, std::string, std::string>> signal_attributes;
 
         // generics
         std::set<std::string> generics;
 
         // signals
-        std::set<signal> signals;
+        std::map<std::string, signal> signals;
 
         // assignments
-        std::map<std::vector<signal>, std::vector<signal>> assignments;
+        std::map<std::vector<signal>, std::set<std::vector<signal>>> assignments;
 
         // instances
-        std::set<instance> instances;
+        std::map<std::string, instance> instances;
 
         bool operator<(const entity& other) const
         {
@@ -132,5 +145,5 @@ protected:
     std::stringstream& m_fs;
 
     // stores all entities parsed from the HDL file
-    std::set<entity> m_entities;
+    std::map<std::string, entity> m_entities;
 };
