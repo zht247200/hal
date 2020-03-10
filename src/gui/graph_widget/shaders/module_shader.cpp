@@ -52,4 +52,11 @@ void module_shader::update()
             m_shading.gate_visuals.insert(id, v);
         }
     }
+
+    // DEBUG CODE
+    for (const u32& id : m_context->nets())
+    {
+        graphics_net::visuals v{true, QColor(200, 200, 200), Qt::SolidLine, true, Qt::SolidPattern};
+        m_shading.net_visuals.insert(id, v);
+    }
 }

@@ -355,14 +355,19 @@ void graphics_scene::delete_all_items()
 
 void graphics_scene::update_visuals(const graph_shader::shading& s)
 {
-    for (module_data m : m_module_items)
+    for (module_data& m : m_module_items)
     {
         m.item->set_visuals(s.module_visuals.value(m.id));
     }
 
-    for (gate_data g : m_gate_items)
+    for (gate_data& g : m_gate_items)
     {
         g.item->set_visuals(s.gate_visuals.value(g.id));
+    }
+
+    for (net_data& n : m_net_items)
+    {
+        n.item->set_visuals(s.net_visuals.value(n.id));
     }
 }
 
