@@ -27,6 +27,7 @@
 
 #include <cctype>
 #include <fstream>
+#include <map>
 #include <set>
 #include <sstream>
 #include <string>
@@ -54,12 +55,82 @@ public:
      * @param[in] gate_library - The gate library name.
      * @returns The netlist representation of the hdl code or a nullptr on error.
      */
-    virtual std::shared_ptr<netlist> parse(const std::string& gate_library) = 0;
+    virtual bool parse() = 0;
+
+    std::shared_ptr<netlist> instantiate(const std::string& gate_library);
 
 protected:
+    struct signal
+    {
+        u32 line_number;
+
+        // name may either be the identifier of the signal or a binary string in case of direct assignments
+        std::string name;
+        std::vector<std::pair<i32, i32>> bounds;
+        bool binary;
+
+        bool operator==(const signal& other) const
+        {
+            return (name == other.name && bounds == other.bounds && binary == other.binary);
+        }
+
+        bool operator<(const signal& other) const
+        {
+            return name < other.name;
+        }
+    };
+
+    struct instance
+    {
+        u32 line_number;
+
+        std::string name;
+        std::string type;
+        std::map<std::string, std::vector<signal>> port_assignments;
+        std::map<std::string, std::string> generic_assignments;
+
+        bool operator<(const instance& other) const
+        {
+            return name < other.name;
+        }
+    };
+
+    struct entity
+    {
+        u32 line_number;
+
+        // name
+        std::string name;
+
+        // ports
+        std::set<signal> in_ports;
+        std::set<signal> out_ports;
+        std::set<signal> inout_ports;
+
+        // generics
+        std::set<std::string> generics;
+
+        // signals
+        std::set<signal> signals;
+
+        // assignments
+        std::map<std::vector<signal>, std::vector<signal>> assignments;
+
+        // instances
+        std::set<instance> instances;
+
+        bool operator<(const entity& other) const
+        {
+            return name < other.name;
+        }
+    };
+
     // stores the netlist
     std::shared_ptr<netlist> m_netlist;
 
     // stores the input stream to the file
     std::stringstream& m_fs;
+
+    // stores all entities parsed from the HDL file
+    std::set<entity> m_entities;
 };
