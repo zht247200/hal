@@ -63,6 +63,7 @@ public:
     static const int NAME_COLUMN = 0;
     static const int ID_COLUMN   = 1;
     static const int TYPE_COLUMN = 2;
+    static const int PARENT_MODULE_COLUMN = 3;
 
 private:
     void setup_model_data();
@@ -75,8 +76,15 @@ private:
     void insert_item(tree_module_item* parent, int position, tree_module_item* item);
     void remove_item(tree_module_item* item);
 
+    void insert_gate(const std::shared_ptr<gate>& gate);
+    void insert_net(const std::shared_ptr<net>& net);
+
+    void remove_childs(tree_module_item* item);
+
+    void update_gate_and_net_item();
+
     void load_data_settings();
-    
+
     tree_module_item* m_root_item;
     tree_module_item* m_gates_item;
     tree_module_item* m_nets_item;

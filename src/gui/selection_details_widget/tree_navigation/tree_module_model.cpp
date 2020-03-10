@@ -144,37 +144,62 @@ QModelIndexList tree_module_model::get_corresponding_indexes(const QList<u32>& g
 
 void tree_module_model::update(u32 module_id)
 {
-    int gates_child_count = m_gates_item->get_child_count();
-    int nets_child_count = m_nets_item->get_child_count();
-    for(int i = 0; i < gates_child_count; i++)
+    remove_childs(m_gates_item);
+    remove_childs(m_nets_item);
+
+    auto parent_module = g_netlist->get_module_by_id(module_id);
+    auto nets = parent_module->get_internal_nets();
+    auto gates = parent_module->get_gates();
+
+    for(const std::shared_ptr<module>& submodule : parent_module->get_submodules())
+        for(const std::shared_ptr<gate>& gate : submodule->get_gates())
+            gates.insert(gate);
+    
+    for(const std::shared_ptr<gate>& gate : gates)
+        insert_gate(gate);
+    
+    for(const std::shared_ptr<net> &net : nets)
+        insert_net(net);
+
+    update_gate_and_net_item();
+}
+
+void tree_module_model::update_gate_and_net_item()
+{
+    m_gates_item->set_data(NAME_COLUMN, "Gates (" + QString::number(m_gates_item->get_child_count()) + ")");
+    m_nets_item->set_data(NAME_COLUMN, "Nets (" + QString::number(m_nets_item->get_child_count()) + ")");
+}
+
+void tree_module_model::remove_childs(tree_module_item* item)
+{
+    int item_child_count = item->get_child_count();
+
+    //removes all childs from an item by repeatedly deleting the first child of the item
+    for(int i = 0; i < item_child_count; i++)
     {
-        auto current_child = m_gates_item->get_child(0);
-        remove_item(current_child);
+        auto first_child = item->get_child(0);
+        remove_item(first_child);
     }
-    for(int i = 0; i < nets_child_count; i++)
-    {
-        auto current_child = m_nets_item->get_child(0);
-        remove_item(current_child);
-    }
+}
 
-    auto _module = g_netlist->get_module_by_id(module_id);
-    auto gates = _module->get_gates();
-    auto nets = _module->get_internal_nets();
+void tree_module_model::insert_gate(const std::shared_ptr<gate>& gate)
+{
+    u32 id = gate->get_id();
+    QString name = QString::fromStdString(gate->get_name());
+    QString type = QString::fromStdString(gate->get_type()->get_name());
+    QString parent_module = QString::fromStdString(gate->get_module()->get_name());
 
-    m_gates_item->set_data(NAME_COLUMN, "Gates (" + QString::number(gates.size()) + ")");
-    m_nets_item->set_data(NAME_COLUMN, "Nets (" + QString::number(nets.size()) + ")");
+    tree_module_item* item = new tree_module_item(QVector<QVariant>() << name << id << type << parent_module, tree_module_item::item_type::gate, m_gates_item);
+    insert_item(m_gates_item, m_gates_item->get_child_count(), item);
+}
 
-    for(const std::shared_ptr<gate> &_g : gates)
-    {
-        tree_module_item* item = new tree_module_item(QVector<QVariant>() << QString::fromStdString(_g->get_name()) << _g->get_id() << QString::fromStdString(_g->get_type()->get_name()) << "", tree_module_item::item_type::gate, m_gates_item);
-        insert_item(m_gates_item, m_gates_item->get_child_count(), item);
-    }
+void tree_module_model::insert_net(const std::shared_ptr<net>& net)
+{
+        u32 id = net->get_id();
+        QString name = QString::fromStdString(net->get_name());
 
-    for(const std::shared_ptr<net> &_n : nets)
-    {
-        tree_module_item* item = new tree_module_item(QVector<QVariant>() << QString::fromStdString(_n->get_name()) << _n->get_id() << "" << "", tree_module_item::item_type::net, m_nets_item);
+        tree_module_item* item = new tree_module_item(QVector<QVariant>() << name << id << "" << "", tree_module_item::item_type::net, m_nets_item);
         insert_item(m_nets_item, m_nets_item->get_child_count(), item);
-    }
 }
 
 void tree_module_model::setup_model_data()
