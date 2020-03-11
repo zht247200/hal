@@ -50,7 +50,7 @@ void labeled_separated_net::paint(QPainter* painter, const QStyleOptionGraphicsI
 
     if (m_fill_icon)
     {
-        s_brush.setColor(color);
+        s_brush.setColor(m_fill_color);
         s_brush.setStyle(m_brush_style);
         painter->setBrush(s_brush); // ???
     }

@@ -300,7 +300,7 @@ void standard_graphics_net::paint(QPainter* painter, const QStyleOptionGraphicsI
                 painter->setBrush(s_brush);
             }
 
-            QPointF translation_value(s_wire_length + s_left_arrow_offset, s_arrow_height / 2);
+            QPointF translation_value(s_wire_length + s_left_arrow_offset, 0);
             painter->translate(translation_value);
             painter->drawPath(s_arrow);
             painter->translate(-translation_value);

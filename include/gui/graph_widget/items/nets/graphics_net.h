@@ -39,6 +39,7 @@ public:
         QColor color;
         Qt::PenStyle pen_style;
         bool fill_icon;
+        QColor fill_color;
         Qt::BrushStyle brush_style;
     };
 
@@ -64,6 +65,7 @@ protected:
     Qt::PenStyle m_pen_style;
 
     bool m_fill_icon;
+    QColor m_fill_color;
     Qt::BrushStyle m_brush_style;
 };
 

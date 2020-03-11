@@ -40,5 +40,6 @@ void graphics_net::set_visuals(const graphics_net::visuals& v)
     m_color = v.color;
     m_pen_style = v.pen_style;
     m_fill_icon = v.fill_icon;
+    m_fill_color = v.fill_color;
     m_brush_style = v.brush_style;
 }

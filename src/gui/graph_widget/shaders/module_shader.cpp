@@ -56,7 +56,7 @@ void module_shader::update()
     // DEBUG CODE
     for (const u32& id : m_context->nets())
     {
-        graphics_net::visuals v{true, QColor(200, 200, 200), Qt::SolidLine, true, Qt::SolidPattern};
+        graphics_net::visuals v{true, QColor(200, 200, 200), Qt::SolidLine, true, QColor(100, 100, 100), Qt::SolidPattern};
         m_shading.net_visuals.insert(id, v);
     }
 }
