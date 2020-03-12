@@ -70,6 +70,7 @@ private:
         std::string name;
         gate_type::base_type type;
         std::vector<std::string> input_pins, output_pins;
+        std::map<std::string, u32> pin_widths;
         std::unordered_map<std::string, token> functions;
         std::string next_state, clocked_on, reset, set;
         gate_type_sequential::set_reset_behavior special_behavior_var1, special_behavior_var2;
@@ -83,6 +84,7 @@ private:
             input_pins.clear();
             output_pins.clear();
             functions.clear();
+            pin_widths.clear();
             next_state            = "";
             clocked_on            = "";
             reset                 = "";

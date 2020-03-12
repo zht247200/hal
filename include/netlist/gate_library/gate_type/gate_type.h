@@ -28,6 +28,9 @@
 #include <string>
 #include <unordered_map>
 
+class gate_library_parser;
+class hdl_parser;
+
 /**
  * Gate type class containing information about the internals of a specific gate type.
  *
@@ -167,8 +170,13 @@ private:
 
     std::unordered_map<std::string, boolean_function> m_functions;
 
+    std::map<std::string, u32> m_pin_widths;
+
     gate_type(const gate_type&) = delete;               // disable copy-constructor
     gate_type& operator=(const gate_type&) = delete;    // disable copy-assignment
 
     virtual bool do_compare(const gate_type& other) const;
+
+    friend gate_library_parser;
+    friend hdl_parser;
 };

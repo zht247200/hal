@@ -25,6 +25,7 @@
 
 #include "def.h"
 #include "netlist/gate_library/gate_library.h"
+#include "netlist/gate_library/gate_type/gate_type.h"
 
 #include <sstream>
 
@@ -57,4 +58,8 @@ protected:
 
     // stores the input stream to the file
     std::stringstream& m_fs;
+
+    void add_gate_type_pin_widths(std::shared_ptr<gate_type> gt, std::map<std::string, u32> pin_widths);
+
+    friend gate_type;
 };
