@@ -3,13 +3,6 @@
 #include "core/log.h"
 #include "core/utils.h"
 
-#include "netlist/gate.h"
-#include "netlist/net.h"
-#include "netlist/netlist.h"
-
-#include "netlist/netlist_factory.h"
-
-#include <queue>
 #include <iomanip>
 
 // TODO: parse attributes
@@ -223,9 +216,18 @@ void hdl_parser_verilog::parse_port_list(std::set<std::string>& port_names)
 
 bool hdl_parser_verilog::parse_port_definition(entity& e, const std::set<std::string>& port_names)
 {
-    auto line_number = m_token_stream.peek().number;
-    auto direction   = m_token_stream.consume();
-    auto ports       = parse_signal_list();
+    i32 line_number       = m_token_stream.peek().number;
+    std::string direction = m_token_stream.consume();
+    auto ports            = parse_signal_list();
+
+    if (direction == "input")
+    {
+        direction = "in";
+    }
+    else if (direction == "output")
+    {
+        direction = "out";
+    }
 
     if (ports.empty())
     {
@@ -233,26 +235,15 @@ bool hdl_parser_verilog::parse_port_definition(entity& e, const std::set<std::st
         return false;
     }
 
-    for (const auto& port : ports)
+    for (auto& port : ports)
     {
         if (port_names.find(port.first) == port_names.end())
         {
             log_error("hdl_parser", "port name '{}' in line {} has not been declared in entity port list.", port.first, line_number);
             return false;
         }
-    }
 
-    if (direction == "input")
-    {
-        e.in_ports.insert(ports.begin(), ports.end());
-    }
-    else if (direction == "output")
-    {
-        e.out_ports.insert(ports.begin(), ports.end());
-    }
-    else if (direction == "inout")
-    {
-        e.inout_ports.insert(ports.begin(), ports.end());
+        e.ports.emplace(port.first, std::make_pair(direction, port.second));
     }
 
     return true;
@@ -275,6 +266,7 @@ bool hdl_parser_verilog::parse_signal_definition(entity& e)
 
 bool hdl_parser_verilog::parse_assign(entity& e)
 {
+    auto line_number = m_token_stream.peek().number;
     m_token_stream.consume("assign", true);
     auto left_str = m_token_stream.extract_until("=", token_stream::END_OF_STREAM, true, true);
     m_token_stream.consume("=", true);
@@ -282,17 +274,23 @@ bool hdl_parser_verilog::parse_assign(entity& e)
     m_token_stream.consume(";", true);
 
     // extract assignments for each bit
-    auto left_parts  = get_assignment_signals(left_str, false);
-    auto right_parts = get_assignment_signals(right_str, true);
+    auto left_parts  = get_assignment_signals(e, left_str, false);
+    auto right_parts = get_assignment_signals(e, right_str, true);
 
     // verify correctness
-    if (left_parts.empty() || right_parts.empty())
+    if (left_parts.second == 0 || right_parts.second == 0)
     {
         // error already printed in subfunction
         return false;
     }
 
-    e.assignments[left_parts].insert(right_parts);
+    if (left_parts.second != right_parts.second)
+    {
+        log_error("hdl_parser", "assignment width mismatch: left side has size {} and right side has size {} in line {}.", left_parts.second, right_parts.second, line_number);
+        return false;
+    }
+
+    e.assignments[left_parts.first].insert(right_parts.first);
 
     return true;
 }
@@ -349,30 +347,26 @@ bool hdl_parser_verilog::parse_instance(entity& e)
     while (port_str.remaining() > 0)
     {
         port_str.consume(".", true);
-        auto port_lhs = port_str.consume();
+        auto left_str = port_str.consume();
         port_str.consume("(", true);
-        auto port_rhs = port_str.extract_until(")", token_stream::END_OF_STREAM, true, true);
+        auto right_str = port_str.extract_until(")", token_stream::END_OF_STREAM, true, true);
         port_str.consume(")", true);
         port_str.consume(",", port_str.remaining() > 0);
 
         // check if port unconnected
-        if (port_rhs.size() != 0)
+        if (right_str.size() != 0)
         {
-            signal processed_lhs;
-            processed_lhs.line_number = port_lhs.number;
-            processed_lhs.name        = port_lhs.string;
-            processed_lhs.bounds      = {std::make_pair(-1, -1)};
-
-            auto processed_rhs = get_assignment_signals(port_rhs, true);
+            signal s(left_str.number, left_str.string, {}, false, false);
+            auto right_parts = get_assignment_signals(e, right_str, true);
 
             // verify correctness
-            if (processed_rhs.empty())
+            if (right_parts.second == 0)
             {
                 // error already printed in subfunction
                 return false;
             }
 
-            inst.port_assignments.emplace(processed_lhs, processed_rhs);
+            inst.port_assignments.emplace(s._name, std::make_pair(s, right_parts.first));
         }
     }
 
@@ -529,23 +523,22 @@ std::map<std::string, hdl_parser_verilog::signal> hdl_parser_verilog::parse_sign
 
     if (bounds.empty())
     {
-        bounds.emplace_back(-1, -1);
+        bounds.emplace_back(0, 0);
     }
 
     // extract names
     do
     {
-        signal s;
-        s.line_number = signal_str.peek().number;
-        s.name        = signal_str.consume();
-        s.bounds      = bounds;
-        signals.emplace(s.name, s);
+        auto signal_name = signal_str.consume();
+
+        signal s(signal_str.peek().number, signal_name, bounds);
+        signals.emplace(signal_name, s);
     } while (signal_str.consume(",", false));
 
     return signals;
 }
 
-std::vector<hdl_parser_verilog::signal> hdl_parser_verilog::get_assignment_signals(token_stream& signal_str, bool allow_numerics)
+std::pair<std::vector<hdl_parser_verilog::signal>, i32> hdl_parser_verilog::get_assignment_signals(entity& e, token_stream& signal_str, bool allow_numerics)
 {
     // PARSE ASSIGNMENT
     //   assignment can currently be one of the following:
@@ -558,6 +551,7 @@ std::vector<hdl_parser_verilog::signal> hdl_parser_verilog::get_assignment_signa
 
     std::vector<signal> result;
     std::vector<token_stream> parts;
+    i32 size = 0;
 
     // (6) {(1) - (5), (1) - (5), ...}
     if (signal_str.peek() == "{")
@@ -580,78 +574,84 @@ std::vector<hdl_parser_verilog::signal> hdl_parser_verilog::get_assignment_signa
 
     for (auto& part_stream : parts)
     {
-        auto signal_name = part_stream.consume();
+        auto signal_name_token  = part_stream.consume();
+        i32 line_number         = signal_name_token.number;
+        std::string signal_name = signal_name_token;
+        std::vector<std::pair<i32, i32>> bounds;
+        bool is_binary = false;
 
         // (3) NUMBER
-        if (isdigit(signal_name.string[0]) || signal_name.string[0] == '\'')
+        if (isdigit(signal_name[0]) || signal_name[0] == '\'')
         {
             if (!allow_numerics)
             {
-                log_error("hdl_parser", "numeric value {} not allowed at this position in line {}.", signal_name.string, signal_name.number);
-                return {};
+                log_error("hdl_parser", "numeric value {} not allowed at this position in line {}.", signal_name, line_number);
+                return {{}, 0};
             }
 
-            signal s;
-            s.line_number = signal_name.number;
-            s.binary      = true;
-            s.name        = get_bin_from_literal(signal_name);
-            s.bounds      = {std::make_pair(s.name.size() - 1, 0)};
-
-            result.push_back(s);
-
-            continue;
-        }
-
-        // create new signal for assign
-        signal s;
-        s.line_number = signal_name.number;
-        s.name        = signal_name.string;
-
-        std::vector<std::pair<i32, i32>> bounds;
-
-        // any bounds specified?
-        if (part_stream.consume("["))
-        {
-            // (5) NAME[BEGIN_INDEX1:END_INDEX1][BEGIN_INDEX2:END_INDEX2]...
-            if (part_stream.find_next(":", part_stream.position() + 2) != part_stream.position() + 2)
-            {
-                do
-                {
-                    i32 left_bound = std::stoi(part_stream.consume());
-                    part_stream.consume(":", true);
-                    i32 right_bound = std::stoi(part_stream.consume());
-
-                    bounds.emplace_back(left_bound, right_bound);
-
-                    part_stream.consume("]", true);
-                } while (part_stream.consume("[", false));
-            }
-            // (4) NAME[INDEX1][INDEX2]...
-            else
-            {
-                do
-                {
-                    i32 index = std::stoi(part_stream.consume());
-
-                    bounds.emplace_back(index, index);
-
-                    part_stream.consume("]", true);
-                } while (part_stream.consume("["));
-            }
+            signal_name = get_bin_from_literal(signal_name_token);
+            bounds      = {std::make_pair(signal_name.size() - 1, 0)};
+            is_binary   = true;
         }
         else
         {
-            // (1) NAME *single-dimensional*
-            // (2) NAME *multi-dimensional*
-            bounds.emplace_back(-1, -1);
+            // any bounds specified?
+            if (part_stream.consume("["))
+            {
+                // (5) NAME[BEGIN_INDEX1:END_INDEX1][BEGIN_INDEX2:END_INDEX2]...
+                if (part_stream.find_next(":", part_stream.position() + 2) != part_stream.position() + 2)
+                {
+                    do
+                    {
+                        i32 left_bound = std::stoi(part_stream.consume());
+                        part_stream.consume(":", true);
+                        i32 right_bound = std::stoi(part_stream.consume());
+
+                        bounds.emplace_back(left_bound, right_bound);
+
+                        part_stream.consume("]", true);
+                    } while (part_stream.consume("[", false));
+                }
+                // (4) NAME[INDEX1][INDEX2]...
+                else
+                {
+                    do
+                    {
+                        i32 index = std::stoi(part_stream.consume());
+
+                        bounds.emplace_back(index, index);
+
+                        part_stream.consume("]", true);
+                    } while (part_stream.consume("["));
+                }
+            }
+            else
+            {
+                // (1) NAME *single-dimensional*
+                // (2) NAME *multi-dimensional*
+                if (auto signal_it = e.signals.find(signal_name); signal_it != e.signals.end())
+                {
+                    bounds = signal_it->second._bound;
+                }
+                else if (auto port_it = e.ports.find(signal_name); port_it != e.ports.end())
+                {
+                    bounds = port_it->second.second._bound;
+                }
+                else
+                {
+                    log_error("hdl_parser", "signal name '{}' is invalid in assignment in line {}.", signal_name, line_number);
+                    return {{}, 0};
+                }
+            }
         }
 
-        s.bounds = bounds;
-
+        // create new signal for assign
+        signal s(line_number, signal_name, bounds, is_binary);
+        size += s.size();
         result.push_back(s);
     }
 
-    return result;
+    return std::make_pair(result, size);
 }
 
 static std::map<char, std::string> oct_to_bin = {{'0', "000"}, {'1', "001"}, {'2', "010"}, {'3', "011"}, {'4', "100"}, {'5', "101"}, {'6', "110"}, {'7', "111"}};

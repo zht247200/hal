@@ -77,9 +77,10 @@ private:
     bool parse_signal_definition(entity& e);
     bool parse_architecture_body(entity& e);
     bool parse_instance(entity& e);
+    bool parse_assign(entity& e);
 
     // helper functions
     std::vector<std::pair<i32, i32>> parse_signal_bounds(token_stream& signal_str);
-    std::vector<signal> get_assignment_signals(token_stream& signal_str, bool allow_numerics, bool allow_concatenation);
+    std::pair<std::vector<signal>, i32> get_assignment_signals(entity& e, token_stream& signal_str, bool is_left_half, bool is_port_assignment);
     std::string get_bin_from_literal(token& value_token);
 };

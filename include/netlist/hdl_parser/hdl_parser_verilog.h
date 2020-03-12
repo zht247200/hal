@@ -80,7 +80,7 @@ private:
     // helper functions
     void remove_comments(std::string& line, bool& multi_line_comment, bool& multi_line_property);
     std::map<std::string, signal> parse_signal_list();
-    std::vector<signal> get_assignment_signals(token_stream& signal_str, bool allow_numerics);
+    std::pair<std::vector<signal>, i32> get_assignment_signals(entity& e, token_stream& signal_str, bool allow_numerics);
     std::string get_bin_from_literal(token& value_token);
     std::string get_hex_from_literal(token& value_token);
 };
