@@ -51,7 +51,7 @@ namespace hdl_parser_dispatcher
 
             if (!parser->parse())
             {
-                log_error("hdl_parser", "VHDL parser cannot parse file '{}'.", file_name.string());
+                log_error("hdl_parser", "parser cannot parse file '{}' using parser '{}'.", file_name.string(), parser_name);
                 return nullptr;
             }
 
@@ -72,6 +72,7 @@ namespace hdl_parser_dispatcher
             std::shared_ptr<netlist> netlist = parser->instantiate(gate_library);
             if (netlist == nullptr)
             {
+                log_error("hdl_parser", "parser cannot instantiate file '{}' using gate library '{}'.", file_name.string(), gate_library);
                 return nullptr;
             }
 

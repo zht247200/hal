@@ -59,7 +59,5 @@ protected:
     // stores the input stream to the file
     std::stringstream& m_fs;
 
-    void add_gate_type_pin_widths(std::shared_ptr<gate_type> gt, std::map<std::string, u32> pin_widths);
-
-    friend gate_type;
+    void add_gate_type_pin_bounds(std::shared_ptr<gate_type> gt, std::map<std::string, std::pair<u32, u32>> pin_bounds);
 };

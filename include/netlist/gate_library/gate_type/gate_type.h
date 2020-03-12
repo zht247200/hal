@@ -170,7 +170,7 @@ private:
 
     std::unordered_map<std::string, boolean_function> m_functions;
 
-    std::map<std::string, u32> m_pin_widths;
+    std::map<std::string, std::pair<u32, u32>> m_pin_bounds;
 
     gate_type(const gate_type&) = delete;               // disable copy-constructor
     gate_type& operator=(const gate_type&) = delete;    // disable copy-assignment

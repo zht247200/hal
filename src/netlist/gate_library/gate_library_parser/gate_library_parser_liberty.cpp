@@ -210,13 +210,14 @@ bool gate_library_parser_liberty::parse_pin(token_stream& cell_stream)
             if (pin_direction == "input")
             {
                 m_current_cell.input_pins.push_back(pin_name);
-                m_current_cell.pin_widths.emplace(pin_name, 1);
+                m_current_cell.pin_bounds.emplace(pin_name, std::make_pair(0, 0));
             }
             else if (pin_direction == "output")
             {
                 m_current_cell.output_pins.push_back(pin_name);
-                m_current_cell.pin_widths.emplace(pin_name, 1);
+                m_current_cell.pin_bounds.emplace(pin_name, std::make_pair(0, 0));
             }
+            //TODO inout
 
             pin_stream.consume(";", true);
         }
@@ -579,7 +580,7 @@ std::shared_ptr<gate_type> gate_library_parser_liberty::construct_gate_type()
 
     gt->add_input_pins(m_current_cell.input_pins);
     gt->add_output_pins(m_current_cell.output_pins);
-    add_gate_type_pin_widths(gt, m_current_cell.pin_widths);
+    add_gate_type_pin_bounds(gt, m_current_cell.pin_bounds);
 
     return gt;
 }
