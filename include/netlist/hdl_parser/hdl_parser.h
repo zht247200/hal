@@ -73,7 +73,7 @@ protected:
         std::string _name;
 
         // bounds
-        std::vector<std::pair<i32, i32>> _bound;
+        std::vector<std::pair<i32, i32>> _bounds;
 
         // is binary string?
         bool _is_binary = false;
@@ -81,8 +81,8 @@ protected:
         // are bounds already known? (should only be unknown for left side of port assignments)
         bool _is_bound_known = true;
 
-        signal(u32 line_number, std::string name, std::vector<std::pair<i32, i32>> bound, bool is_binary = false, bool is_bound_known = true)
-            : _line_number(line_number), _name(name), _bound(bound), _is_binary(is_binary), _is_bound_known(is_bound_known)
+        signal(u32 line_number, std::string name, std::vector<std::pair<i32, i32>> bounds, bool is_binary = false, bool is_bound_known = true)
+            : _line_number(line_number), _name(name), _bounds(bounds), _is_binary(is_binary), _is_bound_known(is_bound_known)
         {
         }
 
@@ -92,7 +92,7 @@ protected:
             {
                 i32 size = 1;
 
-                for (const auto& b : _bound)
+                for (const auto& b : _bounds)
                 {
                     size *= std::abs(b.first - b.second) + 1;
                 }
@@ -103,9 +103,9 @@ protected:
             return -1;
         }
 
-        void set_bound(std::vector<std::pair<i32, i32>> bound)
+        void set_bounds(std::vector<std::pair<i32, i32>> bounds)
         {
-            _bound          = bound;
+            _bounds         = bounds;
             _is_bound_known = true;
         }
 
@@ -113,67 +113,61 @@ protected:
         {
             // there may be two assignments to the same signal using different bounds
             // without checking bounds, two such signals would be considered equal
-            return (_name < other._name) && (_bound < other._bound);
+            return (_name < other._name) && (_bounds < other._bounds);
         }
     };
 
     struct instance
     {
-        u32 line_number;
+        u32 _line_number;
 
         // name
-        std::string name;
+        std::string _name;
 
         // type
-        std::string type;
+        std::string _type;
 
         // port assignments
-        std::map<std::string, std::pair<signal, std::vector<signal>>> port_assignments;
+        std::map<std::string, std::pair<signal, std::vector<signal>>> _port_assignments;
 
         // generic assignments
-        std::map<std::string, std::string> generic_assignments;
+        std::map<std::string, std::pair<std::string, std::string>> _generic_assignments;
 
         bool operator<(const instance& other) const
         {
-            return name < other.name;
+            return _name < other._name;
         }
     };
 
     struct entity
     {
-        u32 line_number;
+        u32 _line_number;
 
         // name
-        std::string name;
+        std::string _name;
 
         // ports
-        std::map<std::string, std::pair<std::string, signal>> ports;
+        std::map<std::string, std::pair<std::string, signal>> _ports;
 
         // attributes
-        std::set<std::tuple<std::string, std::string, std::string>> entity_attributes;
-        std::map<std::string, std::tuple<std::string, std::string, std::string>> instance_attributes;
-        std::map<std::string, std::tuple<std::string, std::string, std::string>> signal_attributes;
-
-        // generics
-        std::set<std::string> generics;
+        std::set<std::tuple<std::string, std::string, std::string>> _entity_attributes;
+        std::map<std::string, std::tuple<std::string, std::string, std::string>> _instance_attributes;
+        std::map<std::string, std::tuple<std::string, std::string, std::string>> _signal_attributes;
 
         // signals
-        std::map<std::string, signal> signals;
+        std::map<std::string, signal> _signals;
 
         // assignments
-        std::map<std::vector<signal>, std::set<std::vector<signal>>> assignments;
+        std::map<std::vector<signal>, std::set<std::vector<signal>>> _assignments;
 
         // instances
-        std::map<std::string, instance> instances;
+        std::map<std::string, instance> _instances;
 
         bool operator<(const entity& other) const
         {
-            return name < other.name;
+            return _name < other._name;
         }
     };
-
-    // stores the netlist
-    std::shared_ptr<netlist> m_netlist;
 
     // stores the input stream to the file
     std::stringstream& m_fs;
@@ -184,6 +178,13 @@ protected:
 private:
     std::string m_file_name;
 
+    // stores the netlist
+    std::shared_ptr<netlist> m_netlist;
+
+    // unique alias generation
+    std::map<std::string, u32> m_name_occurrences;
+    std::map<std::string, u32> m_current_index;
+
     std::string detect_top_module();
-    const std::map<std::string, u32> get_gate_type_pin_width(const std::shared_ptr<const gate_type> gt) const;
+    std::string get_unique_alias(const std::string& name);
 };

@@ -25,21 +25,21 @@ std::shared_ptr<netlist> hdl_parser::instantiate(const std::string& gate_library
 
     if (m_netlist == nullptr)
     {
-        log_error("hdl_parser", "netlist_factory returned nullptr");
+        log_error("hdl_parser", "netlist_factory returned nullptr.");
         return nullptr;
     }
 
     for (auto& e : m_entities)
     {
-        for (auto& inst : e.second.instances)
+        for (auto& inst : e.second._instances)
         {
-            auto& port_assignments = inst.second.port_assignments;
+            auto& port_assignments = inst.second._port_assignments;
 
             // instance of entity
-            if (auto entity_it = m_entities.find(inst.second.type); entity_it != m_entities.end())
+            if (auto entity_it = m_entities.find(inst.second._type); entity_it != m_entities.end())
             {
                 // fill in port width
-                auto& entity_ports = entity_it->second.ports;
+                auto& entity_ports = entity_it->second._ports;
 
                 for (auto& [port_name, assignment] : port_assignments)
                 {
@@ -47,7 +47,7 @@ std::shared_ptr<netlist> hdl_parser::instantiate(const std::string& gate_library
                     {
                         if (auto port_it = entity_ports.find(port_name); port_it != entity_ports.end())
                         {
-                            assignment.first.set_bound(port_it->second.second._bound);
+                            assignment.first.set_bounds(port_it->second.second._bounds);
 
                             i32 left_size  = assignment.first.size();
                             i32 right_size = 0;
@@ -76,23 +76,45 @@ std::shared_ptr<netlist> hdl_parser::instantiate(const std::string& gate_library
             // instance of gate type
             else
             {
-                if (auto gate_it = gate_types.find(inst.second.type); gate_it != gate_types.end())
+                if (auto gate_it = gate_types.find(inst.second._type); gate_it != gate_types.end())
                 {
-                    // TODO
-                    auto test = get_gate_type_pin_width(gate_it->second);
+                    auto pin_widths = gate_it->second->m_pin_bounds;
+
+                    for (auto& [port_name, assignment] : port_assignments)
+                    {
+                        if (auto pin_it = pin_widths.find(port_name); pin_it != pin_widths.end())
+                        {
+                            assignment.first.set_bounds({pin_it->second});
+
+                            i32 left_size  = assignment.first.size();
+                            i32 right_size = 0;
+                            for (const auto& s : assignment.second)
+                            {
+                                right_size += s.size();
+                            }
+
+                            if (left_size != right_size)
+                            {
+                                log_error(
+                                    "hdl_parser", "port assignment width mismatch: left side has size {} and right side has size {} in line {}.", left_size, right_size, assignment.first._line_number);
+                                return nullptr;
+                            }
+                        }
+                        else
+                        {
+                            log_error("hdl_parser", "port '{}' is no valid port of gate type '{}' in line {}.", port_name, gate_it->first, assignment.first._line_number);
+                            return nullptr;
+                        }
+                    }
                 }
                 else
                 {
-                    log_error("hdl_parser", "type '{}' of instance '{}' is neither an entity, nor a gate type in line {}.", inst.second.type, inst.first, inst.second.line_number);
+                    log_error("hdl_parser", "type '{}' of instance '{}' is neither an entity, nor a gate type in line {}.", inst.second._type, inst.first, inst.second._line_number);
                     return nullptr;
                 }
             }
         }
     }
-
-    // TODO match instances with entities and gate_types
-    // TODO verify correctness of port assignments and fill in bounds
-    // TODO verify correctness of assignments and fill in bounds
 
     return nullptr;
 }
@@ -108,9 +130,9 @@ std::string hdl_parser::detect_top_module()
 
     for (auto& e : m_entities)
     {
-        for (auto& i : e.second.instances)
+        for (auto& i : e.second._instances)
         {
-            no_instant.erase(i.second.type);
+            no_instant.erase(i.second._type);
         }
     }
 
@@ -123,7 +145,14 @@ std::string hdl_parser::detect_top_module()
     return *(no_instant.begin());
 }
 
-const std::map<std::string, u32> hdl_parser::get_gate_type_pin_width(const std::shared_ptr<const gate_type> gt) const
+std::string hdl_parser::get_unique_alias(const std::string& name)
 {
-    return gt->m_pin_widths;
+    // if the name only appears once, we don't have to alias it
+    if (m_name_occurrences[name] < 2)
+    {
+        return name;
+    }
+
+    // otherwise, add a unique string to the name
+    return name + "_" + std::to_string(m_current_index[name]++);
 }

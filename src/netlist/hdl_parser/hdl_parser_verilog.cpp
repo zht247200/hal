@@ -125,15 +125,20 @@ bool hdl_parser_verilog::parse_tokens()
 bool hdl_parser_verilog::parse_entity()
 {
     entity e;
-    parser_info p_info;
+    std::set<std::string> port_names;
 
     m_token_stream.consume("module", true);
-    e.line_number = m_token_stream.peek().number;
-    e.name        = m_token_stream.consume();
+    e._line_number = m_token_stream.peek().number;
+    e._name        = m_token_stream.consume();
 
-    // parse generic list and port list
-    parse_generic_list(e.generics);
-    parse_port_list(p_info.port_names);
+    // parse port list
+    if (m_token_stream.consume("#("))
+    {
+        m_token_stream.consume_until(")");
+        m_token_stream.consume(")", true);
+    }
+
+    parse_port_list(port_names);
 
     m_token_stream.consume(";", true);
 
@@ -142,7 +147,7 @@ bool hdl_parser_verilog::parse_entity()
     {
         if (next_token == "input" || next_token == "output" || next_token == "inout")
         {
-            if (!parse_port_definition(e, p_info.port_names))
+            if (!parse_port_definition(e, port_names))
             {
                 return false;
             }
@@ -174,30 +179,14 @@ bool hdl_parser_verilog::parse_entity()
 
     m_token_stream.consume("endmodule", true);
 
-    if (m_entities.find(e.name) != m_entities.end())
+    if (m_entities.find(e._name) != m_entities.end())
     {
-        log_error("hdl_parser", "an entity with the name '{}' does already exist (see line {} and line {}).", e.name, e.line_number, m_entities.at(e.name).line_number);
+        log_error("hdl_parser", "an entity with the name '{}' does already exist (see line {} and line {}).", e._name, e._line_number, m_entities.at(e._name)._line_number);
         return false;
     }
-    m_entities.emplace(e.name, e);
+    m_entities.emplace(e._name, e);
 
     return true;
-}
-
-void hdl_parser_verilog::parse_generic_list(std::set<std::string>& generic_names)
-{
-    if (m_token_stream.consume("#("))
-    {
-        auto generics = m_token_stream.extract_until(")", token_stream::END_OF_STREAM, true, true);
-
-        while (generics.remaining() > 0)
-        {
-            generic_names.insert(generics.consume().string);
-            generics.consume(",", generics.remaining() > 0);
-        }
-
-        m_token_stream.consume(")", true);
-    }
 }
 
 void hdl_parser_verilog::parse_port_list(std::set<std::string>& port_names)
@@ -243,7 +232,7 @@ bool hdl_parser_verilog::parse_port_definition(entity& e, const std::set<std::st
             return false;
         }
 
-        e.ports.emplace(port.first, std::make_pair(direction, port.second));
+        e._ports.emplace(port.first, std::make_pair(direction, port.second));
     }
 
     return true;
@@ -260,7 +249,7 @@ bool hdl_parser_verilog::parse_signal_definition(entity& e)
         return false;
     }
 
-    e.signals.insert(signals.begin(), signals.end());
+    e._signals.insert(signals.begin(), signals.end());
     return true;
 }
 
@@ -290,7 +279,7 @@ bool hdl_parser_verilog::parse_assign(entity& e)
         return false;
     }
 
-    e.assignments[left_parts.first].insert(right_parts.first);
+    e._assignments[left_parts.first].insert(right_parts.first);
 
     return true;
 }
@@ -298,49 +287,40 @@ bool hdl_parser_verilog::parse_assign(entity& e)
 bool hdl_parser_verilog::parse_instance(entity& e)
 {
     instance inst;
-    inst.line_number = m_token_stream.peek().number;
-    inst.type        = m_token_stream.consume();
+    inst._line_number = m_token_stream.peek().number;
+    inst._type        = m_token_stream.consume();
 
     // parse generics map
     if (m_token_stream.consume("#("))
     {
-        auto generic_str = m_token_stream.extract_until(")", token_stream::END_OF_STREAM, true, true);
-
-        while (generic_str.remaining() > 0)
+        if (!parse_generic_assign(inst))
         {
-            std::string processed_rhs;
-
-            generic_str.consume(".", true);
-
-            auto generic_lhs = generic_str.extract_until("(", token_stream::END_OF_STREAM, true, true).join("");
-
-            generic_str.consume("(", true);
-
-            auto generic_rhs = generic_str.extract_until(")", token_stream::END_OF_STREAM, true, true).join("");
-
-            generic_str.consume(")", true);
-
-            generic_str.consume(",", generic_str.remaining() > 0);
-
-            if (generic_rhs.string.find('\'') != std::string::npos)
-            {
-                processed_rhs = get_hex_from_literal(generic_rhs);
-            }
-            else
-            {
-                processed_rhs = generic_rhs.string;
-            }
-
-            inst.generic_assignments.emplace(generic_lhs.string, processed_rhs);
+            return false;
         }
-
-        m_token_stream.consume(")", true);
     }
 
     // parse instance name
-    inst.name = m_token_stream.consume();
+    inst._name = m_token_stream.consume();
 
     // parse port map
+    if (!parse_port_assign(e, inst))
+    {
+        return false;
+    }
+
+    // add to vector of instances of current entity
+    if (e._instances.find(inst._name) != e._instances.end())
+    {
+        log_error("hdl_parser", "an instance with the name '{}' does already exist (see line {} and line {}).", inst._name, inst._line_number, e._instances.at(inst._name)._line_number);
+        return false;
+    }
+    e._instances.emplace(inst._name, inst);
+
+    return true;
+}
+
+bool hdl_parser_verilog::parse_port_assign(entity& e, instance& inst)
+{
     m_token_stream.consume("(", true);
     auto port_str = m_token_stream.extract_until(")", token_stream::END_OF_STREAM, true, true);
 
@@ -366,20 +346,73 @@ bool hdl_parser_verilog::parse_instance(entity& e)
                 return false;
             }
 
-            inst.port_assignments.emplace(s._name, std::make_pair(s, right_parts.first));
+            inst._port_assignments.emplace(s._name, std::make_pair(s, right_parts.first));
         }
     }
 
     m_token_stream.consume(")", true);
     m_token_stream.consume(";", true);
 
-    // add to vector of instances of current entity
-    if (e.instances.find(inst.name) != e.instances.end())
+    return true;
+}
+
+bool hdl_parser_verilog::parse_generic_assign(instance& inst)
+{
+    auto generic_str = m_token_stream.extract_until(")", token_stream::END_OF_STREAM, true, true);
+
+    while (generic_str.remaining() > 0)
     {
-        log_error("hdl_parser", "an instance with the name '{}' does already exist (see line {} and line {}).", inst.name, inst.line_number, e.instances.at(inst.name).line_number);
-        return false;
+        std::string value, data_type;
+
+        auto line_number = generic_str.peek().number;
+        generic_str.consume(".", true);
+        auto lhs = generic_str.join_until("(", "");
+        generic_str.consume("(", true);
+        auto rhs = generic_str.join_until(")", "");
+        generic_str.consume(")", true);
+        generic_str.consume(",", generic_str.remaining() > 0);
+
+        if (core_utils::is_integer(rhs))
+        {
+            value     = rhs;
+            data_type = "integer";
+        }
+        else if (core_utils::is_floating_point(rhs))
+        {
+            data_type = "floating_point";
+        }
+        else if (rhs.string[0] == '\"' && rhs.string.back() == '\"')
+        {
+            value     = rhs.string.substr(1, rhs.string.size() - 2);
+            data_type = "string";
+        }
+        else if (isdigit(rhs.string[0]) || rhs.string[0] == '\'')
+        {
+            value = get_hex_from_literal(rhs);
+            if (value.empty())
+            {
+                return false;
+            }
+
+            if (value.size() == 1)
+            {
+                data_type = "bit_value";
+            }
+            else
+            {
+                data_type = "bit_vector";
+            }
+        }
+        else
+        {
+            log_error("hdl_parser", "cannot identify data type of generic map value '{}' in instance '{}' in line {}", rhs.string, inst._name, line_number);
+            return false;
+        }
+
+        inst._generic_assignments.emplace(lhs, std::make_pair(data_type, value));
     }
-    e.instances.emplace(inst.name, inst);
+
+    m_token_stream.consume(")", true);
 
     return true;
 }
@@ -590,11 +623,32 @@ std::pair<std::vector<hdl_parser_verilog::signal>, i32> hdl_parser_verilog::get_
             }
 
             signal_name = get_bin_from_literal(signal_name_token);
-            bounds      = {std::make_pair(signal_name.size() - 1, 0)};
-            is_binary   = true;
+            if (signal_name.empty())
+            {
+                return {{}, 0};
+            }
+
+            bounds    = {std::make_pair(signal_name.size() - 1, 0)};
+            is_binary = true;
         }
         else
         {
+            std::vector<std::pair<i32, i32>> reference_bounds;
+
+            if (auto signal_it = e._signals.find(signal_name); signal_it != e._signals.end())
+            {
+                reference_bounds = signal_it->second._bounds;
+            }
+            else if (auto port_it = e._ports.find(signal_name); port_it != e._ports.end())
+            {
+                reference_bounds = port_it->second.second._bounds;
+            }
+            else
+            {
+                log_error("hdl_parser", "signal name '{}' is invalid in assignment in line {}.", signal_name, line_number);
+                return {{}, 0};
+            }
+
             // any bounds specified?
             if (part_stream.consume("["))
             {
@@ -624,24 +678,18 @@ std::pair<std::vector<hdl_parser_verilog::signal>, i32> hdl_parser_verilog::get_
                         part_stream.consume("]", true);
                     } while (part_stream.consume("["));
                 }
+
+                if (!is_in_bounds(bounds, reference_bounds))
+                {
+                    log_error("hdl_parser", "invalid bounds given for signal or port '{}' in line {}.", signal_name, line_number);
+                    return {{}, 0};
+                }
             }
             else
             {
                 // (1) NAME *single-dimensional*
                 // (2) NAME *multi-dimensional*
-                if (auto signal_it = e.signals.find(signal_name); signal_it != e.signals.end())
-                {
-                    bounds = signal_it->second._bound;
-                }
-                else if (auto port_it = e.ports.find(signal_name); port_it != e.ports.end())
-                {
-                    bounds = port_it->second.second._bound;
-                }
-                else
-                {
-                    log_error("hdl_parser", "signal name '{}' is invalid in assignment in line {}.", signal_name, line_number);
-                    return {{}, 0};
-                }
+                bounds = reference_bounds;
             }
         }
 
@@ -675,12 +723,11 @@ static std::map<char, std::string> hex_to_bin = {{'0', "0000"},
 std::string hdl_parser_verilog::get_bin_from_literal(token& value_token)
 {
     auto line_number  = value_token.number;
-    std::string value = core_utils::to_lower(core_utils::trim(core_utils::replace(value_token, "_", "")));
+    std::string value = core_utils::to_lower(core_utils::replace(value_token, "_", ""));
 
     i32 len;
     std::string prefix;
     std::string number;
-    u32 base;
     std::string res;
 
     // base specified?
@@ -701,93 +748,83 @@ std::string hdl_parser_verilog::get_bin_from_literal(token& value_token)
     switch (prefix.at(0))
     {
         case 'b':
-            base = 2;
+        {
+            for (const auto& c : number)
+            {
+                if (c >= '0' && c <= '1')
+                {
+                    res += c;
+                }
+                else
+                {
+                    log_error("hdl_parser", "invalid character within binary number literal {} in line {}.", value, line_number);
+                    return "";
+                }
+            }
             break;
+        }
 
         case 'o':
-            base = 8;
+            for (const auto& c : number)
+            {
+                if (c >= '0' && c <= '7')
+                {
+                    res += oct_to_bin[c];
+                }
+                else
+                {
+                    log_error("hdl_parser", "invalid character within octal number literal {} in line {}.", value, line_number);
+                    return "";
+                }
+            }
             break;
 
         case 'd':
-            base = 10;
+        {
+            u64 tmp_val = 0;
+
+            for (const auto& c : number)
+            {
+                if (c >= '0' && c <= '9')
+                {
+                    tmp_val = (tmp_val * 10) + (c - '0');
+                }
+                else
+                {
+                    log_error("hdl_parser", "invalid character within octal number literal {} in line {}.", value, line_number);
+                    return "";
+                }
+            }
+
+            do
+            {
+                res = std::to_string(tmp_val & 0x1) + res;
+                tmp_val >>= 1;
+            } while (tmp_val != 0);
             break;
+        }
 
         case 'h':
-            base = 16;
+        {
+            for (const auto& c : number)
+            {
+                if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
+                {
+                    res += hex_to_bin[c];
+                }
+                else
+                {
+                    log_error("hdl_parser", "invalid character within hexadecimal number literal {} in line {}.", value, line_number);
+                    return "";
+                }
+            }
             break;
+        }
 
         default:
+        {
             log_error("hdl_parser", "invalid base '{}' within number literal {} in line {}.", prefix, value, line_number);
             return "";
-    }
-
-    // parse number literal
-    if (base == 2)
-    {
-        for (const auto& c : number)
-        {
-            if (c >= '0' && c <= '1')
-            {
-                res += c;
-            }
-            else
-            {
-                log_error("hdl_parser", "invalid character '{}' within binary number literal {} in line {}.", c, value, line_number);
-                return "";
-            }
-        }
-    }
-    else if (base == 8)
-    {
-        for (const auto& c : number)
-        {
-            if (c >= '0' && c <= '7')
-            {
-                res += oct_to_bin[c];
-            }
-            else
-            {
-                log_error("hdl_parser", "invalid character '{}' within octal number literal {} in line {}.", c, value, line_number);
-                return "";
-            }
-        }
-    }
-    else if (base == 10)
-    {
-        u64 tmp_val = 0;
-
-        for (const auto& c : number)
-        {
-            if (c >= '0' && c <= '9')
-            {
-                tmp_val = (tmp_val * 10) + (c - '0');
-            }
-            else
-            {
-                log_error("hdl_parser", "invalid character '{}' within octal number literal {} in line {}.", c, value, line_number);
-                return "";
-            }
-        }
-
-        do
-        {
-            res = std::to_string(tmp_val & 0x1) + res;
-            tmp_val >>= 1;
-        } while (tmp_val != 0);
-    }
-    else if (base == 16)
-    {
-        for (const auto& c : number)
-        {
-            if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
-            {
-                res += hex_to_bin[c];
-            }
-            else
-            {
-                log_error("hdl_parser", "invalid character '{}' within hexadecimal number literal {} in line {}.", c, value, line_number);
-                return "";
-            }
         }
     }
 
@@ -802,7 +839,7 @@ std::string hdl_parser_verilog::get_bin_from_literal(token& value_token)
 std::string hdl_parser_verilog::get_hex_from_literal(token& value_token)
 {
     auto line_number  = value_token.number;
-    std::string value = core_utils::to_lower(core_utils::trim(core_utils::replace(value_token, "_", "")));
+    std::string value = core_utils::to_lower(core_utils::replace(value_token, "_", ""));
 
     i32 len;
     std::string prefix;
@@ -824,47 +861,95 @@ std::string hdl_parser_verilog::get_hex_from_literal(token& value_token)
         number = value.substr(value.find('\'') + 2);
     }
 
-    if (number.find('x') != std::string::npos)
-    {
-        log_error("hdl_parser", "character 'x' is not yet supported within number literal {} in line {}.", value, line_number);
-        return "";
-    }
-    else if (number.find('z') != std::string::npos)
-    {
-        log_error("hdl_parser", "character 'z' is not yet supported within number literal {} in line {}.", value, line_number);
-        return "";
-    }
-    else if (number.find('?') != std::string::npos)
-    {
-        log_error("hdl_parser", "character '?' is not yet supported within number literal {} in line {}.", value, line_number);
-        return "";
-    }
-
     // select base
     switch (prefix.at(0))
     {
         case 'b':
+        {
+            if (!std::all_of(number.begin(), number.end(), [](const char& c) { return (c >= '0' && c <= '1'); }))
+            {
+                log_error("hdl_parser", "invalid character within binary number literal {} in line {}.", value, line_number);
+                return "";
+            }
+
             base = 2;
             break;
+        }
 
         case 'o':
+        {
+            if (!std::all_of(number.begin(), number.end(), [](const char& c) { return (c >= '0' && c <= '7'); }))
+            {
+                log_error("hdl_parser", "invalid character within octal number literal {} in line {}.", value, line_number);
+                return "";
+            }
+
             base = 8;
             break;
+        }
 
         case 'd':
+        {
+            if (!std::all_of(number.begin(), number.end(), [](const char& c) { return (c >= '0' && c <= '9'); }))
+            {
+                log_error("hdl_parser", "invalid character within decimal number literal {} in line {}.", value, line_number);
+                return "";
+            }
+
             base = 10;
             break;
+        }
 
         case 'h':
+        {
+            if (!std::all_of(number.begin(), number.end(), [](const char& c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'); }))
+            {
+                log_error("hdl_parser", "invalid character within hexadecimal number literal {} in line {}.", value, line_number);
+                return "";
+            }
+
             base = 16;
             break;
+        }
 
         default:
+        {
             log_error("hdl_parser", "invalid base '{}' within number literal {} in line {}.", prefix, value, line_number);
             return "";
+        }
     }
 
     std::stringstream ss;
     ss << std::setfill('0') << std::setw((len + 3) / 4) << std::hex << stoull(number, 0, base);
     return ss.str();
+}
+
+bool hdl_parser_verilog::is_in_bounds(const std::vector<std::pair<i32, i32>>& bounds, const std::vector<std::pair<i32, i32>>& reference_bounds) const
+{
+    if (bounds.size() != reference_bounds.size())
+    {
+        return false;
+    }
+
+    for (u32 i = 0; i < bounds.size(); i++)
+    {
+        i32 ref_max, ref_min;
+        if (reference_bounds[i].first < reference_bounds[i].second)
+        {
+            ref_min = reference_bounds[i].first;
+            ref_max = reference_bounds[i].second;
+        }
+        else
+        {
+            ref_min = reference_bounds[i].second;
+            ref_max = reference_bounds[i].first;
+        }
+
+        if (!(((ref_min <= bounds[i].first) && (bounds[i].first <= ref_max)) && ((ref_min <= bounds[i].second) && (bounds[i].second <= ref_max))))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }

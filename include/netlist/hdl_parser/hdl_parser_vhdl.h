@@ -69,18 +69,21 @@ private:
     // parse HDL into intermediate format
     bool parse_library();
     bool parse_entity();
-    bool parse_generic_definitions(entity& e);
     bool parse_port_definitons(entity& e);
     bool parse_attribute(entity& e);
     bool parse_architecture();
     bool parse_architecture_header(entity& e);
     bool parse_signal_definition(entity& e);
     bool parse_architecture_body(entity& e);
-    bool parse_instance(entity& e);
     bool parse_assign(entity& e);
+    bool parse_instance(entity& e);
+    bool parse_port_assign(entity& e, instance& inst);
+    bool parse_generic_assign(instance& inst);
 
     // helper functions
     std::vector<std::pair<i32, i32>> parse_signal_bounds(token_stream& signal_str);
     std::pair<std::vector<signal>, i32> get_assignment_signals(entity& e, token_stream& signal_str, bool is_left_half, bool is_port_assignment);
     std::string get_bin_from_literal(token& value_token);
+    std::string get_hex_from_literal(token& value_token);
+    bool is_in_bounds(const std::vector<std::pair<i32, i32>>& bounds, const std::vector<std::pair<i32, i32>>& reference_bounds) const;
 };

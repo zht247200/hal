@@ -3,6 +3,8 @@
 #include "core/log.h"
 #include "core/utils.h"
 
+#include <iomanip>
+
 hdl_parser_vhdl::hdl_parser_vhdl(std::stringstream& stream) : hdl_parser(stream)
 {
 }
@@ -182,8 +184,8 @@ bool hdl_parser_vhdl::parse_entity()
     entity e;
 
     m_token_stream.consume("entity", true);
-    e.line_number = m_token_stream.peek().number;
-    e.name        = m_token_stream.consume();
+    e._line_number = m_token_stream.peek().number;
+    e._name        = m_token_stream.consume();
     m_token_stream.consume("is", true);
 
     auto next_token = m_token_stream.peek();
@@ -191,10 +193,8 @@ bool hdl_parser_vhdl::parse_entity()
     {
         if (next_token == "generic")
         {
-            if (!parse_generic_definitions(e))
-            {
-                return false;
-            }
+            m_token_stream.consume_until(";");
+            m_token_stream.consume(";", true);
         }
         else if (next_token == "port")
         {
@@ -227,30 +227,6 @@ bool hdl_parser_vhdl::parse_entity()
 }
 
 static std::set<std::string> supported_directions = {"in", "out", "inout"};
-
-bool hdl_parser_vhdl::parse_generic_definitions(entity& e)
-{
-    // default generic assignments are not supported
-    m_token_stream.consume("generic", true);
-    m_token_stream.consume("(", true);
-    auto generic_str = m_token_stream.extract_until(")");
-
-    while (generic_str.remaining() > 0)
-    {
-        // extract names
-        do
-        {
-            e.generics.insert(generic_str.consume().string);
-        } while (generic_str.consume(",", false));
-
-        generic_str.consume_until(";");
-        generic_str.consume(";", generic_str.remaining() > 0);
-    }
-
-    m_token_stream.consume(")", true);
-    m_token_stream.consume(";", true);
-    return true;
-}
 
 bool hdl_parser_vhdl::parse_port_definitons(entity& e)
 {
@@ -295,7 +271,7 @@ bool hdl_parser_vhdl::parse_port_definitons(entity& e)
         for (const auto& name : port_names)
         {
             signal s(line_number, name, bounds);
-            e.ports.emplace(name, std::make_pair(direction, s));
+            e._ports.emplace(name, std::make_pair(direction, s));
         }
     }
 
@@ -347,15 +323,15 @@ bool hdl_parser_vhdl::parse_attribute(entity& e)
 
         if (attr_class == "entity")
         {
-            e.entity_attributes.insert(attribute);
+            e._entity_attributes.insert(attribute);
         }
         else if (attr_class == "label")
         {
-            e.instance_attributes.emplace(attr_target, attribute);
+            e._instance_attributes.emplace(attr_target, attribute);
         }
         else if (attr_class == "signal")
         {
-            e.signal_attributes.emplace(attr_target, attribute);
+            e._signal_attributes.emplace(attr_target, attribute);
         }
         else
         {
@@ -461,7 +437,7 @@ bool hdl_parser_vhdl::parse_signal_definition(entity& e)
     for (const auto& name : signal_names)
     {
         signal s(line_number, name, bounds);
-        e.signals.emplace(name, s);
+        e._signals.emplace(name, s);
     }
 
     return true;
@@ -502,110 +478,6 @@ bool hdl_parser_vhdl::parse_architecture_body(entity& e)
     return true;
 }
 
-bool hdl_parser_vhdl::parse_instance(entity& e)
-{
-    instance inst;
-
-    inst.line_number = m_token_stream.peek().number;
-    inst.name        = m_token_stream.consume();
-    m_token_stream.consume(":", true);
-
-    // remove prefix from type
-    if (m_token_stream.peek() == "entity")
-    {
-        m_token_stream.consume("entity", true);
-        inst.type = m_token_stream.consume();
-        auto pos  = inst.type.find('.');
-        if (pos != std::string::npos)
-        {
-            inst.type = inst.type.substr(pos + 1);
-        }
-    }
-    else if (m_token_stream.peek() == "component")
-    {
-        m_token_stream.consume("component", true);
-        inst.type = m_token_stream.consume();
-    }
-    else
-    {
-        inst.type     = m_token_stream.consume();
-        auto low_type = core_utils::to_lower(inst.type);
-        std::string prefix;
-
-        // find longest matching library prefix
-        for (const auto& lib : m_libraries)
-        {
-            if (lib.size() > prefix.size() && core_utils::starts_with(low_type, lib))
-            {
-                prefix = lib;
-            }
-        }
-
-        // remove prefix
-        if (!prefix.empty())
-        {
-            inst.type = inst.type.substr(prefix.size());
-        }
-    }
-
-    // TODO process generic data types
-    if (m_token_stream.peek() == "generic")
-    {
-        m_token_stream.consume("generic", true);
-        m_token_stream.consume("map", true);
-        m_token_stream.consume("(", true);
-        auto generic_map = m_token_stream.extract_until(")");
-        m_token_stream.consume(")", true);
-
-        while (generic_map.remaining() > 0)
-        {
-            auto lhs = generic_map.join_until("=>", " ");
-            generic_map.consume("=>", true);
-            auto rhs = generic_map.join_until(",", " ");
-            generic_map.consume(",", generic_map.remaining() > 0);    // last entry has no comma
-
-            inst.generic_assignments.emplace(lhs, rhs);
-        }
-    }
-
-    if (m_token_stream.peek() == "port")
-    {
-        m_token_stream.consume("port", true);
-        m_token_stream.consume("map", true);
-        m_token_stream.consume("(", true);
-        auto port_map = m_token_stream.extract_until(")");
-        m_token_stream.consume(")", true);
-
-        while (port_map.remaining() > 0)
-        {
-            auto left_str = port_map.extract_until("=>");
-            port_map.consume("=>", true);
-            auto right_str = port_map.extract_until(",");
-            port_map.consume(",", port_map.remaining() > 0);    // last entry has no comma
-
-            if (!right_str.consume("open"))
-            {
-                auto left_parts  = get_assignment_signals(e, left_str, true, true);
-                auto right_parts = get_assignment_signals(e, right_str, false, true);
-
-                if (left_parts.second == 0 || right_parts.second == 0)
-                {
-                    // error already printed in subfunction
-                    return false;
-                }
-
-                inst.port_assignments.emplace(left_parts.first.at(0)._name, std::make_pair(left_parts.first.at(0), right_parts.first));
-            }
-        }
-    }
-
-    m_token_stream.consume(";", true);
-
-    e.instances.emplace(inst.name, inst);
-
-    return true;
-}
-
 bool hdl_parser_vhdl::parse_assign(entity& e)
 {
     auto line_number = m_token_stream.peek().number;
@@ -631,7 +503,178 @@ bool hdl_parser_vhdl::parse_assign(entity& e)
         return false;
     }
 
-    e.assignments[left_parts.first].insert(right_parts.first);
+    e._assignments[left_parts.first].insert(right_parts.first);
+
+    return true;
+}
+
+bool hdl_parser_vhdl::parse_instance(entity& e)
+{
+    instance inst;
+
+    inst._line_number = m_token_stream.peek().number;
+    inst._name        = m_token_stream.consume();
+    m_token_stream.consume(":", true);
+
+    // remove prefix from type
+    if (m_token_stream.peek() == "entity")
+    {
+        m_token_stream.consume("entity", true);
+        inst._type = m_token_stream.consume();
+        auto pos   = inst._type.find('.');
+        if (pos != std::string::npos)
+        {
+            inst._type = inst._type.substr(pos + 1);
+        }
+    }
+    else if (m_token_stream.peek() == "component")
+    {
+        m_token_stream.consume("component", true);
+        inst._type = m_token_stream.consume();
+    }
+    else
+    {
+        inst._type    = m_token_stream.consume();
+        auto low_type = core_utils::to_lower(inst._type);
+        std::string prefix;
+
+        // find longest matching library prefix
+        for (const auto& lib : m_libraries)
+        {
+            if (lib.size() > prefix.size() && core_utils::starts_with(low_type, lib))
+            {
+                prefix = lib;
+            }
+        }
+
+        // remove prefix
+        if (!prefix.empty())
+        {
+            inst._type = inst._type.substr(prefix.size());
+        }
+    }
+
+    if (m_token_stream.consume("generic"))
+    {
+        if (!parse_generic_assign(inst))
+        {
+            return false;
+        }
+    }
+
+    if (m_token_stream.peek() == "port")
+    {
+        if (!parse_port_assign(e, inst))
+        {
+            return false;
+        }
+    }
+
+    m_token_stream.consume(";", true);
+
+    e._instances.emplace(inst._name, inst);
+
+    return true;
+}
+
+bool hdl_parser_vhdl::parse_port_assign(entity& e, instance& inst)
+{
+    m_token_stream.consume("port", true);
+    m_token_stream.consume("map", true);
+    m_token_stream.consume("(", true);
+    auto port_str = m_token_stream.extract_until(")");
+    m_token_stream.consume(")", true);
+
+    while (port_str.remaining() > 0)
+    {
+        auto left_str = port_str.extract_until("=>");
+        port_str.consume("=>", true);
+        auto right_str = port_str.extract_until(",");
+        port_str.consume(",", port_str.remaining() > 0);    // last entry has no comma
+
+        if (!right_str.consume("open"))
+        {
+            auto left_parts  = get_assignment_signals(e, left_str, true, true);
+            auto right_parts = get_assignment_signals(e, right_str, false, true);
+
+            if (left_parts.second == 0 || right_parts.second == 0)
+            {
+                // error already printed in subfunction
+                return false;
+            }
+
+            inst._port_assignments.emplace(left_parts.first.at(0)._name, std::make_pair(left_parts.first.at(0), right_parts.first));
+        }
+    }
+
+    return true;
+}
+
+bool hdl_parser_vhdl::parse_generic_assign(instance& inst)
+{
+    m_token_stream.consume("map", true);
+    m_token_stream.consume("(", true);
+    auto generic_str = m_token_stream.extract_until(")");
+    m_token_stream.consume(")", true);
+
+    while (generic_str.remaining() > 0)
+    {
+        std::string value, data_type;
+
+        auto line_number = generic_str.peek().number;
+        auto lhs         = generic_str.join_until("=>", "");
+        generic_str.consume("=>", true);
+        auto rhs = generic_str.join_until(",", "");
+        generic_str.consume(",", generic_str.remaining() > 0);    // last entry has no comma
+
+        // determine data type
+        if ((core_utils::to_lower(rhs) == "true") || (core_utils::to_lower(rhs) == "false"))
+        {
+            value     = core_utils::to_lower(rhs);
+            data_type = "boolean";
+        }
+        else if (core_utils::is_integer(rhs))
+        {
+            value     = rhs;
+            data_type = "integer";
+        }
+        else if (core_utils::is_floating_point(rhs))
+        {
+            data_type = "floating_point";
+        }
+        else if (core_utils::ends_with(rhs, "s", true) || core_utils::ends_with(rhs, "sec", true) || core_utils::ends_with(rhs, "min", true) || core_utils::ends_with(rhs, "hr", true))
+        {
+            value     = rhs;
+            data_type = "time";
+        }
+        else if (rhs.string[0] == '\"' && rhs.string.back() == '\"')
+        {
+            value     = rhs.string.substr(1, rhs.string.size() - 2);
+            data_type = "string";
+        }
+        else if (rhs.string[0] == '\'' && rhs.string[2] == '\'')
+        {
+            value     = rhs.string.substr(1, 1);
+            data_type = "bit_value";
+        }
+        else if (core_utils::starts_with(rhs, "b\"", true) || core_utils::starts_with(rhs, "o\"", true) || core_utils::starts_with(rhs, "x\"", true))
+        {
+            value = get_hex_from_literal(rhs);
+            if (value.empty())
+            {
+                return false;
+            }
+
+            data_type = "bit_vector";
+        }
+        else
+        {
+            log_error("hdl_parser", "cannot identify data type of generic map value '{}' in instance '{}' in line {}", rhs.string, inst._name, line_number);
+            return false;
+        }
+
+        inst._generic_assignments.emplace(lhs, std::make_pair(data_type, value));
+    }
 
     return true;
 }
@@ -741,13 +784,13 @@ std::pair<std::vector<hdl_parser_vhdl::signal>, i32> hdl_parser_vhdl::get_assign
     {
         auto signal_name_token  = part_stream.consume();
         i32 line_number         = signal_name_token.number;
-        std::string signal_name = signal_name_token;
+        std::string signal_name = core_utils::to_lower(signal_name_token);
         std::vector<std::pair<i32, i32>> bounds;
         bool is_binary      = false;
         bool is_bound_known = true;
 
         // (2) NUMBER
-        if (core_utils::starts_with(signal_name, "B\"", true) || core_utils::starts_with(signal_name, "O\"", true) || core_utils::starts_with(signal_name, "X\""))
+        if (core_utils::starts_with(signal_name, "b\"") || core_utils::starts_with(signal_name, "o\"") || core_utils::starts_with(signal_name, "x\""))
         {
             if (is_left_half)
             {
@@ -756,11 +799,32 @@ std::pair<std::vector<hdl_parser_vhdl::signal>, i32> hdl_parser_vhdl::get_assign
             }
 
             signal_name = get_bin_from_literal(signal_name_token);
-            bounds      = {std::make_pair(signal_name.size() - 1, 0)};
-            is_binary   = true;
+            if (signal_name.empty())
+            {
+                return {{}, 0};
+            }
+
+            bounds    = {std::make_pair(signal_name.size() - 1, 0)};
+            is_binary = true;
         }
         else
         {
+            std::vector<std::pair<i32, i32>> reference_bounds;
+
+            if (auto signal_it = e._signals.find(signal_name); signal_it != e._signals.end())
+            {
+                reference_bounds = signal_it->second._bounds;
+            }
+            else if (auto port_it = e._ports.find(signal_name); port_it != e._ports.end())
+            {
+                reference_bounds = port_it->second.second._bounds;
+            }
+            else
+            {
+                log_error("hdl_parser", "signal name '{}' is invalid in assignment in line {}.", signal_name, line_number);
+                return {{}, 0};
+            }
+
             // any bounds specified?
             if (part_stream.consume("("))
             {
@@ -790,6 +854,12 @@ std::pair<std::vector<hdl_parser_vhdl::signal>, i32> hdl_parser_vhdl::get_assign
                     } while (part_stream.consume(","));
                     part_stream.consume(")", true);
                 }
+
+                if (!is_in_bounds(bounds, reference_bounds))
+                {
+                    log_error("hdl_parser", "invalid bounds given for signal or port '{}' in line {}.", signal_name, line_number);
+                    return {{}, 0};
+                }
             }
             else
             {
@@ -801,15 +871,7 @@ std::pair<std::vector<hdl_parser_vhdl::signal>, i32> hdl_parser_vhdl::get_assign
                 }
                 else
                 {
-                    if (auto it = e.signals.find(signal_name); it != e.signals.end())
-                    {
-                        bounds = it->second._bound;
-                    }
-                    else
-                    {
-                        log_error("hdl_parser", "signal name {} is invalid in assignment in line {}.", signal_name, line_number);
-                        return {{}, 0};
-                    }
+                    bounds = reference_bounds;
                 }
             }
         }
@@ -844,7 +906,7 @@ static std::map<char, std::string> hex_to_bin = {{'0', "0000"},
 std::string hdl_parser_vhdl::get_bin_from_literal(token& value_token)
 {
     auto line_number  = value_token.number;
-    std::string value = core_utils::to_lower(core_utils::trim(core_utils::replace(value_token, "_", "")));
+    std::string value = core_utils::to_lower(core_utils::replace(value_token, "_", ""));
 
     std::string res;
 
@@ -855,6 +917,7 @@ std::string hdl_parser_vhdl::get_bin_from_literal(token& value_token)
     switch (prefix)
     {
         case 'b':
+        {
             for (const auto& c : number)
             {
                 if (c >= '0' && c <= '1')
@@ -863,13 +926,15 @@ std::string hdl_parser_vhdl::get_bin_from_literal(token& value_token)
                 }
                 else
                 {
-                    log_error("hdl_parser", "invalid character '{}' within binary number literal {} in line {}.", c, value, line_number);
+                    log_error("hdl_parser", "invalid character within binary number literal {} in line {}.", value, line_number);
                     return "";
                 }
             }
             break;
+        }
 
         case 'o':
+        {
             for (const auto& c : number)
             {
                 if (c >= '0' && c <= '7')
@@ -878,13 +943,15 @@ std::string hdl_parser_vhdl::get_bin_from_literal(token& value_token)
                 }
                 else
                 {
-                    log_error("hdl_parser", "invalid character '{}' within octal number literal {} in line {}.", c, value, line_number);
+                    log_error("hdl_parser", "invalid character within octal number literal {} in line {}.", value, line_number);
                     return "";
                 }
             }
             break;
+        }
 
         case 'h':
+        {
             for (const auto& c : number)
             {
                 if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))
@@ -893,16 +960,115 @@ std::string hdl_parser_vhdl::get_bin_from_literal(token& value_token)
                 }
                 else
                 {
-                    log_error("hdl_parser", "invalid character '{}' within hexadecimal number literal {} in line {}.", c, value, line_number);
+                    log_error("hdl_parser", "invalid character within hexadecimal number literal {} in line {}.", value, line_number);
                     return "";
                 }
             }
             break;
+        }
 
         default:
+        {
             log_error("hdl_parser", "invalid base '{}' within number literal {} in line {}.", prefix, value, line_number);
             return "";
+        }
     }
 
     return res;
+}
+
+std::string hdl_parser_vhdl::get_hex_from_literal(token& value_token)
+{
+    auto line_number  = value_token.number;
+    std::string value = core_utils::to_lower(core_utils::replace(value_token, "_", ""));
+
+    u32 base;
+    std::string res;
+
+    auto prefix        = value[0];
+    std::string number = value.substr(2, value.find('\"') - 2);
+    i32 len;
+
+    // select base
+    switch (prefix)
+    {
+        case 'b':
+        {
+            if (!std::all_of(number.begin(), number.end(), [](const char& c) { return (c >= '0' && c <= '1'); }))
+            {
+                log_error("hdl_parser", "invalid character within binary number literal {} in line {}.", value, line_number);
+                return "";
+            }
+
+            len  = number.size() + 3 / 4;
+            base = 2;
+            break;
+        }
+
+        case 'o':
+        {
+            if (!std::all_of(number.begin(), number.end(), [](const char& c) { return (c >= '0' && c <= '7'); }))
+            {
+                log_error("hdl_parser", "invalid character within octal number literal {} in line {}.", value, line_number);
+                return "";
+            }
+
+            len  = number.size() + 1 / 2;
+            base = 8;
+            break;
+        }
+
+        case 'h':
+        {
+            if (!std::all_of(number.begin(), number.end(), [](const char& c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'); }))
+            {
+                log_error("hdl_parser", "invalid character within hexadecimal number literal {} in line {}.", value, line_number);
+                return "";
+            }
+
+            len  = number.size();
+            base = 16;
+            break;
+        }
+
+        default:
+        {
+            log_error("hdl_parser", "invalid base '{}' within number literal {} in line {}.", prefix, value, line_number);
+            return "";
+        }
+    }
+
+    std::stringstream ss;
+    ss << std::setfill('0') << std::setw(len) << std::hex << stoull(number, 0, base);
+    return ss.str();
+}
+
+bool hdl_parser_vhdl::is_in_bounds(const std::vector<std::pair<i32, i32>>& bounds, const std::vector<std::pair<i32, i32>>& reference_bounds) const
+{
+    if (bounds.size() != reference_bounds.size())
+    {
+        return false;
+    }
+
+    for (u32 i = 0; i < bounds.size(); i++)
+    {
+        i32 ref_max, ref_min;
+        if (reference_bounds[i].first < reference_bounds[i].second)
+        {
+            ref_min = reference_bounds[i].first;
+            ref_max = reference_bounds[i].second;
+        }
+        else
+        {
+            ref_min = reference_bounds[i].second;
+            ref_max = reference_bounds[i].first;
+        }
+
+        if (!(((ref_min <= bounds[i].first) && (bounds[i].first <= ref_max)) && ((ref_min <= bounds[i].second) && (bounds[i].second <= ref_max))))
+        {
+            return false;
+        }
+    }
+
+    return true;
 }

@@ -58,11 +58,6 @@ public:
     bool parse() override;
 
 private:
-    struct parser_info
-    {
-        std::set<std::string> port_names;
-    };
-
     token_stream m_token_stream;
 
     bool tokenize();
@@ -70,12 +65,13 @@ private:
 
     // parse HDL into intermediate format
     bool parse_entity();
-    void parse_generic_list(std::set<std::string>& generic_names);
     void parse_port_list(std::set<std::string>& port_names);
     bool parse_port_definition(entity& e, const std::set<std::string>& port_names);
     bool parse_signal_definition(entity& e);
     bool parse_assign(entity& e);
     bool parse_instance(entity& e);
+    bool parse_port_assign(entity& e, instance& inst);
+    bool parse_generic_assign(instance& inst);
 
     // helper functions
     void remove_comments(std::string& line, bool& multi_line_comment, bool& multi_line_property);
@@ -83,4 +79,5 @@ private:
     std::pair<std::vector<signal>, i32> get_assignment_signals(entity& e, token_stream& signal_str, bool allow_numerics);
     std::string get_bin_from_literal(token& value_token);
     std::string get_hex_from_literal(token& value_token);
+    bool is_in_bounds(const std::vector<std::pair<i32, i32>>& bounds, const std::vector<std::pair<i32, i32>>& reference_bounds) const;
 };
