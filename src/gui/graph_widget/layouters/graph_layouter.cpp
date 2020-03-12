@@ -772,7 +772,7 @@ void graph_layouter::draw_nets()
             continue;
         }
 
-        bool dst_missing = false;
+        bool dst_missing = false; // PASS TO SHADER ???
 
         if (n->get_source().get_gate())
         {
@@ -1484,7 +1484,7 @@ void graph_layouter::draw_nets()
             current_position = src_pin_position;
         }
 
-        standard_graphics_net* graphics_net = new standard_graphics_net(n, lines, dst_missing);
+        standard_graphics_net* graphics_net = new standard_graphics_net(n, lines);
         m_scene->add_item(graphics_net);
 
         commit_used_paths(used);

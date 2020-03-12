@@ -62,7 +62,7 @@ public:
     static void update_alpha();
 
     //standard_graphics_net(const std::shared_ptr<const net> n, const lines& l);
-    standard_graphics_net(const std::shared_ptr<const net> n, lines& l, bool complete = true);
+    standard_graphics_net(const std::shared_ptr<const net> n, lines& l);
 
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
@@ -85,11 +85,8 @@ private:
 
     static qreal s_split_radius;
 
-    QVector<QLineF> m_output_lines;
     QVector<QLineF> m_other_lines;
     QVector<QPointF> m_splits;
-
-    bool m_complete;
 };
 
 #endif // STANDARD_GRAPHICS_NET_H

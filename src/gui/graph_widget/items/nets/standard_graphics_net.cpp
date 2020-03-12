@@ -7,6 +7,8 @@
 #include <QPointF>
 #include <QStyleOptionGraphicsItem>
 
+#include <limits>
+
 qreal standard_graphics_net::s_alpha;
 
 qreal standard_graphics_net::s_wire_length;
@@ -64,8 +66,7 @@ void standard_graphics_net::update_alpha()
 }
 
 //standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n, const lines& l) : graphics_net(n),
-standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n, lines& l, const bool complete) : graphics_net(n),
-    m_complete(complete)
+standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n, lines& l) : graphics_net(n)
 {    
     QVector<h_line> collapsed_h;
     QVector<v_line> collapsed_v;
@@ -177,16 +178,6 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
     {
         for (const v_line& v : collapsed_v)
         {
-            // ON EVERY INTERSECTION
-//            if (h.small_x <= v.x && v.x <= h.big_x)
-//                if (v.small_y <= h.y && h.y <= v.big_y)
-//                {
-//                    QPointF point(v.x - l.src_x, h.y - l.src_y);
-//                    m_splits.append(point);
-//                    m_shape.addEllipse(point, s_radius, s_radius);
-//                }
-
-            // ONLY ON REAL SPLITS
             if (h.small_x <= v.x && v.x <= h.big_x)
                 if (v.small_y < h.y && h.y < v.big_y)
                 {
@@ -206,11 +197,11 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
     }
 
     // CALCULATE RECT AND SHAPE
-    // 0 INITIALIZATION ONLY WORKS WHEN NETS ARE PLACED AT THE SRC POSITION, CHANGE ?
-    qreal smallest_x = 0;
-    qreal biggest_x = 0;
-    qreal smallest_y = 0;
-    qreal biggest_y = 0;
+    qreal smallest_x = std::numeric_limits<qreal>::max();
+    qreal biggest_x = std::numeric_limits<qreal>::min();
+
+    qreal smallest_y = std::numeric_limits<qreal>::max();
+    qreal biggest_y = std::numeric_limits<qreal>::min();
 
     for (const h_line& h : collapsed_h)
     {
@@ -258,15 +249,9 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
         m_shape.addRect(rect);
     }
 
-    // COMPENSATE FOR PEN WIDTH ?
-    // COMPENSATE FOR SPLITS ?
-    m_rect = QRectF(smallest_x, smallest_y, biggest_x - smallest_x, biggest_y - smallest_y);
 
-//    for (const h_line& h : l.h_lines)
-//        m_lines.append(QLineF(h.small_x - l.src_x, h.y - l.src_y, h.big_x - l.src_x, h.y - l.src_y));
-
-//    for (const v_line& v : l.v_lines)
-    //        m_lines.append(QLineF(v.x - l.src_x, v.small_y - l.src_y, v.x - l.src_x, v.big_y - l.src_y));
+    const qreal padding = s_split_radius + s_shape_width;
+    m_rect = QRectF(smallest_x - padding, smallest_y - padding, biggest_x - smallest_x + padding, biggest_y - smallest_y + padding);
 }
 
 void standard_graphics_net::paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget)
@@ -285,29 +270,15 @@ void standard_graphics_net::paint(QPainter* painter, const QStyleOptionGraphicsI
         color.setAlphaF(s_alpha);
 
         s_pen.setColor(color);
+        s_pen.setStyle(Qt::SolidLine);
         painter->setPen(s_pen);
 
         s_brush.setColor(color);
+        s_brush.setStyle(Qt::SolidPattern);
+        painter->setBrush(s_brush);
 
         const bool original_antialiasing = painter->renderHints().testFlag(QPainter::Antialiasing);
         painter->setRenderHint(QPainter::Antialiasing, true);
-
-        if (!m_complete)
-        {
-            if (m_fill_icon)
-            {
-                s_brush.setStyle(m_brush_style);
-                painter->setBrush(s_brush);
-            }
-
-            QPointF translation_value(s_wire_length + s_left_arrow_offset, 0);
-            painter->translate(translation_value);
-            painter->drawPath(s_arrow);
-            painter->translate(-translation_value);
-        }
-
-        s_brush.setStyle(Qt::SolidPattern);
-        painter->setBrush(s_brush);
 
         for (const QPointF& point : m_splits)
             painter->drawEllipse(point, s_split_radius, s_split_radius);
