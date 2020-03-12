@@ -50,9 +50,6 @@ public:
 
     struct lines
     {
-        qreal src_x;
-        qreal src_y;
-
         QVector<h_line> h_lines;
         QVector<v_line> v_lines;
 

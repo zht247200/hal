@@ -190,7 +190,7 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
             if (h.small_x <= v.x && v.x <= h.big_x)
                 if (v.small_y < h.y && h.y < v.big_y)
                 {
-                    QPointF point(v.x - l.src_x, h.y - l.src_y);
+                    QPointF point(v.x, h.y);
                     m_splits.append(point);
                     m_shape.addEllipse(point, s_split_radius, s_split_radius);
                 }
@@ -198,7 +198,7 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
             if (v.small_y <= h.y && h.y <= v.big_y)
                 if (h.small_x < v.x && v.x < h.big_x)
                 {
-                    QPointF point(v.x - l.src_x, h.y - l.src_y);
+                    QPointF point(v.x, h.y);
                     m_splits.append(point);
                     m_shape.addEllipse(point, s_split_radius, s_split_radius);
                 }
@@ -214,9 +214,9 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
 
     for (const h_line& h : collapsed_h)
     {
-        qreal small_x = h.small_x - l.src_x;
-        qreal big_x = h.big_x - l.src_x;
-        qreal y = h.y - l.src_y;
+        qreal small_x = h.small_x;
+        qreal big_x = h.big_x;
+        qreal y = h.y;
 
         if (small_x < smallest_x)
             smallest_x = small_x;
@@ -237,9 +237,9 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
 
     for (const v_line& v : collapsed_v)
     {
-        qreal x = v.x - l.src_x;
-        qreal small_y = v.small_y - l.src_y;
-        qreal big_y = v.big_y - l.src_y;
+        qreal x = v.x;
+        qreal small_y = v.small_y;
+        qreal big_y = v.big_y;
 
         if (x < smallest_x)
             smallest_x = x;

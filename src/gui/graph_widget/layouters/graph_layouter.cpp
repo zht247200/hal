@@ -903,8 +903,6 @@ void graph_layouter::draw_nets()
 
         const QPointF src_pin_position = src_box->item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin()));
         standard_graphics_net::lines lines;
-        lines.src_x = src_pin_position.x();
-        lines.src_y = src_pin_position.y();
 
         // FOR EVERY DST
         for (const endpoint& dst : n->get_destinations())
@@ -1487,7 +1485,6 @@ void graph_layouter::draw_nets()
         }
 
         standard_graphics_net* graphics_net = new standard_graphics_net(n, lines, dst_missing);
-        graphics_net->setPos(src_pin_position);
         m_scene->add_item(graphics_net);
 
         commit_used_paths(used);
