@@ -25,6 +25,8 @@
 
 #include "def.h"
 
+#include "netlist/gate_library/gate_type/gate_type.h"
+
 #include <cctype>
 #include <fstream>
 #include <map>
@@ -32,6 +34,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 /* forward declaration*/
 class netlist;
@@ -64,20 +67,53 @@ public:
 protected:
     struct signal
     {
-        u32 line_number;
+        u32 _line_number;
 
         // name (may either be the identifier of the signal or a binary string in case of direct assignments)
-        std::string name;
+        std::string _name;
 
-        // bounds (if bounds are both -1: single bit signal or port - OR - (port) assignment of unknown width)
-        std::vector<std::pair<i32, i32>> bounds;
+        // bounds
+        std::vector<std::pair<i32, i32>> _bound;
 
         // is binary string?
-        bool binary;
+        bool _is_binary = false;
+
+        // are bounds already known? (should only be unknown for left side of port assignments)
+        bool _is_bound_known = true;
+
+        signal(u32 line_number, std::string name, std::vector<std::pair<i32, i32>> bound, bool is_binary = false, bool is_bound_known = true)
+            : _line_number(line_number), _name(name), _bound(bound), _is_binary(is_binary), _is_bound_known(is_bound_known)
+        {
+        }
+
+        i32 size() const
+        {
+            if (_is_bound_known)
+            {
+                i32 size = 1;
+
+                for (const auto& b : _bound)
+                {
+                    size *= std::abs(b.first - b.second) + 1;
+                }
+
+                return size;
+            }
+
+            return -1;
+        }
+
+        void set_bound(std::vector<std::pair<i32, i32>> bound)
+        {
+            _bound          = bound;
+            _is_bound_known = true;
+        }
 
         bool operator<(const signal& other) const
         {
-            return name < other.name;
+            // there may be two assignments to the same signal using different bounds
+            // without checking bounds, two such signals would be considered equal
+            return (_name < other._name) && (_bound < other._bound);
         }
     };
 
@@ -92,7 +128,7 @@ protected:
         std::string type;
 
         // port assignments
-        std::map<signal, std::vector<signal>> port_assignments;
+        std::map<std::string, std::pair<signal, std::vector<signal>>> port_assignments;
 
         // generic assignments
         std::map<std::string, std::string> generic_assignments;
@@ -111,9 +147,7 @@ protected:
         std::string name;
 
         // ports
-        std::map<std::string, signal> in_ports;
-        std::map<std::string, signal> out_ports;
-        std::map<std::string, signal> inout_ports;
+        std::map<std::string, std::pair<std::string, signal>> ports;
 
         // attributes
         std::set<std::tuple<std::string, std::string, std::string>> entity_attributes;
@@ -146,4 +180,10 @@ protected:
 
     // stores all entities parsed from the HDL file
     std::map<std::string, entity> m_entities;
+
+private:
+    std::string m_file_name;
+
+    std::string detect_top_module();
+    const std::map<std::string, u32> get_gate_type_pin_width(const std::shared_ptr<const gate_type> gt) const;
 };

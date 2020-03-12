@@ -83,4 +83,3 @@ namespace hdl_parser_dispatcher
     */
     std::shared_ptr<netlist> parse(const std::string& gate_library, const std::string& parser_name, const std::string& file_name);
 }    // namespace hdl_parser_dispatcher
-
