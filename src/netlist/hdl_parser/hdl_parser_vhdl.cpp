@@ -223,6 +223,18 @@ bool hdl_parser_vhdl::parse_entity()
     m_token_stream.consume();
     m_token_stream.consume(";", true);
 
+    if (m_entities.find(e._name) != m_entities.end())
+    {
+        log_error("hdl_parser", "an entity with the name '{}' does already exist (see line {} and line {}).", e._name, e._line_number, m_entities.at(e._name)._line_number);
+        return false;
+    }
+
+    if (!e._name.empty())
+    {
+        m_entities[e._name] = e;
+        m_last_entity       = e._name;
+    }
+
     return true;
 }
 
@@ -323,15 +335,15 @@ bool hdl_parser_vhdl::parse_attribute(entity& e)
 
         if (attr_class == "entity")
         {
-            e._entity_attributes.insert(attribute);
+            e._entity_attributes[attr_target].insert(attribute);
         }
         else if (attr_class == "label")
         {
-            e._instance_attributes.emplace(attr_target, attribute);
+            e._instance_attributes[attr_target].insert(attribute);
         }
         else if (attr_class == "signal")
         {
-            e._signal_attributes.emplace(attr_target, attribute);
+            e._signal_attributes[attr_target].insert(attribute);
         }
         else
         {
@@ -503,7 +515,7 @@ bool hdl_parser_vhdl::parse_assign(entity& e)
         return false;
     }
 
-    e._assignments[left_parts.first].insert(right_parts.first);
+    e._assignments.emplace(left_parts.first, right_parts.first);
 
     return true;
 }

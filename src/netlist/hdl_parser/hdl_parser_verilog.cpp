@@ -184,7 +184,12 @@ bool hdl_parser_verilog::parse_entity()
         log_error("hdl_parser", "an entity with the name '{}' does already exist (see line {} and line {}).", e._name, e._line_number, m_entities.at(e._name)._line_number);
         return false;
     }
-    m_entities.emplace(e._name, e);
+
+    if (!e._name.empty())
+    {
+        m_entities[e._name] = e;
+        m_last_entity       = e._name;
+    }
 
     return true;
 }
@@ -279,7 +284,7 @@ bool hdl_parser_verilog::parse_assign(entity& e)
         return false;
     }
 
-    e._assignments[left_parts.first].insert(right_parts.first);
+    e._assignments.emplace(left_parts.first, right_parts.first);
 
     return true;
 }

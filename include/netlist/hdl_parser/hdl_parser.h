@@ -25,6 +25,8 @@
 
 #include "def.h"
 
+#include "netlist/net.h"
+#include "netlist/module.h"
 #include "netlist/gate_library/gate_type/gate_type.h"
 
 #include <cctype>
@@ -148,17 +150,19 @@ protected:
 
         // ports
         std::map<std::string, std::pair<std::string, signal>> _ports;
+        std::map<std::string, std::vector<std::string>> _ports_expanded;
 
         // attributes
-        std::set<std::tuple<std::string, std::string, std::string>> _entity_attributes;
-        std::map<std::string, std::tuple<std::string, std::string, std::string>> _instance_attributes;
-        std::map<std::string, std::tuple<std::string, std::string, std::string>> _signal_attributes;
+        std::map<std::string, std::set<std::tuple<std::string, std::string, std::string>>> _entity_attributes;
+        std::map<std::string, std::set<std::tuple<std::string, std::string, std::string>>> _instance_attributes;
+        std::map<std::string, std::set<std::tuple<std::string, std::string, std::string>>> _signal_attributes;
 
         // signals
         std::map<std::string, signal> _signals;
+        std::map<std::string, std::vector<std::string>> _signals_expanded;
 
         // assignments
-        std::map<std::vector<signal>, std::set<std::vector<signal>>> _assignments;
+        std::set<std::pair<std::vector<signal>, std::vector<signal>>> _assignments;
 
         // instances
         std::map<std::string, instance> _instances;
@@ -174,6 +178,7 @@ protected:
 
     // stores all entities parsed from the HDL file
     std::map<std::string, entity> m_entities;
+    std::string m_last_entity;
 
 private:
     std::string m_file_name;
@@ -182,9 +187,21 @@ private:
     std::shared_ptr<netlist> m_netlist;
 
     // unique alias generation
-    std::map<std::string, u32> m_name_occurrences;
-    std::map<std::string, u32> m_current_index;
+    std::map<std::string, u32> m_signal_name_occurrences;
+    std::map<std::string, u32> m_instance_name_occurrences;
+    std::map<std::string, u32> m_current_signal_index;
+    std::map<std::string, u32> m_current_instance_index;
 
-    std::string detect_top_module();
-    std::string get_unique_alias(const std::string& name);
+    // net generation
+    std::map<std::string, std::shared_ptr<net>> m_net_by_name;
+    std::map<std::string, std::vector<std::string>> m_nets_to_merge;
+    std::map<std::string, std::function<bool(net&)>> mark_global_net_function_map = {{"in", &net::mark_global_input_net}, {"out", &net::mark_global_output_net}};
+
+    bool build_netlist(const std::string& top_module);
+    std::shared_ptr<module> instantiate_top_module(entity& e);
+    std::shared_ptr<module> instantiate(const instance& inst, std::shared_ptr<module> parent);
+
+    std::string get_unique_signal_suffix(const std::string& name);
+    std::string get_unique_instance_suffix(const std::string& name);
+    void expand_signal_recursively(std::vector<std::string>& expanded_signal, std::string current_signal, const std::vector<std::pair<i32, i32>>& bounds, u32 dimension);
 };
