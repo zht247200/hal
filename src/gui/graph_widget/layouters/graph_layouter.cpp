@@ -937,14 +937,14 @@ void graph_layouter::draw_nets()
                 road* dst_v_road = get_v_road(dst_box->x, dst_box->y);
 
                 qreal x = scene_x_for_v_channel_lane(dst_v_road->x, dst_v_road->lanes);
-                lines.h_lines.append(standard_graphics_net::h_line{src_pin_position.x(), x, src_pin_position.y()});
+                lines.append_h_line(src_pin_position.x(), x, src_pin_position.y());
 
                 if (src_pin_position.y() < dst_pin_position.y())
-                    lines.v_lines.append(standard_graphics_net::v_line{x, src_pin_position.y(), dst_pin_position.y()});
+                    lines.append_v_line(x, src_pin_position.y(), dst_pin_position.y());
                 else
-                    lines.v_lines.append(standard_graphics_net::v_line{x, dst_pin_position.y(), src_pin_position.y()});
+                    lines.append_v_line(x, dst_pin_position.y(), src_pin_position.y());
 
-                lines.h_lines.append(standard_graphics_net::h_line{x, dst_pin_position.x(), dst_pin_position.y()});
+                lines.append_h_line(x, dst_pin_position.x(), dst_pin_position.y());
 
                 used.v_roads.insert(dst_v_road);
                 continue;
@@ -956,14 +956,14 @@ void graph_layouter::draw_nets()
             {
                 // SPECIAL CASE DIRECT HORIZONTAL NEIGHBORS
                 qreal x = scene_x_for_v_channel_lane(src_v_road->x, src_v_road->lanes);
-                lines.h_lines.append(standard_graphics_net::h_line{src_pin_position.x(), x, src_pin_position.y()});
+                lines.append_h_line(src_pin_position.x(), x, src_pin_position.y());
 
                 if (src_pin_position.y() < dst_pin_position.y())
-                    lines.v_lines.append(standard_graphics_net::v_line{x, src_pin_position.y(), dst_pin_position.y()});
+                    lines.append_v_line(x, src_pin_position.y(), dst_pin_position.y());
                 else
-                    lines.v_lines.append(standard_graphics_net::v_line{x, dst_pin_position.y(), src_pin_position.y()});
+                    lines.append_v_line(x, dst_pin_position.y(), src_pin_position.y());
 
-                lines.h_lines.append(standard_graphics_net::h_line{x, dst_pin_position.x(), dst_pin_position.y()});
+                lines.append_h_line(x, dst_pin_position.x(), dst_pin_position.y());
 
                 used.v_roads.insert(src_v_road);
                 continue;
@@ -973,7 +973,7 @@ void graph_layouter::draw_nets()
             // CONNECT SRC TO V ROAD, TRAVEL X DISTANCE, TRAVEL Y DISTANCE, CONNECT V ROAD TO DST
             QPointF current_position(src_pin_position);
             current_position.setX(scene_x_for_v_channel_lane(src_v_road->x, src_v_road->lanes));
-            lines.h_lines.append(standard_graphics_net::h_line{src_pin_position.x(), current_position.x(), src_pin_position.y()});
+            lines.append_h_line(src_pin_position.x(), current_position.x(), src_pin_position.y());
             used.v_roads.insert(src_v_road);
 
             junction* initial_junction = nullptr;
@@ -991,7 +991,7 @@ void graph_layouter::draw_nets()
                     {
                         // POS
                         qreal y = scene_y_for_close_bottom_lane_change(initial_junction->y, initial_junction->close_bottom_lane_changes);
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                        lines.append_v_line(current_position.x(), y, current_position.y());
                         current_position.setY(y);
                         used.close_bottom_junctions.insert(initial_junction);
                     }
@@ -999,7 +999,7 @@ void graph_layouter::draw_nets()
                     {
                         // NEG
                         qreal y = scene_y_for_far_bottom_lane_change(initial_junction->y, initial_junction->far_bottom_lane_changes);
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                        lines.append_v_line(current_position.x(), y, current_position.y());
                         current_position.setY(y);
                         used.far_bottom_junctions.insert(initial_junction);
                     }
@@ -1007,9 +1007,9 @@ void graph_layouter::draw_nets()
                     qreal x = scene_x_for_v_channel_lane(initial_junction->x, initial_junction->v_lanes);
 
                     if (current_position.x() < x)
-                        lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                        lines.append_h_line(current_position.x(), x, current_position.y());
                     else
-                        lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                        lines.append_h_line(x, current_position.x(), current_position.y());
 
                     current_position.setX(x);
                 }
@@ -1026,7 +1026,7 @@ void graph_layouter::draw_nets()
                     {
                         // POS
                         qreal y = scene_y_for_close_top_lane_change(initial_junction->y, initial_junction->close_top_lane_changes);
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                        lines.append_v_line(current_position.x(), current_position.y(), y);
                         current_position.setY(y);
                         used.close_top_junctions.insert(initial_junction);
                     }
@@ -1034,7 +1034,7 @@ void graph_layouter::draw_nets()
                     {
                         // NEG
                         qreal y = scene_y_for_far_top_lane_change(initial_junction->y, initial_junction->far_top_lane_changes);
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                        lines.append_v_line(current_position.x(), current_position.y(), y);
                         current_position.setY(y);
                         used.far_top_junctions.insert(initial_junction);
                     }
@@ -1043,9 +1043,9 @@ void graph_layouter::draw_nets()
 
                     // DUPLICATE CODE ?
                     if (current_position.x() < x)
-                        lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                        lines.append_h_line(current_position.x(), x, current_position.y());
                     else
-                        lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                        lines.append_h_line(x, current_position.x(), current_position.y());
 
                     current_position.setX(x);
                 }
@@ -1064,9 +1064,9 @@ void graph_layouter::draw_nets()
                     qreal y = scene_y_for_h_channel_lane(initial_junction->y, initial_junction->h_lanes);
 
                     if (current_position.y() < y)
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                        lines.append_v_line(current_position.x(), current_position.y(), y);
                     else
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                        lines.append_v_line(current_position.x(), y, current_position.y());
 
                     current_position.setY(y);
                     used.h_junctions.insert(initial_junction);
@@ -1092,7 +1092,7 @@ void graph_layouter::draw_nets()
                             {
                                 // POS
                                 qreal x = scene_x_for_far_right_lane_change(last_junction->x, last_junction->far_right_lane_changes);
-                                lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                                lines.append_h_line(current_position.x(), x, current_position.y());
                                 current_position.setX(x);
                                 used.far_right_junctions.insert(last_junction);
                             }
@@ -1100,7 +1100,7 @@ void graph_layouter::draw_nets()
                             {
                                 // NEG
                                 qreal x = scene_x_for_close_right_lane_change(last_junction->x, last_junction->close_right_lane_changes);
-                                lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                                lines.append_h_line(current_position.x(), x, current_position.y());
                                 current_position.setX(x);
                                 used.close_right_junctions.insert(last_junction);
                             }
@@ -1108,9 +1108,9 @@ void graph_layouter::draw_nets()
                             qreal y = scene_y_for_h_channel_lane(r->y, r->lanes);
 
                             if (current_position.y() < y)
-                                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                                lines.append_v_line(current_position.x(), current_position.y(), y);
                             else
-                                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                                lines.append_v_line(current_position.x(), y, current_position.y());
 
                             current_position.setY(y);
                         }
@@ -1124,7 +1124,7 @@ void graph_layouter::draw_nets()
                             {
                                 // POS
                                 qreal x = scene_x_for_close_left_lane_change(j->x, j->close_left_lane_changes);
-                                lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                                lines.append_h_line(current_position.x(), x, current_position.y());
                                 current_position.setX(x);
                                 used.close_left_junctions.insert(j);
                             }
@@ -1132,7 +1132,7 @@ void graph_layouter::draw_nets()
                             {
                                 // NEG
                                 qreal x = scene_x_for_far_left_lane_change(j->x, j->far_left_lane_changes);
-                                lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                                lines.append_h_line(current_position.x(), x, current_position.y());
                                 current_position.setX(x);
                                 used.far_left_junctions.insert(j);
                             }
@@ -1141,9 +1141,9 @@ void graph_layouter::draw_nets()
 
                             // DUPLICATE CODE ?
                             if (current_position.y() < y)
-                                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                                lines.append_v_line(current_position.x(), current_position.y(), y);
                             else
-                                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                                lines.append_v_line(current_position.x(), y, current_position.y());
 
                             current_position.setY(y);
                         }
@@ -1162,7 +1162,7 @@ void graph_layouter::draw_nets()
                             {
                                 // POS
                                 qreal x = scene_x_for_far_left_lane_change(last_junction->x, last_junction->far_left_lane_changes);
-                                lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                                lines.append_h_line(x, current_position.x(), current_position.y());
                                 current_position.setX(x);
                                 used.far_left_junctions.insert(last_junction);
                             }
@@ -1170,7 +1170,7 @@ void graph_layouter::draw_nets()
                             {
                                 // NEG
                                 qreal x = scene_x_for_close_left_lane_change(last_junction->x, last_junction->close_left_lane_changes);
-                                lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                                lines.append_h_line(x, current_position.x(), current_position.y());
                                 current_position.setX(x);
                                 used.close_left_junctions.insert(last_junction);
                             }
@@ -1179,9 +1179,9 @@ void graph_layouter::draw_nets()
 
                             // DUPLICATE CODE ?
                             if (current_position.y() < y)
-                                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                                lines.append_v_line(current_position.x(), current_position.y(), y);
                             else
-                                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                                lines.append_v_line(current_position.x(), y, current_position.y());
 
                             current_position.setY(y);
                         }
@@ -1195,7 +1195,7 @@ void graph_layouter::draw_nets()
                             {
                                 // POS
                                 qreal x = scene_x_for_close_right_lane_change(j->x, j->close_right_lane_changes);
-                                lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                                lines.append_h_line(x, current_position.x(), current_position.y());
                                 current_position.setX(x);
                                 used.close_right_junctions.insert(j);
                             }
@@ -1203,7 +1203,7 @@ void graph_layouter::draw_nets()
                             {
                                 // NEG
                                 qreal x = scene_x_for_far_right_lane_change(j->x, j->far_right_lane_changes);
-                                lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                                lines.append_h_line(x, current_position.x(), current_position.y());
                                 current_position.setX(x);
                                 used.far_right_junctions.insert(j);
                             }
@@ -1212,9 +1212,9 @@ void graph_layouter::draw_nets()
 
                             // DUPLICATE CODE ?
                             if (current_position.y() < y)
-                                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                                lines.append_v_line(current_position.x(), current_position.y(), y);
                             else
-                                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                                lines.append_v_line(current_position.x(), y, current_position.y());
 
                             current_position.setY(y);
                         }
@@ -1231,9 +1231,9 @@ void graph_layouter::draw_nets()
                 qreal x = scene_x_for_v_channel_lane(last_junction->x, last_junction->v_lanes);
 
                 if (current_position.x() < x)
-                    lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                    lines.append_h_line(current_position.x(), x, current_position.y());
                 else
-                    lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                    lines.append_h_line(x, current_position.x(), current_position.y());
 
                 current_position.setX(x);
                 used.v_junctions.insert(last_junction);
@@ -1254,7 +1254,7 @@ void graph_layouter::draw_nets()
                         {
                             // POS
                             qreal y = scene_y_for_far_bottom_lane_change(last_junction->y, last_junction->far_bottom_lane_changes);
-                            lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                            lines.append_v_line(current_position.x(), current_position.y(), y);
                             current_position.setY(y);
                             used.far_bottom_junctions.insert(last_junction);
                         }
@@ -1262,7 +1262,7 @@ void graph_layouter::draw_nets()
                         {
                             // NEG
                             qreal y = scene_y_for_close_bottom_lane_change(last_junction->y, last_junction->close_bottom_lane_changes);
-                            lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                            lines.append_v_line(current_position.x(), current_position.y(), y);
                             current_position.setY(y);
                             used.close_bottom_junctions.insert(last_junction);
                         }
@@ -1270,9 +1270,9 @@ void graph_layouter::draw_nets()
                         qreal x = scene_x_for_v_channel_lane(r->x, r->lanes);
 
                         if (current_position.x() < x)
-                            lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                            lines.append_h_line(current_position.x(), x, current_position.y());
                         else
-                            lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                            lines.append_h_line(x, current_position.x(), current_position.y());
 
                         current_position.setX(x);
                     }
@@ -1286,7 +1286,7 @@ void graph_layouter::draw_nets()
                         {
                             // POS
                             qreal y = scene_y_for_close_top_lane_change(j->y, j->close_top_lane_changes);
-                            lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                            lines.append_v_line(current_position.x(), current_position.y(), y);
                             current_position.setY(y);
                             used.close_top_junctions.insert(j);
                         }
@@ -1294,7 +1294,7 @@ void graph_layouter::draw_nets()
                         {
                             // NEG
                             qreal y = scene_y_for_far_top_lane_change(j->y, j->far_top_lane_changes);
-                            lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                            lines.append_v_line(current_position.x(), current_position.y(), y);
                             current_position.setY(y);
                             used.far_top_junctions.insert(j);
                         }
@@ -1302,9 +1302,9 @@ void graph_layouter::draw_nets()
                         qreal x = scene_x_for_v_channel_lane(j->x, j->v_lanes);
 
                         if (current_position.x() < x)
-                            lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                            lines.append_h_line(current_position.x(), x, current_position.y());
                         else
-                            lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                            lines.append_h_line(x, current_position.x(), current_position.y());
 
                         current_position.setX(x);
                     }
@@ -1331,7 +1331,7 @@ void graph_layouter::draw_nets()
                         {
                             // POS
                             qreal y = scene_y_for_far_top_lane_change(last_junction->y, last_junction->far_top_lane_changes);
-                            lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                            lines.append_v_line(current_position.x(), y, current_position.y());
                             current_position.setY(y);
                             used.far_top_junctions.insert(last_junction);
                         }
@@ -1339,7 +1339,7 @@ void graph_layouter::draw_nets()
                         {
                             // NEG
                             qreal y = scene_y_for_close_top_lane_change(last_junction->y, last_junction->close_top_lane_changes);
-                            lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                            lines.append_v_line(current_position.x(), y, current_position.y());
                             current_position.setY(y);
                             used.close_top_junctions.insert(last_junction);
                         }
@@ -1347,9 +1347,9 @@ void graph_layouter::draw_nets()
                         qreal x = scene_x_for_v_channel_lane(r->x, r->lanes);
 
                         if (current_position.x() < x)
-                            lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                            lines.append_h_line(current_position.x(), x, current_position.y());
                         else
-                            lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                            lines.append_h_line(x, current_position.x(), current_position.y());
 
                         current_position.setX(x);
                     }
@@ -1363,7 +1363,7 @@ void graph_layouter::draw_nets()
                         {
                             // POS
                             qreal y = scene_y_for_close_bottom_lane_change(j->y, j->close_bottom_lane_changes);
-                            lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                            lines.append_v_line(current_position.x(), y, current_position.y());
                             current_position.setY(y);
                             used.close_bottom_junctions.insert(j);
                         }
@@ -1371,7 +1371,7 @@ void graph_layouter::draw_nets()
                         {
                             // NEG
                             qreal y = scene_y_for_far_bottom_lane_change(j->y, j->far_bottom_lane_changes);
-                            lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                            lines.append_v_line(current_position.x(), y, current_position.y());
                             current_position.setY(y);
                             used.far_bottom_junctions.insert(j);
                         }
@@ -1379,9 +1379,9 @@ void graph_layouter::draw_nets()
                         qreal x = scene_x_for_v_channel_lane(j->x, j->v_lanes);
 
                         if (current_position.x() < x)
-                            lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                            lines.append_h_line(current_position.x(), x, current_position.y());
                         else
-                            lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                            lines.append_h_line(x, current_position.x(), current_position.y());
 
                         current_position.setX(x);
                     }
@@ -1409,7 +1409,7 @@ void graph_layouter::draw_nets()
                     {
                         // POS
                         qreal y = scene_y_for_far_bottom_lane_change(last_junction->y, last_junction->far_bottom_lane_changes);
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                        lines.append_v_line(current_position.x(), current_position.y(), y);
                         current_position.setY(y);
                         used.far_bottom_junctions.insert(last_junction);
                     }
@@ -1417,7 +1417,7 @@ void graph_layouter::draw_nets()
                     {
                         // NEG
                         qreal y = scene_y_for_close_bottom_lane_change(last_junction->y, last_junction->close_bottom_lane_changes);
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), y});
+                        lines.append_v_line(current_position.x(), current_position.y(), y);
                         current_position.setY(y);
                         used.close_bottom_junctions.insert(last_junction);
                     }
@@ -1425,9 +1425,9 @@ void graph_layouter::draw_nets()
                     qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->lanes);
 
                     if (current_position.x() < x)
-                        lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                        lines.append_h_line(current_position.x(), x, current_position.y());
                     else
-                        lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                        lines.append_h_line(x, current_position.x(), current_position.y());
 
                     current_position.setX(x);
                 }
@@ -1444,7 +1444,7 @@ void graph_layouter::draw_nets()
                     {
                         // POS
                         qreal y = scene_y_for_far_top_lane_change(last_junction->y, last_junction->far_top_lane_changes);
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                        lines.append_v_line(current_position.x(), y, current_position.y());
                         current_position.setY(y);
                         used.far_top_junctions.insert(last_junction);
                     }
@@ -1452,7 +1452,7 @@ void graph_layouter::draw_nets()
                     {
                         // NEG
                         qreal y = scene_y_for_close_top_lane_change(last_junction->y, last_junction->close_top_lane_changes);
-                        lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), y, current_position.y()});
+                        lines.append_v_line(current_position.x(), y, current_position.y());
                         current_position.setY(y);
                         used.close_top_junctions.insert(last_junction);
                     }
@@ -1460,9 +1460,9 @@ void graph_layouter::draw_nets()
                     qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->lanes);
 
                     if (current_position.x() < x)
-                        lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), x, current_position.y()});
+                        lines.append_h_line(current_position.x(), x, current_position.y());
                     else
-                        lines.h_lines.append(standard_graphics_net::h_line{x, current_position.x(), current_position.y()});
+                        lines.append_h_line(x, current_position.x(), current_position.y());
 
                     current_position.setX(x);
                 }
@@ -1471,19 +1471,20 @@ void graph_layouter::draw_nets()
             used.v_junctions.insert(last_junction);
 
             if (current_position.y() < dst_pin_position.y())
-                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), current_position.y(), dst_pin_position.y()});
+                lines.append_v_line(current_position.x(), current_position.y(), dst_pin_position.y());
             else
-                lines.v_lines.append(standard_graphics_net::v_line{current_position.x(), dst_pin_position.y(), current_position.y()});
+                lines.append_v_line(current_position.x(), dst_pin_position.y(), current_position.y());
 
             current_position.setY(dst_pin_position.y());
 
             used.v_roads.insert(dst_road);
 
-            lines.h_lines.append(standard_graphics_net::h_line{current_position.x(), dst_pin_position.x(), current_position.y()});
+            lines.append_h_line(current_position.x(), dst_pin_position.x(), current_position.y());
 
             current_position = src_pin_position;
         }
 
+        lines.merge_lines();
         standard_graphics_net* graphics_net = new standard_graphics_net(n, lines);
         m_scene->add_item(graphics_net);
 

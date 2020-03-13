@@ -50,19 +50,22 @@ public:
 
     struct lines
     {
+        void append_h_line(const qreal small_x, const qreal big_x, const qreal y);
+        void append_v_line(const qreal x, const qreal small_y, const qreal big_y);
+
+        void merge_lines();
+
+    private:
         QVector<h_line> h_lines;
         QVector<v_line> v_lines;
 
-//        void remove_zero_length_lines();
-//        void fix_order();
-//        void move(qreal x, qreal y);
+        friend standard_graphics_net;
     };
 
     static void load_settings();
     static void update_alpha();
 
-    //standard_graphics_net(const std::shared_ptr<const net> n, const lines& l);
-    standard_graphics_net(const std::shared_ptr<const net> n, lines& l);
+    standard_graphics_net(const std::shared_ptr<const net> n, const lines& l);
 
     void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
@@ -85,7 +88,7 @@ private:
 
     static qreal s_split_radius;
 
-    QVector<QLineF> m_other_lines;
+    QVector<QLineF> m_lines;
     QVector<QPointF> m_splits;
 };
 
