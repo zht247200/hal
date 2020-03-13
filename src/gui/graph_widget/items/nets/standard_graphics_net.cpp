@@ -110,7 +110,7 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
 
         QLineF line(h.small_x, h.y, h.big_x, h.y);
         m_lines.append(line);
-        QRectF rect(h.small_x - s_shape_width / 2, h.y - s_shape_width / 2, h.big_x - h.small_x + s_line_width + s_shape_width, s_line_width + s_shape_width);
+        QRectF rect(h.small_x - s_shape_width / 2, h.y - s_shape_width / 2, h.big_x - h.small_x + s_shape_width, s_shape_width);
         m_shape.addRect(rect);
     }
 
@@ -129,7 +129,7 @@ standard_graphics_net::standard_graphics_net(const std::shared_ptr<const net> n,
 
         QLineF line(v.x, v.small_y, v.x, v.big_y);
         m_lines.append(line);
-        QRectF rect(v.x - s_shape_width / 2, v.small_y - s_shape_width / 2, s_line_width + s_shape_width, v.big_y - v.small_y + s_line_width + s_shape_width);
+        QRectF rect(v.x - s_shape_width / 2, v.small_y - s_shape_width / 2, s_shape_width, v.big_y - v.small_y + s_shape_width);
         m_shape.addRect(rect);
     }
 
