@@ -234,20 +234,18 @@ void graph_layouter::calculate_nets()
     for (const u32 id : m_context->nets())
     {
         std::shared_ptr<net> n = g_netlist->get_net_by_id(id);
-
-        if (!n)
-            continue;
+        assert(n);
 
         if (n->is_unrouted())
             continue;
 
         // FIND SRC BOX
-        node_box* src_box = nullptr;
-
         hal::node node;
 
         if (!m_context->node_for_gate(node, n->get_source().get_gate()->get_id()))
             continue;
+
+        node_box* src_box = nullptr;
 
         for (node_box& box : m_boxes)
             if (box.node == node)
@@ -256,8 +254,7 @@ void graph_layouter::calculate_nets()
                 break;
             }
 
-        if (!src_box)    // ???
-            continue;
+        assert(src_box);
 
         used_paths used;
 
