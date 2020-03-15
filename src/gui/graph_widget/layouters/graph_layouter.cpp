@@ -239,276 +239,280 @@ void graph_layouter::calculate_nets()
         if (n->is_unrouted())
             continue;
 
-        // FIND SRC BOX
-        hal::node node;
-
-        if (!m_context->node_for_gate(node, n->get_source().get_gate()->get_id()))
-            continue;
-
-        node_box* src_box = nullptr;
-
-        for (node_box& box : m_boxes)
-            if (box.node == node)
-            {
-                src_box = &box;
-                break;
-            }
-
-        assert(src_box);
-
         used_paths used;
 
-        // FOR EVERY DST
-        for (const endpoint& dst : n->get_destinations())
+        for (const endpoint& src : n->get_sources())
         {
-            // FIND DST BOX
-            if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
+
+            // FIND SRC BOX
+            hal::node node;
+
+            if (!m_context->node_for_gate(node, src.get_gate()->get_id()))
                 continue;
 
-            node_box* dst_box = nullptr;
+            node_box* src_box = nullptr;
 
             for (node_box& box : m_boxes)
                 if (box.node == node)
                 {
-                    dst_box = &box;
+                    src_box = &box;
                     break;
                 }
 
-            assert(dst_box);
+            assert(src_box);
 
-            // ROAD BASED DISTANCE (x_distance - 1)
-            const int x_distance = dst_box->x - src_box->x - 1;
-            const int y_distance = dst_box->y - src_box->y;
-
-            if (!y_distance && v_road_jump_possible(src_box->x + 1, dst_box->x, src_box->y))
+            // FOR EVERY DST
+            for (const endpoint& dst : n->get_destinations())
             {
-                // SPECIAL CASE INDIRECT HORIZONTAL NEIGHBORS
-                road* dst_v_road = get_v_road(dst_box->x, dst_box->y);
-                used.v_roads.insert(dst_v_road);
-                continue;
-            }
+                // FIND DST BOX
+                if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
+                    continue;
 
-            road* src_v_road = get_v_road(src_box->x + 1, src_box->y);
+                node_box* dst_box = nullptr;
 
-            if (!(x_distance || y_distance))
-            {
-                // SPECIAL CASE DIRECT HORIZONTAL NEIGHBORS
+                for (node_box& box : m_boxes)
+                    if (box.node == node)
+                    {
+                        dst_box = &box;
+                        break;
+                    }
+
+                assert(dst_box);
+
+                // ROAD BASED DISTANCE (x_distance - 1)
+                const int x_distance = dst_box->x - src_box->x - 1;
+                const int y_distance = dst_box->y - src_box->y;
+
+                if (!y_distance && v_road_jump_possible(src_box->x + 1, dst_box->x, src_box->y))
+                {
+                    // SPECIAL CASE INDIRECT HORIZONTAL NEIGHBORS
+                    road* dst_v_road = get_v_road(dst_box->x, dst_box->y);
+                    used.v_roads.insert(dst_v_road);
+                    continue;
+                }
+
+                road* src_v_road = get_v_road(src_box->x + 1, src_box->y);
+
+                if (!(x_distance || y_distance))
+                {
+                    // SPECIAL CASE DIRECT HORIZONTAL NEIGHBORS
+                    used.v_roads.insert(src_v_road);
+                    continue;
+                }
+
+                // NORMAL CASE
+                // CONNECT SRC TO V ROAD, TRAVEL X DISTANCE, TRAVEL Y DISTANCE, CONNECT V ROAD TO DST
                 used.v_roads.insert(src_v_road);
-                continue;
-            }
 
-            // NORMAL CASE
-            // CONNECT SRC TO V ROAD, TRAVEL X DISTANCE, TRAVEL Y DISTANCE, CONNECT V ROAD TO DST
-            used.v_roads.insert(src_v_road);
+                junction* initial_junction = nullptr;
+                int remaining_y_distance   = y_distance;
 
-            junction* initial_junction = nullptr;
-            int remaining_y_distance   = y_distance;
-
-            if (y_distance < 0)
-            {
-                // TRAVEL UP
-                initial_junction = get_junction(src_v_road->x, src_v_road->y);
-
-                if (src_v_road->lanes != initial_junction->v_lanes)
+                if (y_distance < 0)
                 {
-                    if (src_v_road->lanes < initial_junction->v_lanes)
-                        used.close_bottom_junctions.insert(initial_junction);
-                    else
-                        used.far_bottom_junctions.insert(initial_junction);
-                }
-            }
-            else
-            {
-                // TRAVEL DOWN
-                initial_junction = get_junction(src_v_road->x, src_v_road->y + 1);
+                    // TRAVEL UP
+                    initial_junction = get_junction(src_v_road->x, src_v_road->y);
 
-                if (src_v_road->lanes != initial_junction->v_lanes)
-                {
-                    if (src_v_road->lanes < initial_junction->v_lanes)
-                        used.close_top_junctions.insert(initial_junction);
-                    else
-                        used.far_top_junctions.insert(initial_junction);
-                }
-
-                if (!y_distance)
-                    remaining_y_distance = -1;
-            }
-
-            used.v_junctions.insert(initial_junction);
-
-            junction* last_junction = initial_junction;
-
-            if (x_distance)
-            {
-                used.h_junctions.insert(initial_junction);
-
-                int remaining_x_distance = x_distance;
-
-                // TRAVEL REMAINING X DISTANCE
-                while (remaining_x_distance)
-                {
-                    road* r     = nullptr;
-                    junction* j = nullptr;
-
-                    if (x_distance > 0)
+                    if (src_v_road->lanes != initial_junction->v_lanes)
                     {
-                        // TRAVEL RIGHT
-                        r = get_h_road(last_junction->x, last_junction->y);
-
-                        if (last_junction->h_lanes != r->lanes)
-                        {
-                            if (last_junction->h_lanes < r->lanes)
-                                used.far_right_junctions.insert(last_junction);
-                            else
-                                used.close_right_junctions.insert(last_junction);
-                        }
-
-                        j = get_junction(last_junction->x + 1, last_junction->y);
-
-                        if (r->lanes != j->h_lanes)
-                        {
-                            if (r->lanes < j->h_lanes)
-                                used.close_left_junctions.insert(j);
-                            else
-                                used.far_left_junctions.insert(j);
-                        }
-
-                        --remaining_x_distance;
+                        if (src_v_road->lanes < initial_junction->v_lanes)
+                            used.close_bottom_junctions.insert(initial_junction);
+                        else
+                            used.far_bottom_junctions.insert(initial_junction);
                     }
-                    else
-                    {
-                        // TRAVEL LEFT
-                        r = get_h_road(last_junction->x - 1, last_junction->y);
-
-                        if (last_junction->h_lanes != r->lanes)
-                        {
-                            if (last_junction->h_lanes < r->lanes)
-                                used.far_left_junctions.insert(last_junction);
-                            else
-                                used.close_left_junctions.insert(last_junction);
-                        }
-
-                        j = get_junction(last_junction->x - 1, last_junction->y);
-
-                        if (r->lanes != j->h_lanes)
-                        {
-                            if (r->lanes < j->h_lanes)
-                                used.close_right_junctions.insert(j);
-                            else
-                                used.far_right_junctions.insert(j);
-                        }
-
-                        ++remaining_x_distance;
-                    }
-
-                    used.h_roads.insert(r);
-                    used.h_junctions.insert(j);
-
-                    last_junction = j;
                 }
-
-                used.v_junctions.insert(last_junction);
-            }
-
-            // TRAVEL REMAINING Y DISTANCE
-            if (remaining_y_distance > 0)
-            {
-                while (remaining_y_distance != 1)
+                else
                 {
                     // TRAVEL DOWN
-                    road* r = get_v_road(last_junction->x, last_junction->y);
+                    initial_junction = get_junction(src_v_road->x, src_v_road->y + 1);
 
-                    if (last_junction->v_lanes != r->lanes)
+                    if (src_v_road->lanes != initial_junction->v_lanes)
                     {
-                        if (last_junction->v_lanes < r->lanes)
+                        if (src_v_road->lanes < initial_junction->v_lanes)
+                            used.close_top_junctions.insert(initial_junction);
+                        else
+                            used.far_top_junctions.insert(initial_junction);
+                    }
+
+                    if (!y_distance)
+                        remaining_y_distance = -1;
+                }
+
+                used.v_junctions.insert(initial_junction);
+
+                junction* last_junction = initial_junction;
+
+                if (x_distance)
+                {
+                    used.h_junctions.insert(initial_junction);
+
+                    int remaining_x_distance = x_distance;
+
+                    // TRAVEL REMAINING X DISTANCE
+                    while (remaining_x_distance)
+                    {
+                        road* r     = nullptr;
+                        junction* j = nullptr;
+
+                        if (x_distance > 0)
+                        {
+                            // TRAVEL RIGHT
+                            r = get_h_road(last_junction->x, last_junction->y);
+
+                            if (last_junction->h_lanes != r->lanes)
+                            {
+                                if (last_junction->h_lanes < r->lanes)
+                                    used.far_right_junctions.insert(last_junction);
+                                else
+                                    used.close_right_junctions.insert(last_junction);
+                            }
+
+                            j = get_junction(last_junction->x + 1, last_junction->y);
+
+                            if (r->lanes != j->h_lanes)
+                            {
+                                if (r->lanes < j->h_lanes)
+                                    used.close_left_junctions.insert(j);
+                                else
+                                    used.far_left_junctions.insert(j);
+                            }
+
+                            --remaining_x_distance;
+                        }
+                        else
+                        {
+                            // TRAVEL LEFT
+                            r = get_h_road(last_junction->x - 1, last_junction->y);
+
+                            if (last_junction->h_lanes != r->lanes)
+                            {
+                                if (last_junction->h_lanes < r->lanes)
+                                    used.far_left_junctions.insert(last_junction);
+                                else
+                                    used.close_left_junctions.insert(last_junction);
+                            }
+
+                            j = get_junction(last_junction->x - 1, last_junction->y);
+
+                            if (r->lanes != j->h_lanes)
+                            {
+                                if (r->lanes < j->h_lanes)
+                                    used.close_right_junctions.insert(j);
+                                else
+                                    used.far_right_junctions.insert(j);
+                            }
+
+                            ++remaining_x_distance;
+                        }
+
+                        used.h_roads.insert(r);
+                        used.h_junctions.insert(j);
+
+                        last_junction = j;
+                    }
+
+                    used.v_junctions.insert(last_junction);
+                }
+
+                // TRAVEL REMAINING Y DISTANCE
+                if (remaining_y_distance > 0)
+                {
+                    while (remaining_y_distance != 1)
+                    {
+                        // TRAVEL DOWN
+                        road* r = get_v_road(last_junction->x, last_junction->y);
+
+                        if (last_junction->v_lanes != r->lanes)
+                        {
+                            if (last_junction->v_lanes < r->lanes)
+                                used.far_bottom_junctions.insert(last_junction);
+                            else
+                                used.close_bottom_junctions.insert(last_junction);
+                        }
+
+                        junction* j = get_junction(last_junction->x, last_junction->y + 1);
+
+                        if (r->lanes != j->v_lanes)
+                        {
+                            if (r->lanes < j->v_lanes)
+                                used.close_top_junctions.insert(j);
+                            else
+                                used.far_top_junctions.insert(j);
+                        }
+
+                        used.v_roads.insert(r);
+                        used.v_junctions.insert(j);
+
+                        last_junction = j;
+
+                        --remaining_y_distance;
+                    }
+                }
+                else
+                {
+                    while (remaining_y_distance != -1)
+                    {
+                        // TRAVEL UP
+                        road* r = get_v_road(last_junction->x, last_junction->y - 1);
+
+                        if (last_junction->v_lanes != r->lanes)
+                        {
+                            if (last_junction->v_lanes < r->lanes)
+                                used.far_top_junctions.insert(last_junction);
+                            else
+                                used.close_top_junctions.insert(last_junction);
+                        }
+
+                        junction* j = get_junction(last_junction->x, last_junction->y - 1);
+
+                        if (r->lanes != j->v_lanes)
+                        {
+                            if (r->lanes < j->v_lanes)
+                                used.close_bottom_junctions.insert(j);
+                            else
+                                used.far_bottom_junctions.insert(j);
+                        }
+
+                        used.v_roads.insert(r);
+                        used.v_junctions.insert(j);
+
+                        last_junction = j;
+
+                        ++remaining_y_distance;
+                    }
+                }
+
+                road* dst_road = nullptr;
+
+                if (y_distance > 0)
+                {
+                    // TRAVEL DOWN
+                    dst_road = get_v_road(last_junction->x, last_junction->y);
+
+                    if (last_junction->v_lanes != dst_road->lanes)
+                    {
+                        if (last_junction->v_lanes < dst_road->lanes)
                             used.far_bottom_junctions.insert(last_junction);
                         else
                             used.close_bottom_junctions.insert(last_junction);
                     }
-
-                    junction* j = get_junction(last_junction->x, last_junction->y + 1);
-
-                    if (r->lanes != j->v_lanes)
-                    {
-                        if (r->lanes < j->v_lanes)
-                            used.close_top_junctions.insert(j);
-                        else
-                            used.far_top_junctions.insert(j);
-                    }
-
-                    used.v_roads.insert(r);
-                    used.v_junctions.insert(j);
-
-                    last_junction = j;
-
-                    --remaining_y_distance;
                 }
-            }
-            else
-            {
-                while (remaining_y_distance != -1)
+                else
                 {
                     // TRAVEL UP
-                    road* r = get_v_road(last_junction->x, last_junction->y - 1);
+                    dst_road = get_v_road(last_junction->x, last_junction->y - 1);
 
-                    if (last_junction->v_lanes != r->lanes)
+                    if (last_junction->v_lanes != dst_road->lanes)
                     {
-                        if (last_junction->v_lanes < r->lanes)
+                        if (last_junction->v_lanes < dst_road->lanes)
                             used.far_top_junctions.insert(last_junction);
                         else
                             used.close_top_junctions.insert(last_junction);
                     }
-
-                    junction* j = get_junction(last_junction->x, last_junction->y - 1);
-
-                    if (r->lanes != j->v_lanes)
-                    {
-                        if (r->lanes < j->v_lanes)
-                            used.close_bottom_junctions.insert(j);
-                        else
-                            used.far_bottom_junctions.insert(j);
-                    }
-
-                    used.v_roads.insert(r);
-                    used.v_junctions.insert(j);
-
-                    last_junction = j;
-
-                    ++remaining_y_distance;
                 }
+
+                used.v_junctions.insert(last_junction);
+                used.v_roads.insert(dst_road);
             }
-
-            road* dst_road = nullptr;
-
-            if (y_distance > 0)
-            {
-                // TRAVEL DOWN
-                dst_road = get_v_road(last_junction->x, last_junction->y);
-
-                if (last_junction->v_lanes != dst_road->lanes)
-                {
-                    if (last_junction->v_lanes < dst_road->lanes)
-                        used.far_bottom_junctions.insert(last_junction);
-                    else
-                        used.close_bottom_junctions.insert(last_junction);
-                }
-            }
-            else
-            {
-                // TRAVEL UP
-                dst_road = get_v_road(last_junction->x, last_junction->y - 1);
-
-                if (last_junction->v_lanes != dst_road->lanes)
-                {
-                    if (last_junction->v_lanes < dst_road->lanes)
-                        used.far_top_junctions.insert(last_junction);
-                    else
-                        used.close_top_junctions.insert(last_junction);
-                }
-            }
-
-            used.v_junctions.insert(last_junction);
-            used.v_roads.insert(dst_road);
         }
 
         commit_used_paths(used);
@@ -716,49 +720,49 @@ void graph_layouter::draw_nets()
     for (const u32 id : m_context->nets())
     {
         std::shared_ptr<net> n = g_netlist->get_net_by_id(id);
+        assert(n);
 
-        if (!n)
-            continue;
-
-        // USE SEPARATE NET VECTORS ???
         if (n->is_unrouted())
         {
             // HANDLE GLOBAL NETS
             arrow_separated_net* net_item = new arrow_separated_net(n);
 
-            endpoint src_end = n->get_source();
-
-            if (src_end.get_gate())
+            for (const endpoint& src : n->get_sources())
             {
-                hal::node node;
-
-                if (!m_context->node_for_gate(node, src_end.get_gate()->get_id()))
-                    continue;
-
-                for (const node_box& box : m_boxes)
+                if (src.get_gate())
                 {
-                    if (box.node == node)
+                    hal::node node;
+
+                    if (!m_context->node_for_gate(node, src.get_gate()->get_id()))
+                        continue;
+
+                    for (const node_box& box : m_boxes)
                     {
-                        //net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src_end.get_pin())));
-                        net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src_end.get_pin())));
-                        break;
+                        if (box.node == node)
+                        {
+                            net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src.get_pin())));
+                            break;
+                        }
                     }
                 }
             }
 
-            for (const endpoint& dst_end : n->get_destinations())
+            for (const endpoint& dst : n->get_destinations())
             {
-                hal::node node;
-
-                if (!m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
-                    continue;
-
-                for (const node_box& box : m_boxes)
+                if (dst.get_gate())
                 {
-                    if (box.node == node)
+                    hal::node node;
+
+                    if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
+                        continue;
+
+                    for (const node_box& box : m_boxes)
                     {
-                        net_item->add_input(box.item->get_input_scene_position(n->get_id(), QString::fromStdString(dst_end.get_pin())));
-                        break;
+                        if (box.node == node)
+                        {
+                            net_item->add_input(box.item->get_input_scene_position(n->get_id(), QString::fromStdString(dst.get_pin())));
+                            break;
+                        }
                     }
                 }
             }
@@ -768,112 +772,137 @@ void graph_layouter::draw_nets()
             continue;
         }
 
-        bool dst_missing = false; // PASS TO SHADER ???
+        bool use_label = false;
 
-        if (n->get_source().get_gate())
+        for (const endpoint& src : n->get_sources())
         {
-            if (n->get_source().get_gate()->is_gnd_gate() || n->get_source().get_gate()->is_vcc_gate())
+            if (src.get_gate()->is_gnd_gate() || src.get_gate()->is_vcc_gate())
             {
-                // HANDLE SEPARATED NETS
+                use_label = true;
+                break;
+            }
+        }
+
+        if (use_label)
+        {
+            labeled_separated_net* net_item = new labeled_separated_net(n, QString::fromStdString(n->get_name()));
+
+            for (const endpoint& src : n->get_sources())
+            {
                 hal::node node;
 
-                labeled_separated_net* net_item = new labeled_separated_net(n, QString::fromStdString(n->get_name()));
-
-                if (m_context->node_for_gate(node, n->get_source().get_gate()->get_id()))
+                if (m_context->node_for_gate(node, src.get_gate()->get_id()))
                 {
                     for (const node_box& box : m_boxes)
                     {
                         if (box.node == node)
                         {
-                            //net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
-                            net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
+                            net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src.get_pin())));
                             break;
                         }
                     }
                 }
-
-                for (endpoint& dst_end : n->get_destinations())
-                {
-                    if (!m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
-                        continue;
-
-                    for (const node_box& box : m_boxes)
-                    {
-                        if (box.node == node)
-                        {
-                            net_item->add_input(box.item->get_input_scene_position(n->get_id(), QString::fromStdString(dst_end.get_pin())));
-                            break;
-                        }
-                    }
-                }
-
-                net_item->finalize();
-                m_scene->add_item(net_item);
-
-                continue;
             }
 
-            //TEMPORARY IMPLEMENTATION
-            hal::node tmp;
-            if (!m_context->node_for_gate(tmp, n->get_source().get_gate()->get_id()))
+            for (const endpoint& dst : n->get_destinations())
             {
-                arrow_separated_net* net_item = new arrow_separated_net(n);
+                hal::node node;
 
-                for (endpoint& dst_end : n->get_destinations())
-                {
-                    hal::node node;
-                    if (!m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
-                        continue;
-
-                    for (const node_box& box : m_boxes)
-                    {
-                        if (box.node == node)
-                        {
-                            net_item->add_input(box.item->get_input_scene_position(n->get_id(), QString::fromStdString(dst_end.get_pin())));
-                            break;
-                        }
-                    }
-                }
-
-                // POTENTIALLY ADDS EMPTY NETS, DOESNT MATTER RIGHT NOW FIX LATER
-                net_item->finalize();
-                m_scene->add_item(net_item);
-
-                continue;
-            }
-            else
-            {
-                bool contains_destination = false;
-
-                for (endpoint& dst_end : n->get_destinations())
-                {
-                    hal::node node;
-                    if (m_context->node_for_gate(node, dst_end.get_gate()->get_id()))
-                        contains_destination = true;
-                    else
-                        dst_missing = true;
-                }
-
-                if (!contains_destination)
-                {
-                    arrow_separated_net* net_item = new arrow_separated_net(n);
-
-                    for (const node_box& box : m_boxes)
-                    {
-                        if (box.node == tmp)
-                        {
-                            //net_item->setPos(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
-                            net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin())));
-                            break;
-                        }
-                    }
-
-                    net_item->finalize();
-                    m_scene->add_item(net_item);
-
+                if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
                     continue;
+
+                for (const node_box& box : m_boxes)
+                {
+                    if (box.node == node)
+                    {
+                        net_item->add_input(box.item->get_input_scene_position(n->get_id(), QString::fromStdString(dst.get_pin())));
+                        break;
+                    }
                 }
             }
+
+            net_item->finalize();
+            m_scene->add_item(net_item);
+
+            continue;
+        }
+
+        bool incomplete_net = false; // PASS TO SHADER ???
+        bool src_found = false;
+        bool dst_found = false;
+
+        for (const endpoint& src : n->get_sources())
+        {
+            hal::node node;
+
+            if (m_context->node_for_gate(node, src.get_gate()->get_id()))
+                src_found = true;
+            else
+                incomplete_net = true;
+        }
+
+        for (const endpoint& dst : n->get_destinations())
+        {
+            hal::node node;
+
+            if (m_context->node_for_gate(node, dst.get_gate()->get_id()))
+                dst_found = true;
+            else
+                incomplete_net = true;
+        }
+
+        if (src_found && !dst_found)
+        {
+            arrow_separated_net* net_item = new arrow_separated_net(n);
+
+            for (const endpoint& src : n->get_sources())
+            {
+                hal::node node;
+
+                if (!m_context->node_for_gate(node, src.get_gate()->get_id()))
+                    continue;
+
+                for (const node_box& box : m_boxes)
+                {
+                    if (box.node == node)
+                    {
+                        net_item->add_output(box.item->get_output_scene_position(n->get_id(), QString::fromStdString(src.get_pin())));
+                        break;
+                    }
+                }
+            }
+
+            net_item->finalize();
+            m_scene->add_item(net_item);
+
+            continue;
+        }
+
+        if (!src_found && dst_found)
+        {
+            arrow_separated_net* net_item = new arrow_separated_net(n);
+
+            for (const endpoint& dst : n->get_destinations())
+            {
+                hal::node node;
+
+                if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
+                    continue;
+
+                for (const node_box& box : m_boxes)
+                {
+                    if (box.node == node)
+                    {
+                        net_item->add_input(box.item->get_input_scene_position(n->get_id(), QString::fromStdString(dst.get_pin())));
+                        break;
+                    }
+                }
+            }
+
+            net_item->finalize();
+            m_scene->add_item(net_item);
+
+            continue;
         }
 
         // HANDLE NORMAL NETS
