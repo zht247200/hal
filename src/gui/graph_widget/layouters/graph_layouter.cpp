@@ -262,10 +262,10 @@ void graph_layouter::calculate_nets()
         for (const endpoint& dst : n->get_destinations())
         {
             // FIND DST BOX
-            node_box* dst_box = nullptr;
-
             if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
                 continue;
+
+            node_box* dst_box = nullptr;
 
             for (node_box& box : m_boxes)
                 if (box.node == node)
@@ -274,8 +274,7 @@ void graph_layouter::calculate_nets()
                     break;
                 }
 
-            if (!dst_box)    // ???
-                continue;
+            assert(dst_box);
 
             // ROAD BASED DISTANCE (x_distance - 1)
             const int x_distance = dst_box->x - src_box->x - 1;
