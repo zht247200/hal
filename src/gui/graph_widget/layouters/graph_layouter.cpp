@@ -906,374 +906,532 @@ void graph_layouter::draw_nets()
         }
 
         // HANDLE NORMAL NETS
-        // FIND SRC BOX
-        node_box* src_box = nullptr;
-        {
-            hal::node node;
-
-            if (!m_context->node_for_gate(node, n->get_source().get_gate()->get_id()))
-                continue;
-
-            for (node_box& box : m_boxes)
-                if (box.node == node)
-                {
-                    src_box = &box;
-                    break;
-                }
-        }
-        assert(src_box);
-
         used_paths used;
-
-        const QPointF src_pin_position = src_box->item->get_output_scene_position(n->get_id(), QString::fromStdString(n->get_source().get_pin()));
         standard_graphics_net::lines lines;
 
-        // FOR EVERY DST
-        for (const endpoint& dst : n->get_destinations())
+        // FOR EVERY SRC
+        for (const endpoint& src : n->get_sources())
         {
-            // FIND DST BOX
-            node_box* dst_box = nullptr;
+            // FIND SRC BOX
+            node_box* src_box = nullptr;
+            {
+                hal::node node;
 
-            hal::node node;
+                if (!m_context->node_for_gate(node, src.get_gate()->get_id()))
+                    continue;
 
-            if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
-                continue;
+                for (node_box& box : m_boxes)
+                    if (box.node == node)
+                    {
+                        src_box = &box;
+                        break;
+                    }
+            }
+            assert(src_box);
 
-            for (node_box& box : m_boxes)
-                if (box.node == node)
+            const QPointF src_pin_position = src_box->item->get_output_scene_position(n->get_id(), QString::fromStdString(src.get_pin()));
+
+            // FOR EVERY DST
+            for (const endpoint& dst : n->get_destinations())
+            {
+                // FIND DST BOX
+                node_box* dst_box = nullptr;
+
+                hal::node node;
+
+                if (!m_context->node_for_gate(node, dst.get_gate()->get_id()))
+                    continue;
+
+                for (node_box& box : m_boxes)
+                    if (box.node == node)
+                    {
+                        dst_box = &box;
+                        break;
+                    }
+
+                assert(dst_box);
+
+                QPointF dst_pin_position = dst_box->item->get_input_scene_position(n->get_id(), QString::fromStdString(dst.get_pin()));
+
+                // ROAD BASED DISTANCE (x_distance - 1)
+                const int x_distance = dst_box->x - src_box->x - 1;
+                const int y_distance = dst_box->y - src_box->y;
+
+                if (!y_distance && v_road_jump_possible(src_box->x + 1, dst_box->x, src_box->y))
                 {
-                    dst_box = &box;
-                    break;
+                    // SPECIAL CASE INDIRECT HORIZONTAL NEIGHBORS
+                    road* dst_v_road = get_v_road(dst_box->x, dst_box->y);
+
+                    qreal x = scene_x_for_v_channel_lane(dst_v_road->x, dst_v_road->lanes);
+                    lines.append_h_line(src_pin_position.x(), x, src_pin_position.y());
+
+                    if (src_pin_position.y() < dst_pin_position.y())
+                        lines.append_v_line(x, src_pin_position.y(), dst_pin_position.y());
+                    else
+                        lines.append_v_line(x, dst_pin_position.y(), src_pin_position.y());
+
+                    lines.append_h_line(x, dst_pin_position.x(), dst_pin_position.y());
+
+                    used.v_roads.insert(dst_v_road);
+                    continue;
                 }
 
-            assert(dst_box);
+                road* src_v_road = get_v_road(src_box->x + 1, src_box->y);
 
-            QPointF dst_pin_position = dst_box->item->get_input_scene_position(n->get_id(), QString::fromStdString(dst.get_pin()));
+                if (!(x_distance || y_distance))
+                {
+                    // SPECIAL CASE DIRECT HORIZONTAL NEIGHBORS
+                    qreal x = scene_x_for_v_channel_lane(src_v_road->x, src_v_road->lanes);
+                    lines.append_h_line(src_pin_position.x(), x, src_pin_position.y());
 
-            // ROAD BASED DISTANCE (x_distance - 1)
-            const int x_distance = dst_box->x - src_box->x - 1;
-            const int y_distance = dst_box->y - src_box->y;
+                    if (src_pin_position.y() < dst_pin_position.y())
+                        lines.append_v_line(x, src_pin_position.y(), dst_pin_position.y());
+                    else if (src_pin_position.y() > dst_pin_position.y())
+                        lines.append_v_line(x, dst_pin_position.y(), src_pin_position.y());
 
-            if (!y_distance && v_road_jump_possible(src_box->x + 1, dst_box->x, src_box->y))
-            {
-                // SPECIAL CASE INDIRECT HORIZONTAL NEIGHBORS
-                road* dst_v_road = get_v_road(dst_box->x, dst_box->y);
+                    lines.append_h_line(x, dst_pin_position.x(), dst_pin_position.y());
 
-                qreal x = scene_x_for_v_channel_lane(dst_v_road->x, dst_v_road->lanes);
-                lines.append_h_line(src_pin_position.x(), x, src_pin_position.y());
+                    used.v_roads.insert(src_v_road);
+                    continue;
+                }
 
-                if (src_pin_position.y() < dst_pin_position.y())
-                    lines.append_v_line(x, src_pin_position.y(), dst_pin_position.y());
-                else
-                    lines.append_v_line(x, dst_pin_position.y(), src_pin_position.y());
-
-                lines.append_h_line(x, dst_pin_position.x(), dst_pin_position.y());
-
-                used.v_roads.insert(dst_v_road);
-                continue;
-            }
-
-            road* src_v_road = get_v_road(src_box->x + 1, src_box->y);
-
-            if (!(x_distance || y_distance))
-            {
-                // SPECIAL CASE DIRECT HORIZONTAL NEIGHBORS
-                qreal x = scene_x_for_v_channel_lane(src_v_road->x, src_v_road->lanes);
-                lines.append_h_line(src_pin_position.x(), x, src_pin_position.y());
-
-                if (src_pin_position.y() < dst_pin_position.y())
-                    lines.append_v_line(x, src_pin_position.y(), dst_pin_position.y());
-                else if (src_pin_position.y() > dst_pin_position.y())
-                    lines.append_v_line(x, dst_pin_position.y(), src_pin_position.y());
-
-                lines.append_h_line(x, dst_pin_position.x(), dst_pin_position.y());
-
+                // NORMAL CASE
+                // CONNECT SRC TO V ROAD, TRAVEL X DISTANCE, TRAVEL Y DISTANCE, CONNECT V ROAD TO DST
+                QPointF current_position(src_pin_position);
+                current_position.setX(scene_x_for_v_channel_lane(src_v_road->x, src_v_road->lanes));
+                lines.append_h_line(src_pin_position.x(), current_position.x(), src_pin_position.y());
                 used.v_roads.insert(src_v_road);
-                continue;
-            }
 
-            // NORMAL CASE
-            // CONNECT SRC TO V ROAD, TRAVEL X DISTANCE, TRAVEL Y DISTANCE, CONNECT V ROAD TO DST
-            QPointF current_position(src_pin_position);
-            current_position.setX(scene_x_for_v_channel_lane(src_v_road->x, src_v_road->lanes));
-            lines.append_h_line(src_pin_position.x(), current_position.x(), src_pin_position.y());
-            used.v_roads.insert(src_v_road);
+                junction* initial_junction = nullptr;
+                int remaining_y_distance   = y_distance;
 
-            junction* initial_junction = nullptr;
-            int remaining_y_distance   = y_distance;
-
-            if (y_distance < 0)
-            {
-                // TRAVEL UP
-                initial_junction = get_junction(src_v_road->x, src_v_road->y);
-
-                if (src_v_road->lanes != initial_junction->v_lanes)
+                if (y_distance < 0)
                 {
-                    // R -> J
-                    if (src_v_road->lanes < initial_junction->v_lanes)
+                    // TRAVEL UP
+                    initial_junction = get_junction(src_v_road->x, src_v_road->y);
+
+                    if (src_v_road->lanes != initial_junction->v_lanes)
                     {
-                        // POS
-                        qreal y = scene_y_for_close_bottom_lane_change(initial_junction->y, initial_junction->close_bottom_lane_changes);
-                        lines.append_v_line(current_position.x(), y, current_position.y());
-                        current_position.setY(y);
-                        used.close_bottom_junctions.insert(initial_junction);
-                    }
-                    else
-                    {
-                        // NEG
-                        qreal y = scene_y_for_far_bottom_lane_change(initial_junction->y, initial_junction->far_bottom_lane_changes);
-                        lines.append_v_line(current_position.x(), y, current_position.y());
-                        current_position.setY(y);
-                        used.far_bottom_junctions.insert(initial_junction);
-                    }
-
-                    qreal x = scene_x_for_v_channel_lane(initial_junction->x, initial_junction->v_lanes);
-
-                    if (current_position.x() < x)
-                        lines.append_h_line(current_position.x(), x, current_position.y());
-                    else
-                        lines.append_h_line(x, current_position.x(), current_position.y());
-
-                    current_position.setX(x);
-                }
-            }
-            else
-            {
-                // TRAVEL DOWN
-                initial_junction = get_junction(src_v_road->x, src_v_road->y + 1);
-
-                if (src_v_road->lanes != initial_junction->v_lanes)
-                {
-                    // R -> J
-                    if (src_v_road->lanes < initial_junction->v_lanes)
-                    {
-                        // POS
-                        qreal y = scene_y_for_close_top_lane_change(initial_junction->y, initial_junction->close_top_lane_changes);
-                        lines.append_v_line(current_position.x(), current_position.y(), y);
-                        current_position.setY(y);
-                        used.close_top_junctions.insert(initial_junction);
-                    }
-                    else
-                    {
-                        // NEG
-                        qreal y = scene_y_for_far_top_lane_change(initial_junction->y, initial_junction->far_top_lane_changes);
-                        lines.append_v_line(current_position.x(), current_position.y(), y);
-                        current_position.setY(y);
-                        used.far_top_junctions.insert(initial_junction);
-                    }
-
-                    qreal x = scene_x_for_v_channel_lane(initial_junction->x, initial_junction->v_lanes);
-
-                    // DUPLICATE CODE ?
-                    if (current_position.x() < x)
-                        lines.append_h_line(current_position.x(), x, current_position.y());
-                    else
-                        lines.append_h_line(x, current_position.x(), current_position.y());
-
-                    current_position.setX(x);
-                }
-
-                if (!y_distance)
-                    remaining_y_distance = -1;
-            }
-
-            used.v_junctions.insert(initial_junction);
-
-            junction* last_junction = initial_junction;
-
-            if (x_distance)
-            {
-                {
-                    qreal y = scene_y_for_h_channel_lane(initial_junction->y, initial_junction->h_lanes);
-
-                    if (current_position.y() < y)
-                        lines.append_v_line(current_position.x(), current_position.y(), y);
-                    else
-                        lines.append_v_line(current_position.x(), y, current_position.y());
-
-                    current_position.setY(y);
-                    used.h_junctions.insert(initial_junction);
-                }
-
-                int remaining_x_distance = x_distance;
-
-                // TRAVEL REMAINING X DISTANCE
-                while (remaining_x_distance)
-                {
-                    road* r     = nullptr;
-                    junction* j = nullptr;
-
-                    if (x_distance > 0)
-                    {
-                        // TRAVEL RIGHT
-                        r = get_h_road(last_junction->x, last_junction->y);
-
-                        if (last_junction->h_lanes != r->lanes)
+                        // R -> J
+                        if (src_v_road->lanes < initial_junction->v_lanes)
                         {
-                            // J -> R
-                            if (last_junction->h_lanes < r->lanes)
-                            {
-                                // POS
-                                qreal x = scene_x_for_far_right_lane_change(last_junction->x, last_junction->far_right_lane_changes);
-                                lines.append_h_line(current_position.x(), x, current_position.y());
-                                current_position.setX(x);
-                                used.far_right_junctions.insert(last_junction);
-                            }
-                            else
-                            {
-                                // NEG
-                                qreal x = scene_x_for_close_right_lane_change(last_junction->x, last_junction->close_right_lane_changes);
-                                lines.append_h_line(current_position.x(), x, current_position.y());
-                                current_position.setX(x);
-                                used.close_right_junctions.insert(last_junction);
-                            }
-
-                            qreal y = scene_y_for_h_channel_lane(r->y, r->lanes);
-
-                            if (current_position.y() < y)
-                                lines.append_v_line(current_position.x(), current_position.y(), y);
-                            else
-                                lines.append_v_line(current_position.x(), y, current_position.y());
-
+                            // POS
+                            qreal y = scene_y_for_close_bottom_lane_change(initial_junction->y, initial_junction->close_bottom_lane_changes);
+                            lines.append_v_line(current_position.x(), y, current_position.y());
                             current_position.setY(y);
+                            used.close_bottom_junctions.insert(initial_junction);
+                        }
+                        else
+                        {
+                            // NEG
+                            qreal y = scene_y_for_far_bottom_lane_change(initial_junction->y, initial_junction->far_bottom_lane_changes);
+                            lines.append_v_line(current_position.x(), y, current_position.y());
+                            current_position.setY(y);
+                            used.far_bottom_junctions.insert(initial_junction);
                         }
 
-                        j = get_junction(last_junction->x + 1, last_junction->y);
+                        qreal x = scene_x_for_v_channel_lane(initial_junction->x, initial_junction->v_lanes);
 
-                        if (r->lanes != j->h_lanes)
-                        {
-                            // R -> J
-                            if (r->lanes < j->h_lanes)
-                            {
-                                // POS
-                                qreal x = scene_x_for_close_left_lane_change(j->x, j->close_left_lane_changes);
-                                lines.append_h_line(current_position.x(), x, current_position.y());
-                                current_position.setX(x);
-                                used.close_left_junctions.insert(j);
-                            }
-                            else
-                            {
-                                // NEG
-                                qreal x = scene_x_for_far_left_lane_change(j->x, j->far_left_lane_changes);
-                                lines.append_h_line(current_position.x(), x, current_position.y());
-                                current_position.setX(x);
-                                used.far_left_junctions.insert(j);
-                            }
+                        if (current_position.x() < x)
+                            lines.append_h_line(current_position.x(), x, current_position.y());
+                        else
+                            lines.append_h_line(x, current_position.x(), current_position.y());
 
-                            qreal y = scene_y_for_h_channel_lane(j->y, j->h_lanes);
-
-                            // DUPLICATE CODE ?
-                            if (current_position.y() < y)
-                                lines.append_v_line(current_position.x(), current_position.y(), y);
-                            else
-                                lines.append_v_line(current_position.x(), y, current_position.y());
-
-                            current_position.setY(y);
-                        }
-
-                        --remaining_x_distance;
+                        current_position.setX(x);
                     }
-                    else
-                    {
-                        // TRAVEL LEFT
-                        r = get_h_road(last_junction->x - 1, last_junction->y);
-
-                        if (last_junction->h_lanes != r->lanes)
-                        {
-                            // J -> R
-                            if (last_junction->h_lanes < r->lanes)
-                            {
-                                // POS
-                                qreal x = scene_x_for_far_left_lane_change(last_junction->x, last_junction->far_left_lane_changes);
-                                lines.append_h_line(x, current_position.x(), current_position.y());
-                                current_position.setX(x);
-                                used.far_left_junctions.insert(last_junction);
-                            }
-                            else
-                            {
-                                // NEG
-                                qreal x = scene_x_for_close_left_lane_change(last_junction->x, last_junction->close_left_lane_changes);
-                                lines.append_h_line(x, current_position.x(), current_position.y());
-                                current_position.setX(x);
-                                used.close_left_junctions.insert(last_junction);
-                            }
-
-                            qreal y = scene_y_for_h_channel_lane(r->y, r->lanes);
-
-                            // DUPLICATE CODE ?
-                            if (current_position.y() < y)
-                                lines.append_v_line(current_position.x(), current_position.y(), y);
-                            else
-                                lines.append_v_line(current_position.x(), y, current_position.y());
-
-                            current_position.setY(y);
-                        }
-
-                        j = get_junction(last_junction->x - 1, last_junction->y);
-
-                        if (r->lanes != j->h_lanes)
-                        {
-                            // R -> J
-                            if (r->lanes < j->h_lanes)
-                            {
-                                // POS
-                                qreal x = scene_x_for_close_right_lane_change(j->x, j->close_right_lane_changes);
-                                lines.append_h_line(x, current_position.x(), current_position.y());
-                                current_position.setX(x);
-                                used.close_right_junctions.insert(j);
-                            }
-                            else
-                            {
-                                // NEG
-                                qreal x = scene_x_for_far_right_lane_change(j->x, j->far_right_lane_changes);
-                                lines.append_h_line(x, current_position.x(), current_position.y());
-                                current_position.setX(x);
-                                used.far_right_junctions.insert(j);
-                            }
-
-                            qreal y = scene_y_for_h_channel_lane(j->y, j->h_lanes);
-
-                            // DUPLICATE CODE ?
-                            if (current_position.y() < y)
-                                lines.append_v_line(current_position.x(), current_position.y(), y);
-                            else
-                                lines.append_v_line(current_position.x(), y, current_position.y());
-
-                            current_position.setY(y);
-                        }
-
-                        ++remaining_x_distance;
-                    }
-
-                    used.h_roads.insert(r);
-                    used.h_junctions.insert(j);
-
-                    last_junction = j;
                 }
-
-                qreal x = scene_x_for_v_channel_lane(last_junction->x, last_junction->v_lanes);
-
-                if (current_position.x() < x)
-                    lines.append_h_line(current_position.x(), x, current_position.y());
                 else
-                    lines.append_h_line(x, current_position.x(), current_position.y());
-
-                current_position.setX(x);
-                used.v_junctions.insert(last_junction);
-            }
-
-            // TRAVEL REMAINING Y DISTANCE
-            if (remaining_y_distance > 0)
-            {
-                while (remaining_y_distance != 1)
                 {
                     // TRAVEL DOWN
-                    road* r = get_v_road(last_junction->x, last_junction->y);
+                    initial_junction = get_junction(src_v_road->x, src_v_road->y + 1);
 
-                    if (last_junction->v_lanes != r->lanes)
+                    if (src_v_road->lanes != initial_junction->v_lanes)
+                    {
+                        // R -> J
+                        if (src_v_road->lanes < initial_junction->v_lanes)
+                        {
+                            // POS
+                            qreal y = scene_y_for_close_top_lane_change(initial_junction->y, initial_junction->close_top_lane_changes);
+                            lines.append_v_line(current_position.x(), current_position.y(), y);
+                            current_position.setY(y);
+                            used.close_top_junctions.insert(initial_junction);
+                        }
+                        else
+                        {
+                            // NEG
+                            qreal y = scene_y_for_far_top_lane_change(initial_junction->y, initial_junction->far_top_lane_changes);
+                            lines.append_v_line(current_position.x(), current_position.y(), y);
+                            current_position.setY(y);
+                            used.far_top_junctions.insert(initial_junction);
+                        }
+
+                        qreal x = scene_x_for_v_channel_lane(initial_junction->x, initial_junction->v_lanes);
+
+                        // DUPLICATE CODE ?
+                        if (current_position.x() < x)
+                            lines.append_h_line(current_position.x(), x, current_position.y());
+                        else
+                            lines.append_h_line(x, current_position.x(), current_position.y());
+
+                        current_position.setX(x);
+                    }
+
+                    if (!y_distance)
+                        remaining_y_distance = -1;
+                }
+
+                used.v_junctions.insert(initial_junction);
+
+                junction* last_junction = initial_junction;
+
+                if (x_distance)
+                {
+                    {
+                        qreal y = scene_y_for_h_channel_lane(initial_junction->y, initial_junction->h_lanes);
+
+                        if (current_position.y() < y)
+                            lines.append_v_line(current_position.x(), current_position.y(), y);
+                        else
+                            lines.append_v_line(current_position.x(), y, current_position.y());
+
+                        current_position.setY(y);
+                        used.h_junctions.insert(initial_junction);
+                    }
+
+                    int remaining_x_distance = x_distance;
+
+                    // TRAVEL REMAINING X DISTANCE
+                    while (remaining_x_distance)
+                    {
+                        road* r     = nullptr;
+                        junction* j = nullptr;
+
+                        if (x_distance > 0)
+                        {
+                            // TRAVEL RIGHT
+                            r = get_h_road(last_junction->x, last_junction->y);
+
+                            if (last_junction->h_lanes != r->lanes)
+                            {
+                                // J -> R
+                                if (last_junction->h_lanes < r->lanes)
+                                {
+                                    // POS
+                                    qreal x = scene_x_for_far_right_lane_change(last_junction->x, last_junction->far_right_lane_changes);
+                                    lines.append_h_line(current_position.x(), x, current_position.y());
+                                    current_position.setX(x);
+                                    used.far_right_junctions.insert(last_junction);
+                                }
+                                else
+                                {
+                                    // NEG
+                                    qreal x = scene_x_for_close_right_lane_change(last_junction->x, last_junction->close_right_lane_changes);
+                                    lines.append_h_line(current_position.x(), x, current_position.y());
+                                    current_position.setX(x);
+                                    used.close_right_junctions.insert(last_junction);
+                                }
+
+                                qreal y = scene_y_for_h_channel_lane(r->y, r->lanes);
+
+                                if (current_position.y() < y)
+                                    lines.append_v_line(current_position.x(), current_position.y(), y);
+                                else
+                                    lines.append_v_line(current_position.x(), y, current_position.y());
+
+                                current_position.setY(y);
+                            }
+
+                            j = get_junction(last_junction->x + 1, last_junction->y);
+
+                            if (r->lanes != j->h_lanes)
+                            {
+                                // R -> J
+                                if (r->lanes < j->h_lanes)
+                                {
+                                    // POS
+                                    qreal x = scene_x_for_close_left_lane_change(j->x, j->close_left_lane_changes);
+                                    lines.append_h_line(current_position.x(), x, current_position.y());
+                                    current_position.setX(x);
+                                    used.close_left_junctions.insert(j);
+                                }
+                                else
+                                {
+                                    // NEG
+                                    qreal x = scene_x_for_far_left_lane_change(j->x, j->far_left_lane_changes);
+                                    lines.append_h_line(current_position.x(), x, current_position.y());
+                                    current_position.setX(x);
+                                    used.far_left_junctions.insert(j);
+                                }
+
+                                qreal y = scene_y_for_h_channel_lane(j->y, j->h_lanes);
+
+                                // DUPLICATE CODE ?
+                                if (current_position.y() < y)
+                                    lines.append_v_line(current_position.x(), current_position.y(), y);
+                                else
+                                    lines.append_v_line(current_position.x(), y, current_position.y());
+
+                                current_position.setY(y);
+                            }
+
+                            --remaining_x_distance;
+                        }
+                        else
+                        {
+                            // TRAVEL LEFT
+                            r = get_h_road(last_junction->x - 1, last_junction->y);
+
+                            if (last_junction->h_lanes != r->lanes)
+                            {
+                                // J -> R
+                                if (last_junction->h_lanes < r->lanes)
+                                {
+                                    // POS
+                                    qreal x = scene_x_for_far_left_lane_change(last_junction->x, last_junction->far_left_lane_changes);
+                                    lines.append_h_line(x, current_position.x(), current_position.y());
+                                    current_position.setX(x);
+                                    used.far_left_junctions.insert(last_junction);
+                                }
+                                else
+                                {
+                                    // NEG
+                                    qreal x = scene_x_for_close_left_lane_change(last_junction->x, last_junction->close_left_lane_changes);
+                                    lines.append_h_line(x, current_position.x(), current_position.y());
+                                    current_position.setX(x);
+                                    used.close_left_junctions.insert(last_junction);
+                                }
+
+                                qreal y = scene_y_for_h_channel_lane(r->y, r->lanes);
+
+                                // DUPLICATE CODE ?
+                                if (current_position.y() < y)
+                                    lines.append_v_line(current_position.x(), current_position.y(), y);
+                                else
+                                    lines.append_v_line(current_position.x(), y, current_position.y());
+
+                                current_position.setY(y);
+                            }
+
+                            j = get_junction(last_junction->x - 1, last_junction->y);
+
+                            if (r->lanes != j->h_lanes)
+                            {
+                                // R -> J
+                                if (r->lanes < j->h_lanes)
+                                {
+                                    // POS
+                                    qreal x = scene_x_for_close_right_lane_change(j->x, j->close_right_lane_changes);
+                                    lines.append_h_line(x, current_position.x(), current_position.y());
+                                    current_position.setX(x);
+                                    used.close_right_junctions.insert(j);
+                                }
+                                else
+                                {
+                                    // NEG
+                                    qreal x = scene_x_for_far_right_lane_change(j->x, j->far_right_lane_changes);
+                                    lines.append_h_line(x, current_position.x(), current_position.y());
+                                    current_position.setX(x);
+                                    used.far_right_junctions.insert(j);
+                                }
+
+                                qreal y = scene_y_for_h_channel_lane(j->y, j->h_lanes);
+
+                                // DUPLICATE CODE ?
+                                if (current_position.y() < y)
+                                    lines.append_v_line(current_position.x(), current_position.y(), y);
+                                else
+                                    lines.append_v_line(current_position.x(), y, current_position.y());
+
+                                current_position.setY(y);
+                            }
+
+                            ++remaining_x_distance;
+                        }
+
+                        used.h_roads.insert(r);
+                        used.h_junctions.insert(j);
+
+                        last_junction = j;
+                    }
+
+                    qreal x = scene_x_for_v_channel_lane(last_junction->x, last_junction->v_lanes);
+
+                    if (current_position.x() < x)
+                        lines.append_h_line(current_position.x(), x, current_position.y());
+                    else
+                        lines.append_h_line(x, current_position.x(), current_position.y());
+
+                    current_position.setX(x);
+                    used.v_junctions.insert(last_junction);
+                }
+
+                // TRAVEL REMAINING Y DISTANCE
+                if (remaining_y_distance > 0)
+                {
+                    while (remaining_y_distance != 1)
+                    {
+                        // TRAVEL DOWN
+                        road* r = get_v_road(last_junction->x, last_junction->y);
+
+                        if (last_junction->v_lanes != r->lanes)
+                        {
+                            // J -> R
+                            if (last_junction->v_lanes < r->lanes)
+                            {
+                                // POS
+                                qreal y = scene_y_for_far_bottom_lane_change(last_junction->y, last_junction->far_bottom_lane_changes);
+                                lines.append_v_line(current_position.x(), current_position.y(), y);
+                                current_position.setY(y);
+                                used.far_bottom_junctions.insert(last_junction);
+                            }
+                            else
+                            {
+                                // NEG
+                                qreal y = scene_y_for_close_bottom_lane_change(last_junction->y, last_junction->close_bottom_lane_changes);
+                                lines.append_v_line(current_position.x(), current_position.y(), y);
+                                current_position.setY(y);
+                                used.close_bottom_junctions.insert(last_junction);
+                            }
+
+                            qreal x = scene_x_for_v_channel_lane(r->x, r->lanes);
+
+                            if (current_position.x() < x)
+                                lines.append_h_line(current_position.x(), x, current_position.y());
+                            else
+                                lines.append_h_line(x, current_position.x(), current_position.y());
+
+                            current_position.setX(x);
+                        }
+
+                        junction* j = get_junction(last_junction->x, last_junction->y + 1);
+
+                        if (r->lanes != j->v_lanes)
+                        {
+                            // R -> J
+                            if (r->lanes < j->v_lanes)
+                            {
+                                // POS
+                                qreal y = scene_y_for_close_top_lane_change(j->y, j->close_top_lane_changes);
+                                lines.append_v_line(current_position.x(), current_position.y(), y);
+                                current_position.setY(y);
+                                used.close_top_junctions.insert(j);
+                            }
+                            else
+                            {
+                                // NEG
+                                qreal y = scene_y_for_far_top_lane_change(j->y, j->far_top_lane_changes);
+                                lines.append_v_line(current_position.x(), current_position.y(), y);
+                                current_position.setY(y);
+                                used.far_top_junctions.insert(j);
+                            }
+
+                            qreal x = scene_x_for_v_channel_lane(j->x, j->v_lanes);
+
+                            if (current_position.x() < x)
+                                lines.append_h_line(current_position.x(), x, current_position.y());
+                            else
+                                lines.append_h_line(x, current_position.x(), current_position.y());
+
+                            current_position.setX(x);
+                        }
+
+                        used.v_roads.insert(r);
+                        used.v_junctions.insert(j);
+
+                        last_junction = j;
+
+                        --remaining_y_distance;
+                    }
+                }
+                else
+                {
+                    while (remaining_y_distance != -1)
+                    {
+                        // TRAVEL UP
+                        road* r = get_v_road(last_junction->x, last_junction->y - 1);
+
+                        if (last_junction->v_lanes != r->lanes)
+                        {
+                            // J -> R
+                            if (last_junction->v_lanes < r->lanes)
+                            {
+                                // POS
+                                qreal y = scene_y_for_far_top_lane_change(last_junction->y, last_junction->far_top_lane_changes);
+                                lines.append_v_line(current_position.x(), y, current_position.y());
+                                current_position.setY(y);
+                                used.far_top_junctions.insert(last_junction);
+                            }
+                            else
+                            {
+                                // NEG
+                                qreal y = scene_y_for_close_top_lane_change(last_junction->y, last_junction->close_top_lane_changes);
+                                lines.append_v_line(current_position.x(), y, current_position.y());
+                                current_position.setY(y);
+                                used.close_top_junctions.insert(last_junction);
+                            }
+
+                            qreal x = scene_x_for_v_channel_lane(r->x, r->lanes);
+
+                            if (current_position.x() < x)
+                                lines.append_h_line(current_position.x(), x, current_position.y());
+                            else
+                                lines.append_h_line(x, current_position.x(), current_position.y());
+
+                            current_position.setX(x);
+                        }
+
+                        junction* j = get_junction(last_junction->x, last_junction->y - 1);
+
+                        if (r->lanes != j->v_lanes)
+                        {
+                            // R -> J
+                            if (r->lanes < j->v_lanes)
+                            {
+                                // POS
+                                qreal y = scene_y_for_close_bottom_lane_change(j->y, j->close_bottom_lane_changes);
+                                lines.append_v_line(current_position.x(), y, current_position.y());
+                                current_position.setY(y);
+                                used.close_bottom_junctions.insert(j);
+                            }
+                            else
+                            {
+                                // NEG
+                                qreal y = scene_y_for_far_bottom_lane_change(j->y, j->far_bottom_lane_changes);
+                                lines.append_v_line(current_position.x(), y, current_position.y());
+                                current_position.setY(y);
+                                used.far_bottom_junctions.insert(j);
+                            }
+
+                            qreal x = scene_x_for_v_channel_lane(j->x, j->v_lanes);
+
+                            if (current_position.x() < x)
+                                lines.append_h_line(current_position.x(), x, current_position.y());
+                            else
+                                lines.append_h_line(x, current_position.x(), current_position.y());
+
+                            current_position.setX(x);
+                        }
+
+                        used.v_roads.insert(r);
+                        used.v_junctions.insert(j);
+
+                        last_junction = j;
+
+                        ++remaining_y_distance;
+                    }
+                }
+
+                road* dst_road = nullptr;
+
+                if (y_distance > 0)
+                {
+                    // TRAVEL DOWN
+                    dst_road = get_v_road(last_junction->x, last_junction->y);
+
+                    if (last_junction->v_lanes != dst_road->lanes)
                     {
                         // J -> R
-                        if (last_junction->v_lanes < r->lanes)
+                        if (last_junction->v_lanes < dst_road->lanes)
                         {
                             // POS
                             qreal y = scene_y_for_far_bottom_lane_change(last_junction->y, last_junction->far_bottom_lane_changes);
@@ -1290,7 +1448,7 @@ void graph_layouter::draw_nets()
                             used.close_bottom_junctions.insert(last_junction);
                         }
 
-                        qreal x = scene_x_for_v_channel_lane(r->x, r->lanes);
+                        qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->lanes);
 
                         if (current_position.x() < x)
                             lines.append_h_line(current_position.x(), x, current_position.y());
@@ -1299,58 +1457,16 @@ void graph_layouter::draw_nets()
 
                         current_position.setX(x);
                     }
-
-                    junction* j = get_junction(last_junction->x, last_junction->y + 1);
-
-                    if (r->lanes != j->v_lanes)
-                    {
-                        // R -> J
-                        if (r->lanes < j->v_lanes)
-                        {
-                            // POS
-                            qreal y = scene_y_for_close_top_lane_change(j->y, j->close_top_lane_changes);
-                            lines.append_v_line(current_position.x(), current_position.y(), y);
-                            current_position.setY(y);
-                            used.close_top_junctions.insert(j);
-                        }
-                        else
-                        {
-                            // NEG
-                            qreal y = scene_y_for_far_top_lane_change(j->y, j->far_top_lane_changes);
-                            lines.append_v_line(current_position.x(), current_position.y(), y);
-                            current_position.setY(y);
-                            used.far_top_junctions.insert(j);
-                        }
-
-                        qreal x = scene_x_for_v_channel_lane(j->x, j->v_lanes);
-
-                        if (current_position.x() < x)
-                            lines.append_h_line(current_position.x(), x, current_position.y());
-                        else
-                            lines.append_h_line(x, current_position.x(), current_position.y());
-
-                        current_position.setX(x);
-                    }
-
-                    used.v_roads.insert(r);
-                    used.v_junctions.insert(j);
-
-                    last_junction = j;
-
-                    --remaining_y_distance;
                 }
-            }
-            else
-            {
-                while (remaining_y_distance != -1)
+                else
                 {
                     // TRAVEL UP
-                    road* r = get_v_road(last_junction->x, last_junction->y - 1);
+                    dst_road = get_v_road(last_junction->x, last_junction->y - 1);
 
-                    if (last_junction->v_lanes != r->lanes)
+                    if (last_junction->v_lanes != dst_road->lanes)
                     {
                         // J -> R
-                        if (last_junction->v_lanes < r->lanes)
+                        if (last_junction->v_lanes < dst_road->lanes)
                         {
                             // POS
                             qreal y = scene_y_for_far_top_lane_change(last_junction->y, last_junction->far_top_lane_changes);
@@ -1367,7 +1483,7 @@ void graph_layouter::draw_nets()
                             used.close_top_junctions.insert(last_junction);
                         }
 
-                        qreal x = scene_x_for_v_channel_lane(r->x, r->lanes);
+                        qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->lanes);
 
                         if (current_position.x() < x)
                             lines.append_h_line(current_position.x(), x, current_position.y());
@@ -1376,135 +1492,23 @@ void graph_layouter::draw_nets()
 
                         current_position.setX(x);
                     }
-
-                    junction* j = get_junction(last_junction->x, last_junction->y - 1);
-
-                    if (r->lanes != j->v_lanes)
-                    {
-                        // R -> J
-                        if (r->lanes < j->v_lanes)
-                        {
-                            // POS
-                            qreal y = scene_y_for_close_bottom_lane_change(j->y, j->close_bottom_lane_changes);
-                            lines.append_v_line(current_position.x(), y, current_position.y());
-                            current_position.setY(y);
-                            used.close_bottom_junctions.insert(j);
-                        }
-                        else
-                        {
-                            // NEG
-                            qreal y = scene_y_for_far_bottom_lane_change(j->y, j->far_bottom_lane_changes);
-                            lines.append_v_line(current_position.x(), y, current_position.y());
-                            current_position.setY(y);
-                            used.far_bottom_junctions.insert(j);
-                        }
-
-                        qreal x = scene_x_for_v_channel_lane(j->x, j->v_lanes);
-
-                        if (current_position.x() < x)
-                            lines.append_h_line(current_position.x(), x, current_position.y());
-                        else
-                            lines.append_h_line(x, current_position.x(), current_position.y());
-
-                        current_position.setX(x);
-                    }
-
-                    used.v_roads.insert(r);
-                    used.v_junctions.insert(j);
-
-                    last_junction = j;
-
-                    ++remaining_y_distance;
                 }
+
+                used.v_junctions.insert(last_junction);
+
+                if (current_position.y() < dst_pin_position.y())
+                    lines.append_v_line(current_position.x(), current_position.y(), dst_pin_position.y());
+                else
+                    lines.append_v_line(current_position.x(), dst_pin_position.y(), current_position.y());
+
+                current_position.setY(dst_pin_position.y());
+
+                used.v_roads.insert(dst_road);
+
+                lines.append_h_line(current_position.x(), dst_pin_position.x(), current_position.y());
+
+                current_position = src_pin_position;
             }
-
-            road* dst_road = nullptr;
-
-            if (y_distance > 0)
-            {
-                // TRAVEL DOWN
-                dst_road = get_v_road(last_junction->x, last_junction->y);
-
-                if (last_junction->v_lanes != dst_road->lanes)
-                {
-                    // J -> R
-                    if (last_junction->v_lanes < dst_road->lanes)
-                    {
-                        // POS
-                        qreal y = scene_y_for_far_bottom_lane_change(last_junction->y, last_junction->far_bottom_lane_changes);
-                        lines.append_v_line(current_position.x(), current_position.y(), y);
-                        current_position.setY(y);
-                        used.far_bottom_junctions.insert(last_junction);
-                    }
-                    else
-                    {
-                        // NEG
-                        qreal y = scene_y_for_close_bottom_lane_change(last_junction->y, last_junction->close_bottom_lane_changes);
-                        lines.append_v_line(current_position.x(), current_position.y(), y);
-                        current_position.setY(y);
-                        used.close_bottom_junctions.insert(last_junction);
-                    }
-
-                    qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->lanes);
-
-                    if (current_position.x() < x)
-                        lines.append_h_line(current_position.x(), x, current_position.y());
-                    else
-                        lines.append_h_line(x, current_position.x(), current_position.y());
-
-                    current_position.setX(x);
-                }
-            }
-            else
-            {
-                // TRAVEL UP
-                dst_road = get_v_road(last_junction->x, last_junction->y - 1);
-
-                if (last_junction->v_lanes != dst_road->lanes)
-                {
-                    // J -> R
-                    if (last_junction->v_lanes < dst_road->lanes)
-                    {
-                        // POS
-                        qreal y = scene_y_for_far_top_lane_change(last_junction->y, last_junction->far_top_lane_changes);
-                        lines.append_v_line(current_position.x(), y, current_position.y());
-                        current_position.setY(y);
-                        used.far_top_junctions.insert(last_junction);
-                    }
-                    else
-                    {
-                        // NEG
-                        qreal y = scene_y_for_close_top_lane_change(last_junction->y, last_junction->close_top_lane_changes);
-                        lines.append_v_line(current_position.x(), y, current_position.y());
-                        current_position.setY(y);
-                        used.close_top_junctions.insert(last_junction);
-                    }
-
-                    qreal x = scene_x_for_v_channel_lane(dst_road->x, dst_road->lanes);
-
-                    if (current_position.x() < x)
-                        lines.append_h_line(current_position.x(), x, current_position.y());
-                    else
-                        lines.append_h_line(x, current_position.x(), current_position.y());
-
-                    current_position.setX(x);
-                }
-            }
-
-            used.v_junctions.insert(last_junction);
-
-            if (current_position.y() < dst_pin_position.y())
-                lines.append_v_line(current_position.x(), current_position.y(), dst_pin_position.y());
-            else
-                lines.append_v_line(current_position.x(), dst_pin_position.y(), current_position.y());
-
-            current_position.setY(dst_pin_position.y());
-
-            used.v_roads.insert(dst_road);
-
-            lines.append_h_line(current_position.x(), dst_pin_position.x(), current_position.y());
-
-            current_position = src_pin_position;
         }
 
         lines.merge_lines();
