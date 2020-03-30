@@ -921,8 +921,7 @@ void graph_layouter::draw_nets()
                     break;
                 }
         }
-        if (!src_box)    // ???
-            continue;
+        assert(src_box);
 
         used_paths used;
 
@@ -947,8 +946,7 @@ void graph_layouter::draw_nets()
                     break;
                 }
 
-            if (!dst_box)    // ???
-                continue;
+            assert(dst_box);
 
             QPointF dst_pin_position = dst_box->item->get_input_scene_position(n->get_id(), QString::fromStdString(dst.get_pin()));
 
@@ -985,7 +983,7 @@ void graph_layouter::draw_nets()
 
                 if (src_pin_position.y() < dst_pin_position.y())
                     lines.append_v_line(x, src_pin_position.y(), dst_pin_position.y());
-                else
+                else if (src_pin_position.y() > dst_pin_position.y())
                     lines.append_v_line(x, dst_pin_position.y(), src_pin_position.y());
 
                 lines.append_h_line(x, dst_pin_position.x(), dst_pin_position.y());
